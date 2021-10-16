@@ -1,4 +1,5 @@
 add_library(felspar-poll-headers-tests STATIC EXCLUDE_FROM_ALL
+        accept.cpp
         executor.cpp
         poll.cpp
     )
