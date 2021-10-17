@@ -7,6 +7,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <iostream>
+
 
 namespace {
 
@@ -23,6 +25,13 @@ namespace {
         }
     }
 
+
+    felspar::coro::task<void> echo_connection(felspar::poll::executor &exec, int fd) {
+            set_non_blocking(fd);
+            std::array<std::byte, 256> buffer;
+            auto bytes = co_await felspar::poll::read(exec, fd, buffer);
+            ::close(fd);
+    }
 
     felspar::coro::task<void>
             echo_server(felspar::poll::executor &exec, std::uint16_t port) {
@@ -51,8 +60,7 @@ namespace {
 
         for (auto acceptor = felspar::poll::accept(exec, fd);
              auto cnx = co_await acceptor.next();) {
-            /// Service cnx
-            ::close(*cnx);
+            exec.post(echo_connection, *cnx);
         }
 
         ::close(fd);
@@ -67,10 +75,17 @@ namespace {
         }
         set_non_blocking(fd);
 
-        co_return;
+        sockaddr_in in;
+        in.sin_family = AF_INET;
+        in.sin_port = htons(port);
+        in.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+
+        co_await felspar::poll::connect(exec,
+                fd, reinterpret_cast<sockaddr const *>(&in), sizeof(in));
     }
 
     auto const trans = suite.test("transfer", []() {
+        std::cout << "Starting" << std::endl;
         felspar::poll::executor exec;
         exec.post(echo_server, 5543);
         exec.run(echo_client, 5543);

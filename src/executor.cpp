@@ -1,3 +1,4 @@
+#include <felspar/exceptions.hpp>
 #include <felspar/poll/executor.hpp>
 
 #include <iostream>
@@ -5,10 +6,11 @@
 
 void felspar::poll::iop::await_suspend(
         felspar::coro::coroutine_handle<> h) noexcept {
-    std::cout << "Schedule IOP" << std::endl;
     if (read) {
+    std::cout << "Schedule read IOP" << std::endl;
         exec.requests[fd].reads.push_back(h);
     } else {
+    std::cout << "Schedule write IOP" << std::endl;
         exec.requests[fd].writes.push_back(h);
     }
 }
@@ -21,7 +23,6 @@ void felspar::poll::executor::run(
     std::vector<::pollfd> iops;
     std::vector<felspar::coro::coroutine_handle<>> continuations;
     while (not coro.done()) {
-        std::cout << "Looping" << std::endl;
         /// IOP loop
         iops.clear();
         for (auto const &req : requests) {
@@ -32,7 +33,10 @@ void felspar::poll::executor::run(
         }
 
         /// Do the poll dance
-        ::poll(iops.data(), iops.size(), -1);
+        if (::poll(iops.data(), iops.size(), -1) == -1) {
+                throw felspar::stdexcept::system_error{
+                        errno, std::generic_category(), "poll"};
+        }
 
         /// Continuations loop
         continuations.clear();
@@ -51,7 +55,22 @@ void felspar::poll::executor::run(
             }
         }
         for (auto continuation : continuations) { continuation.resume(); }
+
+        /// Garbage collect old coroutines
+        live.erase(
+            std::remove_if(
+                    live.begin(), live.end(),
+                    [](auto const &h) {
+                        if (h.done()) {
+                            h.promise().consume_value();
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    }),
+            live.end());
     }
+    coro.promise().consume_value();
 }
 
 
