@@ -1,16 +1,12 @@
 #include <felspar/exceptions.hpp>
 #include <felspar/poll/executor.hpp>
 
-#include <iostream>
-
 
 void felspar::poll::iop::await_suspend(
         felspar::coro::coroutine_handle<> h) noexcept {
     if (read) {
-        std::cout << "Schedule read IOP" << std::endl;
         exec.requests[fd].reads.push_back(h);
     } else {
-        std::cout << "Schedule write IOP" << std::endl;
         exec.requests[fd].writes.push_back(h);
     }
 }
@@ -18,7 +14,6 @@ void felspar::poll::iop::await_suspend(
 
 void felspar::poll::executor::run(
         felspar::coro::unique_handle<felspar::coro::task_promise<void>> coro) {
-    std::cout << "Running" << std::endl;
     coro.resume();
     std::vector<::pollfd> iops;
     std::vector<felspar::coro::coroutine_handle<>> continuations;

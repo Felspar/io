@@ -7,8 +7,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <iostream>
-
 
 namespace {
 
@@ -109,12 +107,9 @@ namespace {
         check(buffer[3]) == out[3];
         check(buffer[4]) == out[4];
         check(buffer[5]) == out[5];
-
-        std::cout << "Client done" << std::endl;
     }
 
-    auto const trans = suite.test("transfer", []() {
-        std::cout << "Starting" << std::endl;
+    auto const trans = suite.test("echo", []() {
         felspar::poll::executor exec;
         exec.post(echo_server, 5543);
         exec.run(echo_client, 5543);
