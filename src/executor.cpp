@@ -7,10 +7,10 @@
 void felspar::poll::iop::await_suspend(
         felspar::coro::coroutine_handle<> h) noexcept {
     if (read) {
-    std::cout << "Schedule read IOP" << std::endl;
+        std::cout << "Schedule read IOP" << std::endl;
         exec.requests[fd].reads.push_back(h);
     } else {
-    std::cout << "Schedule write IOP" << std::endl;
+        std::cout << "Schedule write IOP" << std::endl;
         exec.requests[fd].writes.push_back(h);
     }
 }
@@ -34,8 +34,8 @@ void felspar::poll::executor::run(
 
         /// Do the poll dance
         if (::poll(iops.data(), iops.size(), -1) == -1) {
-                throw felspar::stdexcept::system_error{
-                        errno, std::generic_category(), "poll"};
+            throw felspar::stdexcept::system_error{
+                    errno, std::generic_category(), "poll"};
         }
 
         /// Continuations loop
@@ -58,17 +58,17 @@ void felspar::poll::executor::run(
 
         /// Garbage collect old coroutines
         live.erase(
-            std::remove_if(
-                    live.begin(), live.end(),
-                    [](auto const &h) {
-                        if (h.done()) {
-                            h.promise().consume_value();
-                            return true;
-                        } else {
-                            return false;
-                        }
-                    }),
-            live.end());
+                std::remove_if(
+                        live.begin(), live.end(),
+                        [](auto const &h) {
+                            if (h.done()) {
+                                h.promise().consume_value();
+                                return true;
+                            } else {
+                                return false;
+                            }
+                        }),
+                live.end());
     }
     coro.promise().consume_value();
 }

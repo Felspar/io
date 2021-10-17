@@ -31,8 +31,8 @@ felspar::coro::stream<int> felspar::poll::accept(executor &exec, int fd) {
 }
 
 
-felspar::coro::task<void> felspar::poll::connect(executor &exec,
-        int fd, const struct sockaddr *addr, socklen_t addrlen) {
+felspar::coro::task<void> felspar::poll::connect(
+        executor &exec, int fd, const struct sockaddr *addr, socklen_t addrlen) {
     std::cout << "Calling connect for FD " << fd << std::endl;
     if (auto err = ::connect(fd, addr, addrlen); err == 0) {
         std::cout << "Connection done" << std::endl;
@@ -52,8 +52,8 @@ felspar::coro::task<void> felspar::poll::connect(executor &exec,
                         errno, std::generic_category(), "connect"};
             }
         } else {
-        throw felspar::stdexcept::system_error{
-                errno, std::generic_category(), "connect/getsockopt"};
+            throw felspar::stdexcept::system_error{
+                    errno, std::generic_category(), "connect/getsockopt"};
         }
     } else {
         throw felspar::stdexcept::system_error{
@@ -62,14 +62,16 @@ felspar::coro::task<void> felspar::poll::connect(executor &exec,
 }
 
 
-felspar::coro::task<::ssize_t> felspar::poll::read(executor &exec, int fd, void *buf, std::size_t count) {
+felspar::coro::task<::ssize_t> felspar::poll::read(
+        executor &exec, int fd, void *buf, std::size_t count) {
     while (true) {
         std::cout << "Calling read on FD " << fd << std::endl;
         if (auto bytes = ::read(fd, buf, count) >= 0) {
             std::cout << "read done" << std::endl;
             co_return bytes;
         } else if (errno == EAGAIN or errno == EWOULDBLOCK) {
-            std::cout << "read errno == EAGAIN or errno == EWOULDBLOCK" << std::endl;
+            std::cout << "read errno == EAGAIN or errno == EWOULDBLOCK"
+                      << std::endl;
             co_await exec.read(fd);
         } else {
             throw felspar::stdexcept::system_error{

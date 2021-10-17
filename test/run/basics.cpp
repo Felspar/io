@@ -26,11 +26,12 @@ namespace {
     }
 
 
-    felspar::coro::task<void> echo_connection(felspar::poll::executor &exec, int fd) {
-            set_non_blocking(fd);
-            std::array<std::byte, 256> buffer;
-            auto bytes = co_await felspar::poll::read(exec, fd, buffer);
-            ::close(fd);
+    felspar::coro::task<void>
+            echo_connection(felspar::poll::executor &exec, int fd) {
+        set_non_blocking(fd);
+        std::array<std::byte, 256> buffer;
+        auto bytes = co_await felspar::poll::read(exec, fd, buffer);
+        ::close(fd);
     }
 
     felspar::coro::task<void>
@@ -88,8 +89,8 @@ namespace {
         in.sin_port = htons(port);
         in.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-        co_await felspar::poll::connect(exec,
-                fd, reinterpret_cast<sockaddr const *>(&in), sizeof(in));
+        co_await felspar::poll::connect(
+                exec, fd, reinterpret_cast<sockaddr const *>(&in), sizeof(in));
 
         std::cout << "Client done" << std::endl;
     }

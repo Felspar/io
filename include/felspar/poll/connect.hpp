@@ -14,7 +14,10 @@ namespace felspar::poll {
 
     /// Asynchronous connect
     felspar::coro::task<void>
-            connect(executor &exec, int fd, const struct sockaddr *addr, socklen_t addrlen);
+            connect(executor &exec,
+                    int fd,
+                    const struct sockaddr *addr,
+                    socklen_t addrlen);
 
 
 }

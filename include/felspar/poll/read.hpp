@@ -15,9 +15,11 @@ namespace felspar::poll {
 
 
     /// Issue a read request
-    felspar::coro::task<::ssize_t> read(executor &, int fd, void *buf, std::size_t count);
+    felspar::coro::task<::ssize_t>
+            read(executor &, int fd, void *buf, std::size_t count);
 
-    inline felspar::coro::task<ssize_t> read(executor &e, int fd, std::span<std::byte> s) {
+    inline felspar::coro::task<ssize_t>
+            read(executor &e, int fd, std::span<std::byte> s) {
         return read(e, fd, reinterpret_cast<void *>(s.data()), s.size());
     }
 
