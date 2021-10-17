@@ -28,7 +28,7 @@ void felspar::poll::executor::run(
         for (auto const &req : requests) {
             short flags = {};
             if (not req.second.reads.empty()) { flags |= POLLIN; }
-            if (req.second.writes.empty()) { flags |= POLLOUT; }
+            if (not req.second.writes.empty()) { flags |= POLLOUT; }
             iops.push_back({req.first, flags, {}});
         }
 
