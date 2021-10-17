@@ -82,6 +82,8 @@ namespace {
 
         co_await felspar::poll::connect(exec,
                 fd, reinterpret_cast<sockaddr const *>(&in), sizeof(in));
+
+        std::cout << "Client done" << std::endl;
     }
 
     auto const trans = suite.test("transfer", []() {
