@@ -66,7 +66,7 @@ felspar::coro::task<::ssize_t> felspar::poll::read(
         executor &exec, int fd, void *buf, std::size_t count) {
     while (true) {
         std::cout << "Calling read on FD " << fd << std::endl;
-        if (auto bytes = ::read(fd, buf, count) >= 0) {
+        if (auto bytes = ::read(fd, buf, count); bytes >= 0) {
             std::cout << "read done" << std::endl;
             co_return bytes;
         } else if (errno == EAGAIN or errno == EWOULDBLOCK) {
