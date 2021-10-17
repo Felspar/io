@@ -42,6 +42,14 @@ namespace {
         }
         set_non_blocking(fd);
 
+        int optval = 1;
+        if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval))
+            == -1) {
+            throw felspar::stdexcept::system_error{
+                    errno, std::generic_category(),
+                    "setsockopt SO_REUSEPORT failed"};
+        }
+
         sockaddr_in in;
         in.sin_family = AF_INET;
         in.sin_port = htons(port);
