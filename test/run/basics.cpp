@@ -2,6 +2,7 @@
 #include <felspar/poll.hpp>
 #include <felspar/test.hpp>
 
+#include <fcntl.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -13,6 +14,16 @@ namespace {
     auto const suite = felspar::testsuite("basics");
 
 
+    void set_non_blocking(int fd) {
+        if (int err = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
+            err != 0) {
+            throw felspar::stdexcept::system_error{
+                    errno, std::generic_category(),
+                    "fcntl F_SETFL unknown error"};
+        }
+    }
+
+
     felspar::coro::task<void>
             echo_server(felspar::poll::executor &exec, std::uint16_t port) {
         auto fd = ::socket(AF_INET, SOCK_STREAM, 0);
@@ -20,6 +31,7 @@ namespace {
             throw felspar::stdexcept::system_error{
                     errno, std::generic_category(), "Creating server socket"};
         }
+        set_non_blocking(fd);
 
         sockaddr_in in;
         in.sin_family = AF_INET;
@@ -31,8 +43,19 @@ namespace {
                     errno, std::generic_category(), "Binding server socket"};
         }
 
+        int constexpr backlog = 64;
+        if (::listen(fd, backlog) == -1) {
+            throw felspar::stdexcept::system_error{
+                    errno, std::generic_category(), "Calling listen"};
+        }
+
+        for (auto acceptor = felspar::poll::accept(exec, fd);
+             auto cnx = co_await acceptor.next();) {
+            /// Service cnx
+            ::close(*cnx);
+        }
+
         ::close(fd);
-        co_return;
     }
 
     felspar::coro::task<void>
@@ -42,6 +65,7 @@ namespace {
             throw felspar::stdexcept::system_error{
                     errno, std::generic_category(), "Creating client socket"};
         }
+        set_non_blocking(fd);
 
         co_return;
     }
