@@ -15,7 +15,7 @@
 felspar::coro::stream<int> felspar::poll::accept(executor &exec, int fd) {
     while (true) {
         std::cout << "Calling accept on FD " << fd << std::endl;
-        if (int cnx = ::accept(fd, nullptr, nullptr) >= 0) {
+        if (int cnx = ::accept(fd, nullptr, nullptr); cnx >= 0) {
             std::cout << "Got an accept fd " << cnx << std::endl;
             co_yield cnx;
         } else if (errno == EWOULDBLOCK or errno == EAGAIN) {
@@ -34,7 +34,7 @@ felspar::coro::stream<int> felspar::poll::accept(executor &exec, int fd) {
 felspar::coro::task<void> felspar::poll::connect(executor &exec,
         int fd, const struct sockaddr *addr, socklen_t addrlen) {
     std::cout << "Calling connect for FD " << fd << std::endl;
-    if (auto err = ::connect(fd, addr, addrlen) == 0) {
+    if (auto err = ::connect(fd, addr, addrlen); err == 0) {
         std::cout << "Connection done" << std::endl;
         co_return;
     } else if (errno == EINPROGRESS) {
