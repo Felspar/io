@@ -79,3 +79,22 @@ felspar::coro::task<::ssize_t> felspar::poll::read(
         }
     }
 }
+
+
+felspar::coro::task<::ssize_t> felspar::poll::write(
+        executor &exec, int fd, void const *buf, std::size_t count) {
+    while (true) {
+        std::cout << "Calling write on FD " << fd << std::endl;
+        if (auto bytes = ::write(fd, buf, count); bytes >= 0) {
+            std::cout << "write done" << std::endl;
+            co_return bytes;
+        } else if (errno == EAGAIN or errno == EWOULDBLOCK) {
+            std::cout << "write errno == EAGAIN or errno == EWOULDBLOCK"
+                      << std::endl;
+            co_await exec.write(fd);
+        } else {
+            throw felspar::stdexcept::system_error{
+                    errno, std::generic_category(), "write"};
+        }
+    }
+}

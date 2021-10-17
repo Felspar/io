@@ -30,7 +30,11 @@ namespace {
             echo_connection(felspar::poll::executor &exec, int fd) {
         set_non_blocking(fd);
         std::array<std::byte, 256> buffer;
-        auto bytes = co_await felspar::poll::read(exec, fd, buffer);
+        while (auto bytes = co_await felspar::poll::read(exec, fd, buffer)) {
+            std::span writing{buffer};
+            auto written = co_await felspar::poll::write(
+                    exec, fd, writing.first(bytes));
+        }
         ::close(fd);
     }
 
@@ -77,6 +81,8 @@ namespace {
 
     felspar::coro::task<void>
             echo_client(felspar::poll::executor &exec, std::uint16_t port) {
+        felspar::test::injected check;
+
         auto fd = ::socket(AF_INET, SOCK_STREAM, 0);
         if (fd < 0) {
             throw felspar::stdexcept::system_error{
@@ -91,6 +97,18 @@ namespace {
 
         co_await felspar::poll::connect(
                 exec, fd, reinterpret_cast<sockaddr const *>(&in), sizeof(in));
+
+        std::array<std::uint8_t, 6> out{1, 2, 3, 4, 5, 6}, buffer{};
+        co_await felspar::poll::write(exec, fd, out);
+
+        auto bytes = co_await felspar::poll::read(exec, fd, buffer);
+        check(bytes) == 6u;
+        check(buffer[0]) == out[0];
+        check(buffer[1]) == out[1];
+        check(buffer[2]) == out[2];
+        check(buffer[3]) == out[3];
+        check(buffer[4]) == out[4];
+        check(buffer[5]) == out[5];
 
         std::cout << "Client done" << std::endl;
     }
