@@ -12,11 +12,11 @@
 namespace felspar::poll {
 
 
-    class executor;
+    class warden;
 
 
     struct iop {
-        executor &exec;
+        warden &exec;
         int fd;
         bool read;
 
@@ -27,7 +27,7 @@ namespace felspar::poll {
 
 
     /// Executor that allows `poll` based asynchronous IO
-    class executor {
+    class warden {
         friend class iop;
 
         std::vector<
@@ -43,16 +43,14 @@ namespace felspar::poll {
 
       public:
         template<typename... PArgs, typename... MArgs>
-        void
-                post(coro::task<void> (*f)(executor &, PArgs...),
-                     MArgs &&...margs) {
+        void post(coro::task<void> (*f)(warden &, PArgs...), MArgs &&...margs) {
             auto task = f(*this, std::forward<MArgs>(margs)...);
             auto coro = task.release();
             coro.resume();
             live.push_back(std::move(coro));
         }
         template<typename... PArgs, typename... MArgs>
-        void run(coro::task<void> (*f)(executor &, PArgs...), MArgs &&...margs) {
+        void run(coro::task<void> (*f)(warden &, PArgs...), MArgs &&...margs) {
             auto task = f(*this, std::forward<MArgs>(margs)...);
             run(task.release());
         }

@@ -25,19 +25,19 @@ namespace {
 
 
     felspar::coro::task<void>
-            echo_connection(felspar::poll::executor &exec, int fd) {
+            echo_connection(felspar::poll::warden &ward, int fd) {
         set_non_blocking(fd);
         std::array<std::byte, 256> buffer;
-        while (auto bytes = co_await felspar::poll::read(exec, fd, buffer)) {
+        while (auto bytes = co_await felspar::poll::read(ward, fd, buffer)) {
             std::span writing{buffer};
             auto written = co_await felspar::poll::write(
-                    exec, fd, writing.first(bytes));
+                    ward, fd, writing.first(bytes));
         }
         ::close(fd);
     }
 
     felspar::coro::task<void>
-            echo_server(felspar::poll::executor &exec, std::uint16_t port) {
+            echo_server(felspar::poll::warden &ward, std::uint16_t port) {
         auto fd = ::socket(AF_INET, SOCK_STREAM, 0);
         if (fd < 0) {
             throw felspar::stdexcept::system_error{
@@ -69,16 +69,16 @@ namespace {
                     errno, std::generic_category(), "Calling listen"};
         }
 
-        for (auto acceptor = felspar::poll::accept(exec, fd);
+        for (auto acceptor = felspar::poll::accept(ward, fd);
              auto cnx = co_await acceptor.next();) {
-            exec.post(echo_connection, *cnx);
+            ward.post(echo_connection, *cnx);
         }
 
         ::close(fd);
     }
 
     felspar::coro::task<void>
-            echo_client(felspar::poll::executor &exec, std::uint16_t port) {
+            echo_client(felspar::poll::warden &ward, std::uint16_t port) {
         felspar::test::injected check;
 
         auto fd = ::socket(AF_INET, SOCK_STREAM, 0);
@@ -94,12 +94,12 @@ namespace {
         in.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
         co_await felspar::poll::connect(
-                exec, fd, reinterpret_cast<sockaddr const *>(&in), sizeof(in));
+                ward, fd, reinterpret_cast<sockaddr const *>(&in), sizeof(in));
 
         std::array<std::uint8_t, 6> out{1, 2, 3, 4, 5, 6}, buffer{};
-        co_await felspar::poll::write(exec, fd, out);
+        co_await felspar::poll::write(ward, fd, out);
 
-        auto bytes = co_await felspar::poll::read(exec, fd, buffer);
+        auto bytes = co_await felspar::poll::read(ward, fd, buffer);
         check(bytes) == 6u;
         check(buffer[0]) == out[0];
         check(buffer[1]) == out[1];
@@ -110,9 +110,9 @@ namespace {
     }
 
     auto const trans = suite.test("echo", []() {
-        felspar::poll::executor exec;
-        exec.post(echo_server, 5543);
-        exec.run(echo_client, 5543);
+        felspar::poll::warden ward;
+        ward.post(echo_server, 5543);
+        ward.run(echo_client, 5543);
     });
 
 

@@ -9,15 +9,12 @@
 namespace felspar::poll {
 
 
-    class executor;
+    class warden;
 
 
     /// Asynchronous connect
-    felspar::coro::task<void>
-            connect(executor &exec,
-                    int fd,
-                    const struct sockaddr *addr,
-                    socklen_t addrlen);
+    felspar::coro::task<void> connect(
+            warden &, int fd, const struct sockaddr *, socklen_t addrlen);
 
 
 }

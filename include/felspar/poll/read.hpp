@@ -11,20 +11,20 @@
 namespace felspar::poll {
 
 
-    class executor;
+    class warden;
 
 
     /// Issue a read request
     felspar::coro::task<::ssize_t>
-            read(executor &, int fd, void *buf, std::size_t count);
+            read(warden &, int fd, void *buf, std::size_t count);
 
     inline felspar::coro::task<ssize_t>
-            read(executor &e, int fd, std::span<std::uint8_t> s) {
-        return read(e, fd, s.data(), s.size());
+            read(warden &w, int fd, std::span<std::uint8_t> s) {
+        return read(w, fd, s.data(), s.size());
     }
     inline felspar::coro::task<ssize_t>
-            read(executor &e, int fd, std::span<std::byte> s) {
-        return read(e, fd, s.data(), s.size());
+            read(warden &w, int fd, std::span<std::byte> s) {
+        return read(w, fd, s.data(), s.size());
     }
 
 

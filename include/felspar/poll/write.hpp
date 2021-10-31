@@ -9,20 +9,20 @@
 namespace felspar::poll {
 
 
-    class executor;
+    class warden;
 
 
     /// Write to a file descriptor
     felspar::coro::task<::ssize_t>
-            write(executor &, int fd, void const *buf, std::size_t count);
+            write(warden &, int fd, void const *buf, std::size_t count);
 
     inline felspar::coro::task<::ssize_t>
-            write(executor &e, int fd, std::span<std::uint8_t> s) {
-        return write(e, fd, s.data(), s.size());
+            write(warden &w, int fd, std::span<std::uint8_t> s) {
+        return write(w, fd, s.data(), s.size());
     }
     inline felspar::coro::task<::ssize_t>
-            write(executor &e, int fd, std::span<std::byte> s) {
-        return write(e, fd, s.data(), s.size());
+            write(warden &w, int fd, std::span<std::byte> s) {
+        return write(w, fd, s.data(), s.size());
     }
 
 

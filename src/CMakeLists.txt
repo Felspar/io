@@ -1,6 +1,6 @@
 add_library(felspar-poll
-        executor.cpp
         iops.cpp
+        warden.poll.cpp
     )
 target_include_directories(felspar-poll PUBLIC ../include)
 target_link_libraries(felspar-poll PUBLIC felspar-coro)

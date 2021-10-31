@@ -1,5 +1,5 @@
 #include <felspar/exceptions.hpp>
-#include <felspar/poll/executor.hpp>
+#include <felspar/poll/warden.poll.hpp>
 
 
 void felspar::poll::iop::await_suspend(
@@ -12,7 +12,7 @@ void felspar::poll::iop::await_suspend(
 }
 
 
-void felspar::poll::executor::run(
+void felspar::poll::warden::run(
         felspar::coro::unique_handle<felspar::coro::task_promise<void>> coro) {
     coro.resume();
     std::vector<::pollfd> iops;
@@ -69,9 +69,9 @@ void felspar::poll::executor::run(
 }
 
 
-felspar::poll::iop felspar::poll::executor::read(int fd) {
+felspar::poll::iop felspar::poll::warden::read(int fd) {
     return {*this, fd, true};
 }
-felspar::poll::iop felspar::poll::executor::write(int fd) {
+felspar::poll::iop felspar::poll::warden::write(int fd) {
     return {*this, fd, false};
 }
