@@ -3,6 +3,7 @@
 
 #include <felspar/coro/task.hpp>
 
+#include <functional>
 #include <map>
 #include <vector>
 
@@ -16,12 +17,13 @@ namespace felspar::poll {
 
 
     struct iop {
-        warden &exec;
-        int fd;
-        bool read;
+        /// TODO Want something with much lower overhead than std::function
+        std::function<void(felspar::coro::coroutine_handle<>)> suspend;
 
         bool await_ready() const noexcept { return false; }
-        void await_suspend(felspar::coro::coroutine_handle<> h) noexcept;
+        void await_suspend(felspar::coro::coroutine_handle<> h) noexcept {
+            suspend(h);
+        }
         auto await_resume() noexcept {}
     };
 
@@ -30,16 +32,10 @@ namespace felspar::poll {
     class warden {
         friend class iop;
 
+      protected:
         std::vector<
                 felspar::coro::unique_handle<felspar::coro::task_promise<void>>>
                 live;
-
-        void run(felspar::coro::unique_handle<felspar::coro::task_promise<void>>);
-
-        struct request {
-            std::vector<felspar::coro::coroutine_handle<>> reads, writes;
-        };
-        std::map<int, request> requests;
 
       public:
         template<typename... PArgs, typename... MArgs>
@@ -49,14 +45,9 @@ namespace felspar::poll {
             coro.resume();
             live.push_back(std::move(coro));
         }
-        template<typename... PArgs, typename... MArgs>
-        void run(coro::task<void> (*f)(warden &, PArgs...), MArgs &&...margs) {
-            auto task = f(*this, std::forward<MArgs>(margs)...);
-            run(task.release());
-        }
 
-        iop read(int fd);
-        iop write(int fd);
+        virtual iop read(int fd) = 0;
+        virtual iop write(int fd) = 0;
     };
 
 

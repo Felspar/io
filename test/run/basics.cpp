@@ -110,7 +110,7 @@ namespace {
     }
 
     auto const trans = suite.test("echo", []() {
-        felspar::poll::warden ward;
+        felspar::poll::poll_warden ward;
         ward.post(echo_server, 5543);
         ward.run(echo_client, 5543);
     });

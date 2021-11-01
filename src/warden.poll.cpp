@@ -2,17 +2,7 @@
 #include <felspar/poll/warden.poll.hpp>
 
 
-void felspar::poll::iop::await_suspend(
-        felspar::coro::coroutine_handle<> h) noexcept {
-    if (read) {
-        exec.requests[fd].reads.push_back(h);
-    } else {
-        exec.requests[fd].writes.push_back(h);
-    }
-}
-
-
-void felspar::poll::warden::run(
+void felspar::poll::poll_warden::run(
         felspar::coro::unique_handle<felspar::coro::task_promise<void>> coro) {
     coro.resume();
     std::vector<::pollfd> iops;
@@ -69,9 +59,13 @@ void felspar::poll::warden::run(
 }
 
 
-felspar::poll::iop felspar::poll::warden::read(int fd) {
-    return {*this, fd, true};
+felspar::poll::iop felspar::poll::poll_warden::read(int fd) {
+    return {[this, fd](felspar::coro::coroutine_handle<> h) {
+        requests[fd].reads.push_back(h);
+    }};
 }
-felspar::poll::iop felspar::poll::warden::write(int fd) {
-    return {*this, fd, false};
+felspar::poll::iop felspar::poll::poll_warden::write(int fd) {
+    return {[this, fd](felspar::coro::coroutine_handle<> h) {
+        requests[fd].writes.push_back(h);
+    }};
 }
