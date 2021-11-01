@@ -46,8 +46,8 @@ namespace felspar::poll {
             live.push_back(std::move(coro));
         }
 
-        virtual iop read(int fd) = 0;
-        virtual iop write(int fd) = 0;
+        virtual iop read_ready(int fd) = 0;
+        virtual iop write_ready(int fd) = 0;
     };
 
 

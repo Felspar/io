@@ -15,7 +15,7 @@ felspar::coro::stream<int> felspar::poll::accept(warden &ward, int fd) {
         if (int cnx = ::accept(fd, nullptr, nullptr); cnx >= 0) {
             co_yield cnx;
         } else if (errno == EWOULDBLOCK or errno == EAGAIN) {
-            co_await ward.read(fd);
+            co_await ward.read_ready(fd);
         } else if (errno == EBADF) {
             co_return;
         } else {
@@ -31,7 +31,7 @@ felspar::coro::task<void> felspar::poll::connect(
     if (auto err = ::connect(fd, addr, addrlen); err == 0) {
         co_return;
     } else if (errno == EINPROGRESS) {
-        co_await ward.write(fd);
+        co_await ward.write_ready(fd);
         int errvalue{};
         ::socklen_t length{};
         if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &errvalue, &length) == 0) {
@@ -58,7 +58,7 @@ felspar::coro::task<::ssize_t> felspar::poll::read(
         if (auto bytes = ::read(fd, buf, count); bytes >= 0) {
             co_return bytes;
         } else if (errno == EAGAIN or errno == EWOULDBLOCK) {
-            co_await ward.read(fd);
+            co_await ward.read_ready(fd);
         } else {
             throw felspar::stdexcept::system_error{
                     errno, std::generic_category(), "read"};
@@ -73,7 +73,7 @@ felspar::coro::task<::ssize_t> felspar::poll::write(
         if (auto bytes = ::write(fd, buf, count); bytes >= 0) {
             co_return bytes;
         } else if (errno == EAGAIN or errno == EWOULDBLOCK) {
-            co_await ward.write(fd);
+            co_await ward.write_ready(fd);
         } else {
             throw felspar::stdexcept::system_error{
                     errno, std::generic_category(), "write"};

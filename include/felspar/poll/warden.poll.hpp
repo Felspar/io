@@ -22,8 +22,8 @@ namespace felspar::poll {
             run(task.release());
         }
 
-        iop read(int fd) override;
-        iop write(int fd) override;
+        iop read_ready(int fd) override;
+        iop write_ready(int fd) override;
     };
 
 
