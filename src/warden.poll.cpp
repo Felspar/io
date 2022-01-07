@@ -59,12 +59,12 @@ void felspar::poll::poll_warden::run(
 }
 
 
-felspar::poll::iop felspar::poll::poll_warden::read_ready(int fd) {
+felspar::poll::iop<void> felspar::poll::poll_warden::read_ready(int fd) {
     return {[this, fd](felspar::coro::coroutine_handle<> h) {
         requests[fd].reads.push_back(h);
     }};
 }
-felspar::poll::iop felspar::poll::poll_warden::write_ready(int fd) {
+felspar::poll::iop<void> felspar::poll::poll_warden::write_ready(int fd) {
     return {[this, fd](felspar::coro::coroutine_handle<> h) {
         requests[fd].writes.push_back(h);
     }};

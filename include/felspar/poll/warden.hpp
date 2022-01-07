@@ -13,10 +13,14 @@
 namespace felspar::poll {
 
 
+    template<typename R>
+    struct iop;
     class warden;
 
 
-    struct iop {
+
+    template<>
+    struct iop<void> {
         /// TODO Want something with much lower overhead than std::function
         std::function<void(felspar::coro::coroutine_handle<>)> suspend;
 
@@ -30,8 +34,6 @@ namespace felspar::poll {
 
     /// Executor that allows `poll` based asynchronous IO
     class warden {
-        friend class iop;
-
       protected:
         std::vector<
                 felspar::coro::unique_handle<felspar::coro::task_promise<void>>>
@@ -46,8 +48,8 @@ namespace felspar::poll {
             live.push_back(std::move(coro));
         }
 
-        virtual iop read_ready(int fd) = 0;
-        virtual iop write_ready(int fd) = 0;
+        virtual iop<void> read_ready(int fd) = 0;
+        virtual iop<void> write_ready(int fd) = 0;
     };
 
 
