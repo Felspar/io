@@ -1,5 +1,5 @@
 add_library(felspar-poll
-        iops.cpp
+        iops.poll.cpp
         warden.poll.cpp
     )
 target_include_directories(felspar-poll PUBLIC ../include)
