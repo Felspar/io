@@ -18,7 +18,6 @@ namespace felspar::poll {
     class warden;
 
 
-
     template<>
     struct iop<void> {
         /// TODO Want something with much lower overhead than std::function
@@ -39,7 +38,18 @@ namespace felspar::poll {
                 felspar::coro::unique_handle<felspar::coro::task_promise<void>>>
                 live;
 
+        virtual void run_until(felspar::coro::unique_handle<
+                               felspar::coro::task_promise<void>>) = 0;
+
       public:
+        virtual ~warden() = default;
+
+        template<typename... PArgs, typename... MArgs>
+        void run(coro::task<void> (*f)(warden &, PArgs...), MArgs &&...margs) {
+            auto task = f(*this, std::forward<MArgs>(margs)...);
+            run_until(task.release());
+        }
+
         template<typename... PArgs, typename... MArgs>
         void post(coro::task<void> (*f)(warden &, PArgs...), MArgs &&...margs) {
             auto task = f(*this, std::forward<MArgs>(margs)...);

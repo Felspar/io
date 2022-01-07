@@ -7,17 +7,14 @@
 namespace felspar::poll {
 
 
-    class poll_warden : public warden {
-        struct request {
-            std::vector<felspar::coro::coroutine_handle<>> reads, writes;
-        };
-        std::map<int, request> requests;
-
+    class io_uring_warden : public warden {
         void run_until(
                 felspar::coro::unique_handle<felspar::coro::task_promise<void>>)
                 override;
 
       public:
+        io_uring_warden();
+
         iop<void> read_ready(int fd) override;
         iop<void> write_ready(int fd) override;
     };

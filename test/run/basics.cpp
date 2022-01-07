@@ -109,11 +109,14 @@ namespace {
         check(buffer[5]) == out[5];
     }
 
-    auto const trans = suite.test("echo", []() {
+
+    auto const tp = suite.test("echo/poll", []() {
         felspar::poll::poll_warden ward;
         ward.post(echo_server, 5543);
         ward.run(echo_client, 5543);
     });
+    auto const tu = suite.test(
+            "echo/io_uring", []() { felspar::poll::io_uring_warden ward; });
 
 
 }
