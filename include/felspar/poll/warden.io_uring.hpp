@@ -15,6 +15,8 @@ namespace felspar::poll {
       public:
         io_uring_warden();
 
+        //         iop<int> accept(int fd) override;
+
         iop<void> read_ready(int fd) override;
         iop<void> write_ready(int fd) override;
     };

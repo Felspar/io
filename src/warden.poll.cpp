@@ -1,6 +1,8 @@
 #include <felspar/exceptions.hpp>
 #include <felspar/poll/warden.poll.hpp>
 
+#include <poll.h>
+
 
 void felspar::poll::poll_warden::run_until(
         felspar::coro::unique_handle<felspar::coro::task_promise<void>> coro) {
@@ -56,16 +58,4 @@ void felspar::poll::poll_warden::run_until(
                 live.end());
     }
     coro.promise().consume_value();
-}
-
-
-felspar::poll::iop<void> felspar::poll::poll_warden::read_ready(int fd) {
-    return {[this, fd](felspar::coro::coroutine_handle<> h) {
-        requests[fd].reads.push_back(h);
-    }};
-}
-felspar::poll::iop<void> felspar::poll::poll_warden::write_ready(int fd) {
-    return {[this, fd](felspar::coro::coroutine_handle<> h) {
-        requests[fd].writes.push_back(h);
-    }};
 }

@@ -9,10 +9,10 @@ void felspar::poll::io_uring_warden::run_until(
 
 
 felspar::poll::iop<void> felspar::poll::io_uring_warden::read_ready(int fd) {
-    return {};
+    return {nullptr};
 }
 
 
 felspar::poll::iop<void> felspar::poll::io_uring_warden::write_ready(int fd) {
-    return {};
+    return {nullptr};
 }

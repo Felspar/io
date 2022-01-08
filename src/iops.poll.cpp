@@ -2,7 +2,7 @@
 #include <felspar/poll/accept.hpp>
 #include <felspar/poll/connect.hpp>
 #include <felspar/poll/read.hpp>
-#include <felspar/poll/warden.hpp>
+#include <felspar/poll/warden.poll.hpp>
 #include <felspar/poll/write.hpp>
 
 #include <netinet/in.h>
@@ -23,6 +23,46 @@ felspar::coro::stream<int> felspar::poll::accept(warden &ward, int fd) {
                     errno, std::generic_category(), "accept"};
         }
     }
+}
+
+
+// felspar::poll::iop<int> felspar::poll::poll_warden::accept(int fd) {
+//     return {[this, fd](felspar::coro::coroutine_handle<> h) {
+//         if (int cnx = ::accept(fd, nullptr, nullptr); cnx >= 0) {
+//             return cnx;
+//         } else if (errno == EWOULDBLOCK or errno == EAGAIN) {
+// //             co_await ward.read_ready(fd);
+//         } else if (errno == EBADF) {
+//              return -1;
+//         } else {
+//             throw felspar::stdexcept::system_error{
+//                     errno, std::generic_category(), "accept"};
+//         }
+//     }};
+// }
+
+
+felspar::poll::iop<void> felspar::poll::poll_warden::read_ready(int fd) {
+    struct c : public iop<void>::completion {
+        c(poll_warden *s, int f) : self{s}, fd{f} {}
+        poll_warden *self;
+        int fd;
+        void await_suspend(felspar::coro::coroutine_handle<> h) noexcept {
+            self->requests[fd].reads.push_back(h);
+        }
+    };
+    return {std::make_unique<c>(this, fd)};
+}
+felspar::poll::iop<void> felspar::poll::poll_warden::write_ready(int fd) {
+    struct c : public iop<void>::completion {
+        c(poll_warden *s, int f) : self{s}, fd{f} {}
+        poll_warden *self;
+        int fd;
+        void await_suspend(felspar::coro::coroutine_handle<> h) noexcept {
+            self->requests[fd].writes.push_back(h);
+        }
+    };
+    return {std::make_unique<c>(this, fd)};
 }
 
 

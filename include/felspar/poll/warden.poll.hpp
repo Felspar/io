@@ -3,6 +3,8 @@
 
 #include <felspar/poll/warden.hpp>
 
+#include <map>
+
 
 namespace felspar::poll {
 
@@ -18,6 +20,8 @@ namespace felspar::poll {
                 override;
 
       public:
+        //         iop<int> accept(int fd) override;
+
         iop<void> read_ready(int fd) override;
         iop<void> write_ready(int fd) override;
     };
