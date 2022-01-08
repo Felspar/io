@@ -6,6 +6,9 @@ time (
         # Debug builds
         ninja -C ./build.tmp/clang-debug all check &&
         ninja -C ./build.tmp/gcc-debug all check &&
+        # ASAN
+        ninja -C ./build.tmp/clang-debug-asan all check &&
+        ninja -C ./build.tmp/clang-release-asan all check &&
         # Release builds
         ninja -C ./build.tmp/clang-release all check &&
         ninja -C ./build.tmp/gcc-release all check &&
