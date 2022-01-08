@@ -11,6 +11,7 @@ namespace felspar::poll {
         void run_until(
                 felspar::coro::unique_handle<felspar::coro::task_promise<void>>)
                 override;
+        void cancel(iop<void>::completion *) override;
 
       public:
         io_uring_warden();

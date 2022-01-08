@@ -10,19 +10,25 @@ namespace felspar::poll {
 
 
     template<typename R>
-    struct iop;
+    class iop;
     class warden;
 
 
     template<>
-    struct iop<void> {
+    class iop<void> {
+      public:
         struct completion {
+            warden *ward;
+
+            completion(warden *w) : ward{w} {}
             virtual ~completion() = default;
+
             virtual void await_suspend(
                     felspar::coro::coroutine_handle<> h) noexcept = 0;
         };
 
-        iop(std::unique_ptr<completion> c) : comp{std::move(c)} {}
+        iop(completion *c) : comp{c} {}
+        ~iop();
 
         bool await_ready() const noexcept { return false; }
         void await_suspend(felspar::coro::coroutine_handle<> h) noexcept {
@@ -31,8 +37,12 @@ namespace felspar::poll {
         auto await_resume() noexcept {}
 
       private:
-        std::unique_ptr<completion> comp;
+        completion *comp;
     };
+
+
+    template<typename R>
+    class iop {};
 
 
 }

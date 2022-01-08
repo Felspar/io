@@ -10,6 +10,9 @@ namespace felspar::poll {
 
     /// Executor that allows `poll` based asynchronous IO
     class warden {
+        template<typename R>
+        friend struct felspar::poll::iop;
+
       protected:
         std::vector<
                 felspar::coro::unique_handle<felspar::coro::task_promise<void>>>
@@ -17,6 +20,7 @@ namespace felspar::poll {
 
         virtual void run_until(felspar::coro::unique_handle<
                                felspar::coro::task_promise<void>>) = 0;
+        virtual void cancel(iop<void>::completion *) = 0;
 
       public:
         virtual ~warden() = default;
@@ -46,6 +50,9 @@ namespace felspar::poll {
         virtual iop<void> read_ready(int fd) = 0;
         virtual iop<void> write_ready(int fd) = 0;
     };
+
+
+    inline iop<void>::~iop() { comp->ward->cancel(comp); }
 
 
 }

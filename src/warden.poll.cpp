@@ -59,3 +59,6 @@ void felspar::poll::poll_warden::run_until(
     }
     coro.promise().consume_value();
 }
+
+
+void felspar::poll::poll_warden::cancel(iop<void>::completion *p) { delete p; }

@@ -8,6 +8,11 @@ void felspar::poll::io_uring_warden::run_until(
         felspar::coro::unique_handle<felspar::coro::task_promise<void>>) {}
 
 
+void felspar::poll::io_uring_warden::cancel(iop<void>::completion *p) {
+    delete p;
+}
+
+
 felspar::poll::iop<void> felspar::poll::io_uring_warden::read_ready(int fd) {
     return {nullptr};
 }

@@ -44,25 +44,27 @@ felspar::coro::stream<int> felspar::poll::accept(warden &ward, int fd) {
 
 felspar::poll::iop<void> felspar::poll::poll_warden::read_ready(int fd) {
     struct c : public iop<void>::completion {
-        c(poll_warden *s, int f) : self{s}, fd{f} {}
+        c(poll_warden *s, int f) : completion{s}, self{s}, fd{f} {}
+        ~c() = default;
         poll_warden *self;
         int fd;
         void await_suspend(felspar::coro::coroutine_handle<> h) noexcept {
             self->requests[fd].reads.push_back(h);
         }
     };
-    return {std::make_unique<c>(this, fd)};
+    return {new c{this, fd}};
 }
 felspar::poll::iop<void> felspar::poll::poll_warden::write_ready(int fd) {
     struct c : public iop<void>::completion {
-        c(poll_warden *s, int f) : self{s}, fd{f} {}
+        c(poll_warden *s, int f) : completion{s}, self{s}, fd{f} {}
+        ~c() = default;
         poll_warden *self;
         int fd;
         void await_suspend(felspar::coro::coroutine_handle<> h) noexcept {
             self->requests[fd].writes.push_back(h);
         }
     };
-    return {std::make_unique<c>(this, fd)};
+    return {new c{this, fd}};
 }
 
 
