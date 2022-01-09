@@ -69,9 +69,11 @@ namespace {
                     errno, std::generic_category(), "Calling listen"};
         }
 
+        felspar::poll::coro_owner co{ward};
         for (auto acceptor = felspar::poll::accept(ward, fd);
              auto cnx = co_await acceptor.next();) {
-            ward.post(echo_connection, *cnx);
+            co.post(echo_connection, ward, *cnx);
+            co.gc();
         }
 
         ::close(fd);
@@ -112,7 +114,8 @@ namespace {
 
     auto const tp = suite.test("echo/poll", []() {
         felspar::poll::poll_warden ward;
-        ward.post(echo_server, 5543);
+        felspar::poll::coro_owner co{ward};
+        co.post(echo_server, ward, 5543);
         ward.run(echo_client, 5543);
     });
     auto const tu = suite.test(

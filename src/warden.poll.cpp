@@ -42,20 +42,6 @@ void felspar::poll::poll_warden::run_until(
             }
         }
         for (auto continuation : continuations) { continuation.resume(); }
-
-        /// Garbage collect old coroutines
-        live.erase(
-                std::remove_if(
-                        live.begin(), live.end(),
-                        [](auto const &h) {
-                            if (h.done()) {
-                                h.promise().consume_value();
-                                return true;
-                            } else {
-                                return false;
-                            }
-                        }),
-                live.end());
     }
     coro.promise().consume_value();
 }

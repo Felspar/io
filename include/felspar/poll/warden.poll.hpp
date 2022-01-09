@@ -4,6 +4,7 @@
 #include <felspar/poll/warden.hpp>
 
 #include <map>
+#include <vector>
 
 
 namespace felspar::poll {
@@ -21,8 +22,6 @@ namespace felspar::poll {
         void cancel(iop<void>::completion *) override;
 
       public:
-        ~poll_warden() { live.clear(); }
-
         //         iop<int> accept(int fd) override;
 
         iop<void> read_ready(int fd) override;
