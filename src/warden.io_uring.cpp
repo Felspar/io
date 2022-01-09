@@ -13,6 +13,11 @@ void felspar::poll::io_uring_warden::cancel(iop<void>::completion *p) {
 }
 
 
+felspar::poll::iop<int> felspar::poll::io_uring_warden::accept(int fd) {
+    return {nullptr};
+}
+
+
 felspar::poll::iop<void> felspar::poll::io_uring_warden::read_ready(int fd) {
     return {nullptr};
 }

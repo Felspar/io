@@ -22,7 +22,7 @@ namespace felspar::poll {
         void cancel(iop<void>::completion *) override;
 
       public:
-        //         iop<int> accept(int fd) override;
+        iop<int> accept(int fd) override;
 
         iop<void> read_ready(int fd) override;
         iop<void> write_ready(int fd) override;

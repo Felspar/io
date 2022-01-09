@@ -28,7 +28,7 @@ namespace felspar::poll {
         /**
          * ### Socket APIs
          */
-        //         virtual iop<int> accept(int fd) = 0;
+        virtual iop<int> accept(int fd) = 0;
 
         /**
          * ### File readiness

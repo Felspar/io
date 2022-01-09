@@ -26,7 +26,22 @@ felspar::coro::stream<int> felspar::poll::accept(warden &ward, int fd) {
 }
 
 
-// felspar::poll::iop<int> felspar::poll::poll_warden::accept(int fd) {
+felspar::poll::iop<int> felspar::poll::poll_warden::accept(int fd) {
+    struct c : public iop<int>::completion {
+        c(poll_warden *s, int f) : completion{s}, self{s}, fd{f} {}
+        poll_warden *self;
+        int fd;
+        void try_or_resume() noexcept override {
+            result = ::accept(fd, nullptr, nullptr);
+            if (result >= 0) {
+                handle.resume();
+            } else {
+                /// TODO Schedule again
+            }
+        }
+    };
+    return {new c{this, fd}};
+}
 //     return {[this, fd](felspar::coro::coroutine_handle<> h) {
 //         if (int cnx = ::accept(fd, nullptr, nullptr); cnx >= 0) {
 //             return cnx;
@@ -39,7 +54,6 @@ felspar::coro::stream<int> felspar::poll::accept(warden &ward, int fd) {
 //                     errno, std::generic_category(), "accept"};
 //         }
 //     }};
-// }
 
 
 felspar::poll::iop<void> felspar::poll::poll_warden::read_ready(int fd) {
@@ -48,7 +62,7 @@ felspar::poll::iop<void> felspar::poll::poll_warden::read_ready(int fd) {
         ~c() = default;
         poll_warden *self;
         int fd;
-        void await_suspend(felspar::coro::coroutine_handle<> h) noexcept {
+        void await_suspend(felspar::coro::coroutine_handle<> h) override {
             self->requests[fd].reads.push_back(h);
         }
     };
@@ -60,7 +74,8 @@ felspar::poll::iop<void> felspar::poll::poll_warden::write_ready(int fd) {
         ~c() = default;
         poll_warden *self;
         int fd;
-        void await_suspend(felspar::coro::coroutine_handle<> h) noexcept {
+        void await_suspend(
+                felspar::coro::coroutine_handle<> h) noexcept override {
             self->requests[fd].writes.push_back(h);
         }
     };
