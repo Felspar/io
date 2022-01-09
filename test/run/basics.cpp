@@ -1,8 +1,6 @@
-#include <felspar/exceptions.hpp>
 #include <felspar/poll.hpp>
 #include <felspar/test.hpp>
 
-#include <fcntl.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -14,19 +12,9 @@ namespace {
     auto const suite = felspar::testsuite("basics");
 
 
-    void set_non_blocking(int fd) {
-        if (int err = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
-            err != 0) {
-            throw felspar::stdexcept::system_error{
-                    errno, std::generic_category(),
-                    "fcntl F_SETFL unknown error"};
-        }
-    }
-
-
     felspar::coro::task<void>
             echo_connection(felspar::poll::warden &ward, int fd) {
-        set_non_blocking(fd);
+        felspar::posix::set_non_blocking(fd);
         std::array<std::byte, 256> buffer;
         while (auto bytes = co_await felspar::poll::read(ward, fd, buffer)) {
             std::span writing{buffer};
@@ -43,7 +31,7 @@ namespace {
             throw felspar::stdexcept::system_error{
                     errno, std::generic_category(), "Creating server socket"};
         }
-        set_non_blocking(fd);
+        felspar::posix::set_non_blocking(fd);
 
         int optval = 1;
         if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval))
@@ -88,7 +76,7 @@ namespace {
             throw felspar::stdexcept::system_error{
                     errno, std::generic_category(), "Creating client socket"};
         }
-        set_non_blocking(fd);
+        felspar::posix::set_non_blocking(fd);
 
         sockaddr_in in;
         in.sin_family = AF_INET;

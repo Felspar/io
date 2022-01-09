@@ -3,6 +3,7 @@ add_library(felspar-poll-headers-tests STATIC EXCLUDE_FROM_ALL
         completion.cpp
         connect.cpp
         poll.cpp
+        posix.cpp
         post.cpp
         read.cpp
         warden.cpp
