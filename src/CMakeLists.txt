@@ -1,4 +1,5 @@
 add_library(felspar-poll
+        convenience.cpp
         iops.poll.cpp
         warden.io_uring.cpp
         warden.poll.cpp

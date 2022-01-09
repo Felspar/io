@@ -8,7 +8,7 @@ void felspar::poll::poll_warden::run_until(
         felspar::coro::unique_handle<felspar::coro::task_promise<void>> coro) {
     coro.resume();
     std::vector<::pollfd> iops;
-    std::vector<felspar::coro::coroutine_handle<>> continuations;
+    std::vector<iop<void>::completion *> continuations;
     while (not coro.done()) {
         /// IOP loop
         iops.clear();
@@ -41,7 +41,9 @@ void felspar::poll::poll_warden::run_until(
                 writes.clear();
             }
         }
-        for (auto continuation : continuations) { continuation.resume(); }
+        for (auto continuation : continuations) {
+            continuation->try_or_resume();
+        }
     }
     coro.promise().consume_value();
 }

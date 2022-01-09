@@ -12,7 +12,7 @@ namespace felspar::poll {
 
     class poll_warden : public warden {
         struct request {
-            std::vector<felspar::coro::coroutine_handle<>> reads, writes;
+            std::vector<iop<void>::completion *> reads, writes;
         };
         std::map<int, request> requests;
 

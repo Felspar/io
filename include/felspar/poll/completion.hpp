@@ -62,7 +62,7 @@ namespace felspar::poll {
 
         bool await_ready() const noexcept { return false; }
         void await_suspend(felspar::coro::coroutine_handle<> h) {
-            comp->await_suspend();
+            comp->await_suspend(h);
         }
         R await_resume() { return comp->result; }
 
