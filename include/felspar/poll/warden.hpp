@@ -2,6 +2,8 @@
 
 #include <felspar/poll/completion.hpp>
 
+#include <netinet/in.h>
+
 
 namespace felspar::poll {
 
@@ -29,6 +31,7 @@ namespace felspar::poll {
          * ### Socket APIs
          */
         virtual iop<int> accept(int fd) = 0;
+        virtual iop<void> connect(int fd, sockaddr const *, socklen_t) = 0;
 
         /**
          * ### File readiness

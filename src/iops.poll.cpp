@@ -4,7 +4,6 @@
 #include <felspar/poll/warden.poll.hpp>
 #include <felspar/poll/write.hpp>
 
-#include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -34,6 +33,53 @@ felspar::poll::iop<int> felspar::poll::poll_warden::accept(int fd) {
 }
 
 
+felspar::poll::iop<void> felspar::poll::poll_warden::connect(
+        int fd, sockaddr const *addr, socklen_t addrlen) {
+    struct c : public iop<void>::completion {
+        c(poll_warden *s, int f, sockaddr const *a, socklen_t l)
+        : completion{s}, self{s}, fd{f}, addr{a}, addrlen{l} {}
+        ~c() = default;
+        poll_warden *self;
+        int fd;
+        sockaddr const *addr;
+        socklen_t addrlen;
+        void await_suspend(felspar::coro::coroutine_handle<> h) override {
+            handle = h;
+            if (auto err = ::connect(fd, addr, addrlen); err == 0) {
+                handle.resume();
+            } else if (errno == EINPROGRESS) {
+                self->requests[fd].writes.push_back(this);
+            } else {
+                /// TODO Keep the exception to throw later on when the IOP's
+                /// await_resume is executed
+                throw felspar::stdexcept::system_error{
+                        errno, std::generic_category(), "connect"};
+            }
+        }
+        void try_or_resume() override {
+            int errvalue{};
+            ::socklen_t length{};
+            if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &errvalue, &length) == 0) {
+                if (errvalue == 0) {
+                    handle.resume();
+                } else {
+                    /// TODO Keep the exception to throw later on when the IOP's
+                    /// await_resume is executed
+                    throw felspar::stdexcept::system_error{
+                            errno, std::generic_category(), "connect"};
+                }
+            } else {
+                /// TODO Keep the exception to throw later on when the IOP's
+                /// await_resume is executed
+                throw felspar::stdexcept::system_error{
+                        errno, std::generic_category(), "connect/getsockopt"};
+            }
+        }
+    };
+    return {new c{this, fd, addr, addrlen}};
+}
+
+
 felspar::poll::iop<void> felspar::poll::poll_warden::read_ready(int fd) {
     struct c : public iop<void>::completion {
         c(poll_warden *s, int f) : completion{s}, self{s}, fd{f} {}
@@ -60,32 +106,6 @@ felspar::poll::iop<void> felspar::poll::poll_warden::write_ready(int fd) {
         }
     };
     return {new c{this, fd}};
-}
-
-
-felspar::coro::task<void> felspar::poll::connect(
-        warden &ward, int fd, const struct sockaddr *addr, socklen_t addrlen) {
-    if (auto err = ::connect(fd, addr, addrlen); err == 0) {
-        co_return;
-    } else if (errno == EINPROGRESS) {
-        co_await ward.write_ready(fd);
-        int errvalue{};
-        ::socklen_t length{};
-        if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &errvalue, &length) == 0) {
-            if (errvalue == 0) {
-                co_return;
-            } else {
-                throw felspar::stdexcept::system_error{
-                        errno, std::generic_category(), "connect"};
-            }
-        } else {
-            throw felspar::stdexcept::system_error{
-                    errno, std::generic_category(), "connect/getsockopt"};
-        }
-    } else {
-        throw felspar::stdexcept::system_error{
-                errno, std::generic_category(), "connect"};
-    }
 }
 
 

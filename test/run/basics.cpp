@@ -83,8 +83,8 @@ namespace {
         in.sin_port = htons(port);
         in.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-        co_await felspar::poll::connect(
-                ward, fd, reinterpret_cast<sockaddr const *>(&in), sizeof(in));
+        co_await ward.connect(
+                fd, reinterpret_cast<sockaddr const *>(&in), sizeof(in));
 
         std::array<std::uint8_t, 6> out{1, 2, 3, 4, 5, 6}, buffer{};
         co_await felspar::poll::write(ward, fd, out);
