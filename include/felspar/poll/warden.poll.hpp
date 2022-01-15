@@ -12,16 +12,18 @@ namespace felspar::poll {
 
     class poll_warden : public warden {
         struct request {
-            std::vector<iop<void>::completion *> reads, writes;
+            std::vector<completion *> reads, writes;
         };
         std::map<int, request> requests;
 
         void run_until(
                 felspar::coro::unique_handle<felspar::coro::task_promise<void>>)
                 override;
-        void cancel(iop<void>::completion *) override;
+        void cancel(completion *) override;
 
       public:
+        int create_socket(int domain, int type, int protocol) override;
+
         iop<int> accept(int fd) override;
         iop<void> connect(int fd, sockaddr const *, socklen_t) override;
 

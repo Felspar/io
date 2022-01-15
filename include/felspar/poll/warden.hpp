@@ -16,7 +16,7 @@ namespace felspar::poll {
       protected:
         virtual void run_until(felspar::coro::unique_handle<
                                felspar::coro::task_promise<void>>) = 0;
-        virtual void cancel(iop<void>::completion *) = 0;
+        virtual void cancel(completion *) = 0;
 
       public:
         virtual ~warden() = default;
@@ -30,6 +30,8 @@ namespace felspar::poll {
         /**
          * ### Socket APIs
          */
+        virtual int create_socket(int domain, int type, int protocol);
+
         virtual iop<int> accept(int fd) = 0;
         virtual iop<void> connect(int fd, sockaddr const *, socklen_t) = 0;
 

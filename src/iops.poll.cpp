@@ -1,15 +1,13 @@
 #include <felspar/exceptions.hpp>
 #include <felspar/poll/connect.hpp>
-#include <felspar/poll/read.hpp>
 #include <felspar/poll/warden.poll.hpp>
-#include <felspar/poll/write.hpp>
 
 #include <sys/socket.h>
 #include <unistd.h>
 
 
 felspar::poll::iop<int> felspar::poll::poll_warden::accept(int fd) {
-    struct c : public iop<int>::completion {
+    struct c : public completion {
         c(poll_warden *s, int f) : completion{s}, self{s}, fd{f} {}
         poll_warden *self;
         int fd;
@@ -35,7 +33,7 @@ felspar::poll::iop<int> felspar::poll::poll_warden::accept(int fd) {
 
 felspar::poll::iop<void> felspar::poll::poll_warden::connect(
         int fd, sockaddr const *addr, socklen_t addrlen) {
-    struct c : public iop<void>::completion {
+    struct c : public completion {
         c(poll_warden *s, int f, sockaddr const *a, socklen_t l)
         : completion{s}, self{s}, fd{f}, addr{a}, addrlen{l} {}
         ~c() = default;
@@ -81,7 +79,7 @@ felspar::poll::iop<void> felspar::poll::poll_warden::connect(
 
 
 felspar::poll::iop<void> felspar::poll::poll_warden::read_ready(int fd) {
-    struct c : public iop<void>::completion {
+    struct c : public completion {
         c(poll_warden *s, int f) : completion{s}, self{s}, fd{f} {}
         ~c() = default;
         poll_warden *self;
@@ -94,7 +92,7 @@ felspar::poll::iop<void> felspar::poll::poll_warden::read_ready(int fd) {
     return {new c{this, fd}};
 }
 felspar::poll::iop<void> felspar::poll::poll_warden::write_ready(int fd) {
-    struct c : public iop<void>::completion {
+    struct c : public completion {
         c(poll_warden *s, int f) : completion{s}, self{s}, fd{f} {}
         ~c() = default;
         poll_warden *self;
@@ -106,34 +104,4 @@ felspar::poll::iop<void> felspar::poll::poll_warden::write_ready(int fd) {
         }
     };
     return {new c{this, fd}};
-}
-
-
-felspar::coro::task<::ssize_t> felspar::poll::read(
-        warden &ward, int fd, void *buf, std::size_t count) {
-    while (true) {
-        if (auto bytes = ::read(fd, buf, count); bytes >= 0) {
-            co_return bytes;
-        } else if (errno == EAGAIN or errno == EWOULDBLOCK) {
-            co_await ward.read_ready(fd);
-        } else {
-            throw felspar::stdexcept::system_error{
-                    errno, std::generic_category(), "read"};
-        }
-    }
-}
-
-
-felspar::coro::task<::ssize_t> felspar::poll::write(
-        warden &ward, int fd, void const *buf, std::size_t count) {
-    while (true) {
-        if (auto bytes = ::write(fd, buf, count); bytes >= 0) {
-            co_return bytes;
-        } else if (errno == EAGAIN or errno == EWOULDBLOCK) {
-            co_await ward.write_ready(fd);
-        } else {
-            throw felspar::stdexcept::system_error{
-                    errno, std::generic_category(), "write"};
-        }
-    }
 }
