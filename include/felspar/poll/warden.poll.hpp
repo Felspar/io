@@ -22,6 +22,17 @@ namespace felspar::poll {
         void cancel(completion *) override;
 
       public:
+        iop<std::size_t> read_some(
+                int fd,
+                std::span<std::byte>,
+                felspar::source_location =
+                        felspar::source_location::current()) override;
+        iop<std::size_t> write_some(
+                int fd,
+                std::span<std::byte const>,
+                felspar::source_location =
+                        felspar::source_location::current()) override;
+
         int create_socket(
                 int domain,
                 int type,

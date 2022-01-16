@@ -22,6 +22,17 @@ namespace felspar::poll {
         explicit io_uring_warden(unsigned entries, unsigned flags = {});
         ~io_uring_warden();
 
+        iop<std::size_t> read_some(
+                int fd,
+                std::span<std::byte>,
+                felspar::source_location =
+                        felspar::source_location::current()) override;
+        iop<std::size_t> write_some(
+                int fd,
+                std::span<std::byte const>,
+                felspar::source_location =
+                        felspar::source_location::current()) override;
+
         iop<int>
                 accept(int fd,
                        felspar::source_location =

@@ -3,6 +3,8 @@
 #include <felspar/poll/completion.hpp>
 #include <felspar/test/source.hpp>
 
+#include <span>
+
 #include <netinet/in.h>
 
 
@@ -27,6 +29,22 @@ namespace felspar::poll {
             auto task = f(*this, std::forward<MArgs>(margs)...);
             run_until(task.release());
         }
+
+        /**
+         * ### Reading and writing
+         */
+        /// Read or write bytes from the provided buffer returning the number of
+        /// bytes read/written.
+        virtual iop<std::size_t> read_some(
+                int fd,
+                std::span<std::byte>,
+                felspar::source_location =
+                        felspar::source_location::current()) = 0;
+        virtual iop<std::size_t> write_some(
+                int fd,
+                std::span<std::byte const>,
+                felspar::source_location =
+                        felspar::source_location::current()) = 0;
 
         /**
          * ### Socket APIs

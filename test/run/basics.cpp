@@ -18,7 +18,7 @@ namespace {
             echo_connection(felspar::poll::warden &ward, int fd) {
         felspar::posix::set_non_blocking(fd);
         std::array<std::byte, 256> buffer;
-        while (auto bytes = co_await felspar::poll::read(ward, fd, buffer)) {
+        while (auto bytes = co_await ward.read_some(fd, buffer)) {
             std::cout << "Server FD " << fd << " read " << bytes << " bytes"
                       << std::endl;
             std::span writing{buffer};
@@ -89,7 +89,7 @@ namespace {
         std::array<std::uint8_t, 6> out{1, 2, 3, 4, 5, 6}, buffer{};
         co_await felspar::poll::write(ward, fd, out);
 
-        auto bytes = co_await felspar::poll::read(ward, fd, buffer);
+        auto bytes = co_await felspar::poll::read_exactly(ward, fd, buffer);
         check(bytes) == 6u;
         check(buffer[0]) == out[0];
         check(buffer[1]) == out[1];
