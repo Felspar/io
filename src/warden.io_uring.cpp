@@ -28,7 +28,11 @@ void felspar::poll::io_uring_warden::run_until(
         ::io_uring_submit(&ring->uring);
 
         ::io_uring_cqe *cqe;
-        int ret = io_uring_wait_cqe(&ring->uring, &cqe);
+        auto const ret = ::io_uring_wait_cqe(&ring->uring, &cqe);
+        if (ret < 0) {
+            throw felspar::stdexcept::system_error{
+                    -ret, std::generic_category(), "io_uring_wait_cqe"};
+        }
         completion::execute(&ring->uring, cqe);
         while (::io_uring_peek_cqe(&ring->uring, &cqe) == 0) {
             completion::execute(&ring->uring, cqe);
