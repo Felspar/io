@@ -13,6 +13,7 @@ namespace felspar::poll {
                 override;
         void cancel(poll::completion *) override;
 
+        struct completion;
         struct impl;
         std::unique_ptr<impl> ring;
 
@@ -26,8 +27,6 @@ namespace felspar::poll {
 
         iop<void> read_ready(int fd) override;
         iop<void> write_ready(int fd) override;
-
-        struct completion;
     };
 
 

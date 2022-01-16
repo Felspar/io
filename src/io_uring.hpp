@@ -16,6 +16,8 @@ namespace felspar::poll {
 
         sockaddr addr = {};
         socklen_t addrlen = {};
+
+        static void execute(::io_uring *, ::io_uring_cqe *);
     };
 
 
