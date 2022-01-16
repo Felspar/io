@@ -9,9 +9,11 @@
 felspar::poll::iop<int> felspar::poll::poll_warden::accept(
         int fd, felspar::source_location loc) {
     struct c : public completion {
-        c(poll_warden *s, int f) : self{s}, fd{f} {}
+        c(poll_warden *s, int f, felspar::source_location loc)
+        : self{s}, fd{f}, loc{std::move(loc)} {}
         poll_warden *self;
         int fd;
+        felspar::source_location loc;
         warden *ward() override { return self; }
         void try_or_resume() override {
             result = ::accept(fd, nullptr, nullptr);
@@ -25,11 +27,12 @@ felspar::poll::iop<int> felspar::poll::poll_warden::accept(
                 /// TODO Keep the exception to throw later on when the IOP's
                 /// await_resume is executed
                 throw felspar::stdexcept::system_error{
-                        errno, std::generic_category(), "accept"};
+                        errno, std::generic_category(), "accept",
+                        std::move(loc)};
             }
         }
     };
-    return {new c{this, fd}};
+    return {new c{this, fd, std::move(loc)}};
 }
 
 
@@ -39,13 +42,18 @@ felspar::poll::iop<void> felspar::poll::poll_warden::connect(
         socklen_t addrlen,
         felspar::source_location loc) {
     struct c : public completion {
-        c(poll_warden *s, int f, sockaddr const *a, socklen_t l)
-        : self{s}, fd{f}, addr{a}, addrlen{l} {}
+        c(poll_warden *s,
+          int f,
+          sockaddr const *a,
+          socklen_t l,
+          felspar::source_location loc)
+        : self{s}, fd{f}, addr{a}, addrlen{l}, loc{std::move(loc)} {}
         ~c() = default;
         poll_warden *self;
         int fd;
         sockaddr const *addr;
         socklen_t addrlen;
+        felspar::source_location loc;
         warden *ward() override { return self; }
         void await_suspend(felspar::coro::coroutine_handle<> h) override {
             handle = h;
@@ -57,7 +65,8 @@ felspar::poll::iop<void> felspar::poll::poll_warden::connect(
                 /// TODO Keep the exception to throw later on when the IOP's
                 /// await_resume is executed
                 throw felspar::stdexcept::system_error{
-                        errno, std::generic_category(), "connect"};
+                        errno, std::generic_category(), "connect",
+                        std::move(loc)};
             }
         }
         void try_or_resume() override {
@@ -70,42 +79,48 @@ felspar::poll::iop<void> felspar::poll::poll_warden::connect(
                     /// TODO Keep the exception to throw later on when the IOP's
                     /// await_resume is executed
                     throw felspar::stdexcept::system_error{
-                            errno, std::generic_category(), "connect"};
+                            errno, std::generic_category(), "connect",
+                            std::move(loc)};
                 }
             } else {
                 /// TODO Keep the exception to throw later on when the IOP's
                 /// await_resume is executed
                 throw felspar::stdexcept::system_error{
-                        errno, std::generic_category(), "connect/getsockopt"};
+                        errno, std::generic_category(), "connect/getsockopt",
+                        std::move(loc)};
             }
         }
     };
-    return {new c{this, fd, addr, addrlen}};
+    return {new c{this, fd, addr, addrlen, std::move(loc)}};
 }
 
 
 felspar::poll::iop<void> felspar::poll::poll_warden::read_ready(
         int fd, felspar::source_location loc) {
     struct c : public completion {
-        c(poll_warden *s, int f) : self{s}, fd{f} {}
+        c(poll_warden *s, int f, felspar::source_location loc)
+        : self{s}, fd{f}, loc{std::move(loc)} {}
         ~c() = default;
         poll_warden *self;
         int fd;
+        felspar::source_location loc;
         warden *ward() override { return self; }
         void await_suspend(felspar::coro::coroutine_handle<> h) override {
             handle = h;
             self->requests[fd].reads.push_back(this);
         }
     };
-    return {new c{this, fd}};
+    return {new c{this, fd, std::move(loc)}};
 }
 felspar::poll::iop<void> felspar::poll::poll_warden::write_ready(
         int fd, felspar::source_location loc) {
     struct c : public completion {
-        c(poll_warden *s, int f) : self{s}, fd{f} {}
+        c(poll_warden *s, int f, felspar::source_location loc)
+        : self{s}, fd{f}, loc{std::move(loc)} {}
         ~c() = default;
         poll_warden *self;
         int fd;
+        felspar::source_location loc;
         warden *ward() override { return self; }
         void await_suspend(
                 felspar::coro::coroutine_handle<> h) noexcept override {
@@ -113,5 +128,5 @@ felspar::poll::iop<void> felspar::poll::poll_warden::write_ready(
             self->requests[fd].writes.push_back(this);
         }
     };
-    return {new c{this, fd}};
+    return {new c{this, fd, std::move(loc)}};
 }
