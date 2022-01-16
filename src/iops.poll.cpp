@@ -8,9 +8,10 @@
 
 felspar::poll::iop<int> felspar::poll::poll_warden::accept(int fd) {
     struct c : public completion {
-        c(poll_warden *s, int f) : completion{s}, self{s}, fd{f} {}
+        c(poll_warden *s, int f) : self{s}, fd{f} {}
         poll_warden *self;
         int fd;
+        warden *ward() override { return self; }
         void try_or_resume() override {
             result = ::accept(fd, nullptr, nullptr);
             if (result >= 0) {
@@ -35,12 +36,13 @@ felspar::poll::iop<void> felspar::poll::poll_warden::connect(
         int fd, sockaddr const *addr, socklen_t addrlen) {
     struct c : public completion {
         c(poll_warden *s, int f, sockaddr const *a, socklen_t l)
-        : completion{s}, self{s}, fd{f}, addr{a}, addrlen{l} {}
+        : self{s}, fd{f}, addr{a}, addrlen{l} {}
         ~c() = default;
         poll_warden *self;
         int fd;
         sockaddr const *addr;
         socklen_t addrlen;
+        warden *ward() override { return self; }
         void await_suspend(felspar::coro::coroutine_handle<> h) override {
             handle = h;
             if (auto err = ::connect(fd, addr, addrlen); err == 0) {
@@ -80,10 +82,11 @@ felspar::poll::iop<void> felspar::poll::poll_warden::connect(
 
 felspar::poll::iop<void> felspar::poll::poll_warden::read_ready(int fd) {
     struct c : public completion {
-        c(poll_warden *s, int f) : completion{s}, self{s}, fd{f} {}
+        c(poll_warden *s, int f) : self{s}, fd{f} {}
         ~c() = default;
         poll_warden *self;
         int fd;
+        warden *ward() override { return self; }
         void await_suspend(felspar::coro::coroutine_handle<> h) override {
             handle = h;
             self->requests[fd].reads.push_back(this);
@@ -93,10 +96,11 @@ felspar::poll::iop<void> felspar::poll::poll_warden::read_ready(int fd) {
 }
 felspar::poll::iop<void> felspar::poll::poll_warden::write_ready(int fd) {
     struct c : public completion {
-        c(poll_warden *s, int f) : completion{s}, self{s}, fd{f} {}
+        c(poll_warden *s, int f) : self{s}, fd{f} {}
         ~c() = default;
         poll_warden *self;
         int fd;
+        warden *ward() override { return self; }
         void await_suspend(
                 felspar::coro::coroutine_handle<> h) noexcept override {
             handle = h;

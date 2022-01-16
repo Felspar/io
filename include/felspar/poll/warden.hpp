@@ -43,10 +43,10 @@ namespace felspar::poll {
     };
 
 
-    inline iop<void>::~iop() { comp->ward->cancel(comp); }
+    inline iop<void>::~iop() { comp->ward()->cancel(comp); }
     template<typename R>
     inline iop<R>::~iop() {
-        comp->ward->cancel(comp);
+        comp->ward()->cancel(comp);
     }
 
 

@@ -15,14 +15,13 @@ namespace felspar::poll {
 
 
     struct completion {
-        warden *ward;
         felspar::coro::coroutine_handle<> handle;
         int result = {};
         std::exception_ptr exception;
 
-        completion(warden *w) : ward{w} {}
         virtual ~completion() = default;
 
+        virtual warden *ward() = 0;
         virtual void await_suspend(felspar::coro::coroutine_handle<> h) {
             handle = h;
             try_or_resume();

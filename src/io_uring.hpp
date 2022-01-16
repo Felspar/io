@@ -10,10 +10,14 @@ namespace felspar::poll {
 
 
     struct io_uring_warden::completion : public poll::completion {
-        completion(io_uring_warden *w) : poll::completion{w} {}
+        completion(io_uring_warden *w) : self{w} {}
 
-        void await_suspend(felspar::coro::coroutine_handle<> h) { handle = h; }
+        warden *ward() override { return self; }
+        void await_suspend(felspar::coro::coroutine_handle<> h) override {
+            handle = h;
+        }
 
+        io_uring_warden *self;
         sockaddr addr = {};
         socklen_t addrlen = {};
 
