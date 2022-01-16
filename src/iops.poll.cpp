@@ -6,7 +6,8 @@
 #include <unistd.h>
 
 
-felspar::poll::iop<int> felspar::poll::poll_warden::accept(int fd) {
+felspar::poll::iop<int> felspar::poll::poll_warden::accept(
+        int fd, felspar::source_location loc) {
     struct c : public completion {
         c(poll_warden *s, int f) : self{s}, fd{f} {}
         poll_warden *self;
@@ -33,7 +34,10 @@ felspar::poll::iop<int> felspar::poll::poll_warden::accept(int fd) {
 
 
 felspar::poll::iop<void> felspar::poll::poll_warden::connect(
-        int fd, sockaddr const *addr, socklen_t addrlen) {
+        int fd,
+        sockaddr const *addr,
+        socklen_t addrlen,
+        felspar::source_location loc) {
     struct c : public completion {
         c(poll_warden *s, int f, sockaddr const *a, socklen_t l)
         : self{s}, fd{f}, addr{a}, addrlen{l} {}
@@ -80,7 +84,8 @@ felspar::poll::iop<void> felspar::poll::poll_warden::connect(
 }
 
 
-felspar::poll::iop<void> felspar::poll::poll_warden::read_ready(int fd) {
+felspar::poll::iop<void> felspar::poll::poll_warden::read_ready(
+        int fd, felspar::source_location loc) {
     struct c : public completion {
         c(poll_warden *s, int f) : self{s}, fd{f} {}
         ~c() = default;
@@ -94,7 +99,8 @@ felspar::poll::iop<void> felspar::poll::poll_warden::read_ready(int fd) {
     };
     return {new c{this, fd}};
 }
-felspar::poll::iop<void> felspar::poll::poll_warden::write_ready(int fd) {
+felspar::poll::iop<void> felspar::poll::poll_warden::write_ready(
+        int fd, felspar::source_location loc) {
     struct c : public completion {
         c(poll_warden *s, int f) : self{s}, fd{f} {}
         ~c() = default;

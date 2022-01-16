@@ -1,6 +1,7 @@
 #pragma once
 
 #include <felspar/poll/completion.hpp>
+#include <felspar/test/source.hpp>
 
 #include <netinet/in.h>
 
@@ -30,16 +31,34 @@ namespace felspar::poll {
         /**
          * ### Socket APIs
          */
-        virtual int create_socket(int domain, int type, int protocol);
+        virtual int create_socket(
+                int domain,
+                int type,
+                int protocol,
+                felspar::source_location = felspar::source_location::current());
 
-        virtual iop<int> accept(int fd) = 0;
-        virtual iop<void> connect(int fd, sockaddr const *, socklen_t) = 0;
+        virtual iop<int>
+                accept(int fd,
+                       felspar::source_location =
+                               felspar::source_location::current()) = 0;
+        virtual iop<void>
+                connect(int fd,
+                        sockaddr const *,
+                        socklen_t,
+                        felspar::source_location =
+                                felspar::source_location::current()) = 0;
 
         /**
          * ### File readiness
          */
-        virtual iop<void> read_ready(int fd) = 0;
-        virtual iop<void> write_ready(int fd) = 0;
+        virtual iop<void> read_ready(
+                int fd,
+                felspar::source_location =
+                        felspar::source_location::current()) = 0;
+        virtual iop<void> write_ready(
+                int fd,
+                felspar::source_location =
+                        felspar::source_location::current()) = 0;
     };
 
 

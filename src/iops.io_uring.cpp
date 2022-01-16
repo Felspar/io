@@ -5,7 +5,8 @@
 #include <poll.h>
 
 
-felspar::poll::iop<int> felspar::poll::io_uring_warden::accept(int fd) {
+felspar::poll::iop<int> felspar::poll::io_uring_warden::accept(
+        int fd, felspar::source_location loc) {
     auto sqe = ring->next_sqe();
     auto *c = new completion{this};
     ::io_uring_prep_accept(sqe, fd, &c->addr, &c->addrlen, 0);
@@ -15,7 +16,10 @@ felspar::poll::iop<int> felspar::poll::io_uring_warden::accept(int fd) {
 
 
 felspar::poll::iop<void> felspar::poll::io_uring_warden::connect(
-        int fd, sockaddr const *addr, socklen_t addrlen) {
+        int fd,
+        sockaddr const *addr,
+        socklen_t addrlen,
+        felspar::source_location loc) {
     auto sqe = ring->next_sqe();
     auto *c = new completion{this};
     ::io_uring_prep_connect(sqe, fd, addr, addrlen);
@@ -24,7 +28,8 @@ felspar::poll::iop<void> felspar::poll::io_uring_warden::connect(
 }
 
 
-felspar::poll::iop<void> felspar::poll::io_uring_warden::read_ready(int fd) {
+felspar::poll::iop<void> felspar::poll::io_uring_warden::read_ready(
+        int fd, felspar::source_location loc) {
     auto sqe = ring->next_sqe();
     auto *c = new completion{this};
     ::io_uring_prep_poll_add(sqe, fd, POLLIN);
@@ -33,7 +38,8 @@ felspar::poll::iop<void> felspar::poll::io_uring_warden::read_ready(int fd) {
 }
 
 
-felspar::poll::iop<void> felspar::poll::io_uring_warden::write_ready(int fd) {
+felspar::poll::iop<void> felspar::poll::io_uring_warden::write_ready(
+        int fd, felspar::source_location loc) {
     auto sqe = ring->next_sqe();
     auto *c = new completion{this};
     ::io_uring_prep_poll_add(sqe, fd, POLLOUT);
