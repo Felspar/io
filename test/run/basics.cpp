@@ -1,8 +1,6 @@
 #include <felspar/poll.hpp>
 #include <felspar/test.hpp>
 
-#include <iostream>
-
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -19,13 +17,9 @@ namespace {
         felspar::posix::set_non_blocking(fd);
         std::array<std::byte, 256> buffer;
         while (auto bytes = co_await ward.read_some(fd, buffer)) {
-            std::cout << "Server FD " << fd << " read " << bytes << " bytes"
-                      << std::endl;
             std::span writing{buffer};
             auto written = co_await felspar::poll::write_all(
                     ward, fd, writing.first(bytes));
-            std::cout << "Server FD " << fd << " wrote " << written << " bytes"
-                      << std::endl;
         }
         ::close(fd);
     }
@@ -59,14 +53,11 @@ namespace {
         }
 
         felspar::poll::coro_owner co{ward};
-        std::cout << "Accept ready to start accepting" << std::endl;
         for (auto acceptor = felspar::poll::accept(ward, fd);
              auto cnx = co_await acceptor.next();) {
-            std::cout << "Server accepted FD " << *cnx << std::endl;
             co.post(echo_connection, ward, *cnx);
             co.gc();
         }
-        std::cout << "Accept done" << std::endl;
 
         ::close(fd);
     }
