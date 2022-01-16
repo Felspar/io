@@ -14,8 +14,12 @@ felspar::poll::iop<std::size_t> felspar::poll::io_uring_warden::read_some(
     return {c};
 }
 felspar::poll::iop<std::size_t> felspar::poll::io_uring_warden::write_some(
-        int fd, std::span<std::byte const>, felspar::source_location loc) {
-    throw felspar::stdexcept::logic_error{"Not implemented"};
+        int fd, std::span<std::byte const> b, felspar::source_location loc) {
+    auto sqe = ring->next_sqe();
+    auto *c = new completion{this};
+    ::io_uring_prep_write(sqe, fd, b.data(), b.size(), 0);
+    ::io_uring_sqe_set_data(sqe, c);
+    return {c};
 }
 
 

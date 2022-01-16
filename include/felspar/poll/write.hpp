@@ -2,6 +2,7 @@
 
 
 #include <felspar/coro/task.hpp>
+#include <felspar/poll/warden.hpp>
 
 #include <span>
 
@@ -12,17 +13,31 @@ namespace felspar::poll {
     class warden;
 
 
-    /// Write to a file descriptor
-    felspar::coro::task<::ssize_t>
-            write(warden &, int fd, void const *buf, std::size_t count);
-
-    inline felspar::coro::task<::ssize_t>
-            write(warden &w, int fd, std::span<std::uint8_t> s) {
-        return write(w, fd, s.data(), s.size());
+    /// Write all of the buffer to a file descriptor
+    inline felspar::coro::task<std::size_t>
+            write_all(warden &ward, int fd, std::span<std::byte const> s) {
+        auto out{s};
+        while (out.size()) {
+            auto const bytes = co_await ward.write_some(fd, out);
+            if (not bytes) { co_return s.size() - out.size(); }
+            out = out.subspan(bytes);
+        }
+        co_return s.size();
     }
-    inline felspar::coro::task<::ssize_t>
-            write(warden &w, int fd, std::span<std::byte> s) {
-        return write(w, fd, s.data(), s.size());
+    inline felspar::coro::task<std::size_t>
+            write_all(warden &w, int fd, void const *buf, std::size_t count) {
+        return write_all(
+                w, fd,
+                std::span<std::byte const>{
+                        reinterpret_cast<std::byte const *>(buf), count});
+    }
+    inline felspar::coro::task<std::size_t>
+            write_all(warden &w, int fd, std::span<std::uint8_t const> s) {
+        return write_all(
+                w, fd,
+                std::span<std::byte const>{
+                        reinterpret_cast<std::byte const *>(s.data()),
+                        s.size()});
     }
 
 

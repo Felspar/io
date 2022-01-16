@@ -36,18 +36,34 @@ felspar::poll::iop<std::size_t> felspar::poll::poll_warden::read_some(
     return {new c{this, fd, buf, std::move(loc)}};
 }
 felspar::poll::iop<std::size_t> felspar::poll::poll_warden::write_some(
-        int fd, std::span<std::byte const>, felspar::source_location loc) {
-    throw felspar::stdexcept::logic_error{"Not implemented"};
-    // while (true) {
-    //     if (auto bytes = ::write(fd, buf, count); bytes >= 0) {
-    //         co_return bytes;
-    //     } else if (errno == EAGAIN or errno == EWOULDBLOCK) {
-    //         co_await ward.write_ready(fd);
-    //     } else {
-    //         throw felspar::stdexcept::system_error{
-    //                 errno, std::generic_category(), "write"};
-    //     }
-    // }
+        int fd, std::span<std::byte const> buf, felspar::source_location loc) {
+    struct c : public completion {
+        c(poll_warden *s,
+          int f,
+          std::span<std::byte const> b,
+          felspar::source_location loc)
+        : self{s}, fd{f}, buf{b}, loc{std::move(loc)} {}
+        poll_warden *self;
+        int fd;
+        std::span<std::byte const> buf;
+        felspar::source_location loc;
+        warden *ward() override { return self; }
+        void try_or_resume() override {
+            if (auto bytes = ::write(fd, buf.data(), buf.size()); bytes >= 0) {
+                result = bytes;
+                handle.resume();
+            } else if (errno == EAGAIN or errno == EWOULDBLOCK) {
+                self->requests[fd].writes.push_back(this);
+            } else {
+                /// TODO Keep the exception to throw later on when the IOP's
+                /// await_resume is executed
+                throw felspar::stdexcept::system_error{
+                        errno, std::generic_category(), "write",
+                        std::move(loc)};
+            }
+        }
+    };
+    return {new c{this, fd, buf, std::move(loc)}};
 }
 
 

@@ -25,18 +25,3 @@ felspar::coro::stream<int> felspar::poll::accept(warden &ward, int fd) {
         }
     }
 }
-
-
-felspar::coro::task<::ssize_t> felspar::poll::write(
-        warden &ward, int fd, void const *buf, std::size_t count) {
-    while (true) {
-        if (auto bytes = ::write(fd, buf, count); bytes >= 0) {
-            co_return bytes;
-        } else if (errno == EAGAIN or errno == EWOULDBLOCK) {
-            co_await ward.write_ready(fd);
-        } else {
-            throw felspar::stdexcept::system_error{
-                    errno, std::generic_category(), "write"};
-        }
-    }
-}
