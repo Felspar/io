@@ -1,10 +1,10 @@
 add_library(felspar-poll
         convenience.cpp
-        iops.io_uring.cpp
-        iops.poll.cpp
+        io_uring.iops.cpp
+        io_uring.warden.cpp
+        poll.iops.cpp
+        poll.warden.cpp
         warden.cpp
-        warden.io_uring.cpp
-        warden.poll.cpp
     )
 target_include_directories(felspar-poll PUBLIC ../include)
 target_link_libraries(felspar-poll PUBLIC felspar-coro uring)
