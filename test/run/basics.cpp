@@ -98,7 +98,7 @@ namespace {
         ward.run(echo_client, 5543);
     });
     auto const tu = suite.test("echo/io_uring", []() {
-        felspar::poll::io_uring_warden ward;
+        felspar::poll::io_uring_warden ward{10};
         felspar::poll::coro_owner co{ward};
         co.post(echo_server, ward, 5547);
         ward.run(echo_client, 5547);
