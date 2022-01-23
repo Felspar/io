@@ -1,7 +1,5 @@
 #include "io_uring.hpp"
 
-#include <felspar/exceptions.hpp>
-
 
 /**
  * `felspar::poll::io_uring_warden`
@@ -33,34 +31,12 @@ void felspar::poll::io_uring_warden::run_until(
             throw felspar::stdexcept::system_error{
                     -ret, std::generic_category(), "io_uring_wait_cqe"};
         }
-        completion::execute(&ring->uring, cqe);
+        ring->execute(cqe);
         while (::io_uring_peek_cqe(&ring->uring, &cqe) == 0) {
-            completion::execute(&ring->uring, cqe);
+            ring->execute(cqe);
         }
     }
     coro.promise().consume_value();
-}
-
-
-void felspar::poll::io_uring_warden::cancel(poll::completion *p) { delete p; }
-
-
-/**
- * `felspar::poll::io_uring_warden::completion`
- */
-
-
-void felspar::poll::io_uring_warden::completion::execute(
-        ::io_uring *uring, ::io_uring_cqe *cqe) {
-    auto comp = reinterpret_cast<felspar::poll::io_uring_warden::completion *>(
-            io_uring_cqe_get_data(cqe));
-    comp->result = cqe->res;
-    ::io_uring_cqe_seen(uring, cqe);
-    if (comp->handle) {
-        comp->handle.resume();
-    } else {
-        throw felspar::stdexcept::runtime_error{"No coroutine handle"};
-    }
 }
 
 
@@ -76,4 +52,12 @@ io_uring_sqe *felspar::poll::io_uring_warden::impl::next_sqe() {
                 "No more SQEs are available in the ring"};
     }
     return sqe;
+}
+
+
+void felspar::poll::io_uring_warden::impl::execute(::io_uring_cqe *cqe) {
+    auto d = reinterpret_cast<delivery *>(::io_uring_cqe_get_data(cqe));
+    int result = cqe->res;
+    ::io_uring_cqe_seen(&uring, cqe);
+    d->deliver(result);
 }

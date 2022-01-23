@@ -1,6 +1,7 @@
+#include "poll.hpp"
+
 #include <felspar/exceptions.hpp>
 #include <felspar/poll/posix.hpp>
-#include <felspar/poll/warden.poll.hpp>
 
 #include <poll.h>
 
@@ -9,7 +10,7 @@ void felspar::poll::poll_warden::run_until(
         felspar::coro::unique_handle<felspar::coro::task_promise<void>> coro) {
     coro.resume();
     std::vector<::pollfd> iops;
-    std::vector<completion *> continuations;
+    std::vector<retrier *> continuations;
     while (not coro.done()) {
         /// IOP loop
         iops.clear();
@@ -48,9 +49,6 @@ void felspar::poll::poll_warden::run_until(
     }
     coro.promise().consume_value();
 }
-
-
-void felspar::poll::poll_warden::cancel(completion *p) { delete p; }
 
 
 int felspar::poll::poll_warden::create_socket(

@@ -11,15 +11,18 @@ namespace felspar::poll {
 
 
     class poll_warden : public warden {
+        struct retrier;
+        template<typename R>
+        struct completion;
         struct request {
-            std::vector<completion *> reads, writes;
+            std::vector<retrier *> reads, writes;
         };
         std::map<int, request> requests;
 
         void run_until(
                 felspar::coro::unique_handle<felspar::coro::task_promise<void>>)
                 override;
-        void cancel(completion *) override;
+
 
       public:
         iop<std::size_t> read_some(

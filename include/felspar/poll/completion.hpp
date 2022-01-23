@@ -14,19 +14,30 @@ namespace felspar::poll {
     class warden;
 
 
+    template<typename R>
     struct completion {
+        using result_type = R;
+
         felspar::coro::coroutine_handle<> handle;
-        int result = {};
+        R result = {};
         std::exception_ptr exception;
 
         virtual ~completion() = default;
 
         virtual warden *ward() = 0;
-        virtual void await_suspend(felspar::coro::coroutine_handle<> h) {
-            handle = h;
-            try_or_resume();
-        }
-        virtual void try_or_resume() { handle.resume(); }
+        virtual void await_suspend(felspar::coro::coroutine_handle<>) = 0;
+    };
+    template<>
+    struct completion<void> {
+        using result_type = void;
+
+        felspar::coro::coroutine_handle<> handle;
+        std::exception_ptr exception;
+
+        virtual ~completion() = default;
+
+        virtual warden *ward() = 0;
+        virtual void await_suspend(felspar::coro::coroutine_handle<> h) = 0;
     };
 
 
@@ -34,8 +45,9 @@ namespace felspar::poll {
     class iop<void> {
       public:
         using result_type = void;
+        using completion_type = completion<result_type>;
 
-        iop(completion *c) : comp{c} {}
+        iop(completion_type *c) : comp{c} {}
         ~iop();
 
         bool await_ready() const noexcept { return false; }
@@ -47,7 +59,7 @@ namespace felspar::poll {
         }
 
       private:
-        completion *comp;
+        completion_type *comp;
     };
 
 
@@ -55,8 +67,9 @@ namespace felspar::poll {
     class iop {
       public:
         using result_type = R;
+        using completion_type = completion<result_type>;
 
-        iop(completion *c) : comp{c} {}
+        iop(completion_type *c) : comp{c} {}
         ~iop();
 
         bool await_ready() const noexcept { return false; }
@@ -72,7 +85,7 @@ namespace felspar::poll {
         }
 
       private:
-        completion *comp;
+        completion_type *comp;
     };
 
 

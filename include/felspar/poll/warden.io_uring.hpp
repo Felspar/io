@@ -11,8 +11,9 @@ namespace felspar::poll {
         void run_until(
                 felspar::coro::unique_handle<felspar::coro::task_promise<void>>)
                 override;
-        void cancel(poll::completion *) override;
 
+        struct delivery;
+        template<typename R>
         struct completion;
         struct impl;
         std::unique_ptr<impl> ring;

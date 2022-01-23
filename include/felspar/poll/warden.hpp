@@ -19,7 +19,11 @@ namespace felspar::poll {
       protected:
         virtual void run_until(felspar::coro::unique_handle<
                                felspar::coro::task_promise<void>>) = 0;
-        virtual void cancel(completion *) = 0;
+        template<typename R>
+        void cancel(completion<R> *c) {
+            /// TODO Put the memory back into the pool for later re-use
+            delete c;
+        }
 
       public:
         virtual ~warden() = default;

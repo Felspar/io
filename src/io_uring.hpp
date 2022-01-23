@@ -1,6 +1,7 @@
 #pragma once
 
 
+#include <felspar/exceptions.hpp>
 #include <felspar/poll/warden.io_uring.hpp>
 
 #include <liburing.h>
@@ -14,31 +15,50 @@ namespace felspar::poll {
 
         /// Fetch another SQE from the io_uring
         io_uring_sqe *next_sqe();
+
+        void execute(::io_uring_cqe *);
     };
 
 
-    struct io_uring_warden::completion : public poll::completion {
-        completion(io_uring_warden *w, void (*o)(completion *))
-        : self{w}, order_iop{o} {}
+    struct io_uring_warden::delivery {
+        virtual void deliver(int result) = 0;
+    };
+    template<typename R>
+    struct io_uring_warden::completion :
+    public delivery,
+            public poll::completion<R> {
+        completion(io_uring_warden *w) : self{w} {}
 
         io_uring_warden *self;
-        void (*order_iop)(completion *);
 
         warden *ward() override { return self; }
-        void await_suspend(felspar::coro::coroutine_handle<> h) override {
-            handle = h;
-            order_iop(this);
+        void deliver(int result) override {
+            if (result < 0) {
+                throw felspar::stdexcept::system_error{
+                        -result, std::generic_category(), "io_uring IOP"};
+            } else {
+                poll::completion<R>::result = result;
+                poll::completion<R>::handle.resume();
+            }
         }
+    };
+    template<>
+    struct io_uring_warden::completion<void> :
+    public delivery,
+            public poll::completion<void> {
+        completion(io_uring_warden *w) : self{w} {}
 
-        /// Extra storage that can be used for "stuff" important to IOPs
-        int fd = {};
-        sockaddr addr = {};
-        sockaddr const *addrptr = {};
-        socklen_t addrlen = {};
-        std::span<std::byte> bytes = {};
-        std::span<std::byte const> cbytes = {};
+        io_uring_warden *self;
 
-        static void execute(::io_uring *, ::io_uring_cqe *);
+        warden *ward() override { return self; }
+        void deliver(int result) override {
+            if (result < 0) {
+                throw felspar::stdexcept::system_error{
+                        -result, std::generic_category(), "io_uring IOP"};
+            } else {
+                poll::completion<void>::handle.resume();
+            }
+        }
     };
 
 
