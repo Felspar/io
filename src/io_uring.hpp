@@ -9,6 +9,14 @@
 namespace felspar::poll {
 
 
+    struct io_uring_warden::impl {
+        ::io_uring uring;
+
+        /// Fetch another SQE from the io_uring
+        io_uring_sqe *next_sqe();
+    };
+
+
     struct io_uring_warden::completion : public poll::completion {
         completion(io_uring_warden *w, void (*o)(completion *))
         : self{w}, order_iop{o} {}
@@ -31,14 +39,6 @@ namespace felspar::poll {
         std::span<std::byte const> cbytes = {};
 
         static void execute(::io_uring *, ::io_uring_cqe *);
-    };
-
-
-    struct io_uring_warden::impl {
-        ::io_uring uring;
-
-        /// Fetch another SQE from the io_uring
-        io_uring_sqe *next_sqe();
     };
 
 
