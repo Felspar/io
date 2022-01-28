@@ -1,23 +1,66 @@
 #pragma once
 
 
-#include <fcntl.h>
 #include <felspar/exceptions/system_error.hpp>
+
+#include <unistd.h>
 
 
 namespace felspar::posix {
 
 
-    /// Set a file descriptor to non-blocking mode
-    inline void set_non_blocking(
-            int fd,
-            felspar::source_location loc = felspar::source_location::current()) {
-        if (int err = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
-            err != 0) {
-            throw felspar::stdexcept::system_error{
-                    errno, std::generic_category(), "fcntl F_SETFL error",
-                    std::move(loc)};
+    /// A very simple type for RAII management of a file descriptor
+    class fd {
+        int f;
+
+      public:
+        fd() : f{-1} {}
+        explicit fd(int f) : f{f} {}
+        fd(fd &&o) : f{std::exchange(o.f, -1)} {}
+        fd(fd const &) = delete;
+        ~fd() {
+            if (f >= 0) { ::close(f); }
         }
+
+        fd &operator=(fd &&o) {
+            fd s{std::exchange(f, o.f)};
+            return *this;
+        }
+        fd &operator=(fd const &) = delete;
+
+        /// `true` if the file descriptor looks valid
+        explicit operator bool() const noexcept { return f >= 0; }
+        int native_handle() const noexcept { return f; }
+
+        int release() noexcept { return std::exchange(f, -1); }
+
+        /// Close the FD
+        void close() noexcept {
+            int c = std::exchange(f, -1);
+            if (c >= 0) { ::close(c); }
+        }
+    };
+
+
+    /// Set a file descriptor to non-blocking mode
+    void set_non_blocking(
+            int sock,
+            felspar::source_location = felspar::source_location::current());
+    inline void set_non_blocking(
+            fd const &sock,
+            felspar::source_location loc = felspar::source_location::current()) {
+        return set_non_blocking(sock.native_handle(), std::move(loc));
+    }
+
+
+    /// Set a socket port for re-use
+    void set_reuse_port(
+            int sock,
+            felspar::source_location = felspar::source_location::current());
+    inline void set_reuse_port(
+            fd const &sock,
+            felspar::source_location loc = felspar::source_location::current()) {
+        return set_reuse_port(sock.native_handle(), std::move(loc));
     }
 
 

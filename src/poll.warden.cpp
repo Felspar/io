@@ -51,9 +51,9 @@ void felspar::poll::poll_warden::run_until(
 }
 
 
-int felspar::poll::poll_warden::create_socket(
+felspar::posix::fd felspar::poll::poll_warden::create_socket(
         int domain, int type, int protocol, felspar::source_location loc) {
-    int fd = warden::create_socket(domain, type, protocol, loc);
+    auto fd = warden::create_socket(domain, type, protocol, loc);
     felspar::posix::set_non_blocking(fd);
     return fd;
 }

@@ -2,8 +2,6 @@
 #include <felspar/test.hpp>
 
 #include <netinet/in.h>
-#include <sys/socket.h>
-#include <unistd.h>
 
 
 namespace {
@@ -12,41 +10,34 @@ namespace {
     auto const suite = felspar::testsuite("basics");
 
 
-    felspar::coro::task<void>
-            echo_connection(felspar::poll::warden &ward, int fd) {
+    felspar::coro::task<void> echo_connection(
+            felspar::poll::warden &ward, felspar::posix::fd sock) {
         std::array<std::byte, 256> buffer;
-        while (auto bytes = co_await ward.read_some(fd, buffer)) {
+        while (auto bytes = co_await ward.read_some(sock, buffer)) {
             std::span writing{buffer};
             auto written = co_await felspar::poll::write_all(
-                    ward, fd, writing.first(bytes));
+                    ward, sock, writing.first(bytes));
         }
-        ::close(fd);
     }
 
     felspar::coro::task<void>
             echo_server(felspar::poll::warden &ward, std::uint16_t port) {
         auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
-
-        int optval = 1;
-        if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval))
-            == -1) {
-            throw felspar::stdexcept::system_error{
-                    errno, std::generic_category(),
-                    "setsockopt SO_REUSEPORT failed"};
-        }
+        set_reuse_port(fd);
 
         sockaddr_in in;
         in.sin_family = AF_INET;
         in.sin_port = htons(port);
         in.sin_addr.s_addr = htonl(INADDR_ANY);
-        if (::bind(fd, reinterpret_cast<sockaddr const *>(&in), sizeof(in))
+        if (::bind(fd.native_handle(), reinterpret_cast<sockaddr const *>(&in),
+                   sizeof(in))
             != 0) {
             throw felspar::stdexcept::system_error{
                     errno, std::generic_category(), "Binding server socket"};
         }
 
         int constexpr backlog = 64;
-        if (::listen(fd, backlog) == -1) {
+        if (::listen(fd.native_handle(), backlog) == -1) {
             throw felspar::stdexcept::system_error{
                     errno, std::generic_category(), "Calling listen"};
         }
@@ -54,11 +45,9 @@ namespace {
         felspar::poll::coro_owner co{ward};
         for (auto acceptor = felspar::poll::accept(ward, fd);
              auto cnx = co_await acceptor.next();) {
-            co.post(echo_connection, ward, *cnx);
+            co.post(echo_connection, ward, felspar::posix::fd{*cnx});
             co.gc();
         }
-
-        ::close(fd);
     }
 
     felspar::coro::task<void>

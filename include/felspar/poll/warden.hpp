@@ -1,6 +1,7 @@
 #pragma once
 
 #include <felspar/poll/completion.hpp>
+#include <felspar/poll/posix.hpp>
 #include <felspar/test/source.hpp>
 
 #include <span>
@@ -44,16 +45,30 @@ namespace felspar::poll {
                 std::span<std::byte>,
                 felspar::source_location =
                         felspar::source_location::current()) = 0;
+        iop<std::size_t> read_some(
+                posix::fd const &s,
+                std::span<std::byte> b,
+                felspar::source_location l =
+                        felspar::source_location::current()) {
+            return read_some(s.native_handle(), b, std::move(l));
+        }
         virtual iop<std::size_t> write_some(
                 int fd,
                 std::span<std::byte const>,
                 felspar::source_location =
                         felspar::source_location::current()) = 0;
+        iop<std::size_t> write_some(
+                posix::fd const &s,
+                std::span<std::byte const> b,
+                felspar::source_location l =
+                        felspar::source_location::current()) {
+            return write_some(s.native_handle(), b, std::move(l));
+        }
 
         /**
          * ### Socket APIs
          */
-        virtual int create_socket(
+        virtual posix::fd create_socket(
                 int domain,
                 int type,
                 int protocol,
@@ -63,12 +78,27 @@ namespace felspar::poll {
                 accept(int fd,
                        felspar::source_location =
                                felspar::source_location::current()) = 0;
+        iop<int>
+                accept(posix::fd const &sock,
+                       felspar::source_location loc =
+                               felspar::source_location::current()) {
+            return accept(sock.native_handle(), std::move(loc));
+        }
         virtual iop<void>
                 connect(int fd,
                         sockaddr const *,
                         socklen_t,
                         felspar::source_location =
                                 felspar::source_location::current()) = 0;
+        iop<void>
+                connect(posix::fd const &sock,
+                        sockaddr const *addr,
+                        socklen_t addrlen,
+                        felspar::source_location loc =
+                                felspar::source_location::current()) {
+            return connect(sock.native_handle(), addr, addrlen, std::move(loc));
+        }
+
 
         /**
          * ### File readiness

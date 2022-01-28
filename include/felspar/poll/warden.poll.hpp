@@ -31,6 +31,7 @@ namespace felspar::poll {
         struct write_ready_completion;
 
       public:
+        /// Read & Write
         iop<std::size_t> read_some(
                 int fd,
                 std::span<std::byte>,
@@ -42,7 +43,8 @@ namespace felspar::poll {
                 felspar::source_location =
                         felspar::source_location::current()) override;
 
-        int create_socket(
+        /// Sockets
+        posix::fd create_socket(
                 int domain,
                 int type,
                 int protocol,
@@ -60,6 +62,7 @@ namespace felspar::poll {
                         felspar::source_location =
                                 felspar::source_location::current()) override;
 
+        /// File descriptor readiness
         iop<void> read_ready(
                 int fd,
                 felspar::source_location =
