@@ -35,8 +35,10 @@ namespace felspar::poll {
         warden *ward() override { return self; }
         void deliver(int result) override {
             if (result < 0) {
-                throw felspar::stdexcept::system_error{
-                        -result, std::generic_category(), "io_uring IOP"};
+                poll::completion<R>::exception = std::make_exception_ptr(
+                        felspar::stdexcept::system_error{
+                                -result, std::generic_category(),
+                                "io_uring IOP"});
             } else {
                 poll::completion<R>::result = result;
                 poll::completion<R>::handle.resume();
@@ -55,8 +57,10 @@ namespace felspar::poll {
         warden *ward() override { return self; }
         void deliver(int result) override {
             if (result < 0) {
-                throw felspar::stdexcept::system_error{
-                        -result, std::generic_category(), "io_uring IOP"};
+                poll::completion<void>::exception = std::make_exception_ptr(
+                        felspar::stdexcept::system_error{
+                                -result, std::generic_category(),
+                                "io_uring IOP"});
             } else {
                 poll::completion<void>::handle.resume();
             }

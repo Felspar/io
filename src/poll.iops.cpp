@@ -24,10 +24,11 @@ felspar::poll::iop<std::size_t> felspar::poll::poll_warden::read_some(
             } else if (errno == EAGAIN or errno == EWOULDBLOCK) {
                 self->requests[fd].reads.push_back(this);
             } else {
-                /// TODO Keep the exception to throw later on when the IOP's
-                /// await_resume is executed
-                throw felspar::stdexcept::system_error{
-                        errno, std::generic_category(), "read", std::move(loc)};
+                exception = std::make_exception_ptr(
+                        felspar::stdexcept::system_error{
+                                errno, std::generic_category(), "read",
+                                std::move(loc)});
+                handle.resume();
             }
         }
     };
@@ -50,11 +51,11 @@ felspar::poll::iop<std::size_t> felspar::poll::poll_warden::write_some(
             } else if (errno == EAGAIN or errno == EWOULDBLOCK) {
                 self->requests[fd].writes.push_back(this);
             } else {
-                /// TODO Keep the exception to throw later on when the IOP's
-                /// await_resume is executed
-                throw felspar::stdexcept::system_error{
-                        errno, std::generic_category(), "write",
-                        std::move(loc)};
+                exception = std::make_exception_ptr(
+                        felspar::stdexcept::system_error{
+                                errno, std::generic_category(), "write",
+                                std::move(loc)});
+                handle.resume();
             }
         }
     };
@@ -77,11 +78,11 @@ felspar::poll::iop<int> felspar::poll::poll_warden::accept(
             } else if (errno == EBADF) {
                 handle.resume();
             } else {
-                /// TODO Keep the exception to throw later on when the IOP's
-                /// await_resume is executed
-                throw felspar::stdexcept::system_error{
-                        errno, std::generic_category(), "accept",
-                        std::move(loc)};
+                exception = std::make_exception_ptr(
+                        felspar::stdexcept::system_error{
+                                errno, std::generic_category(), "accept",
+                                std::move(loc)});
+                handle.resume();
             }
         }
     };
@@ -112,11 +113,11 @@ felspar::poll::iop<void> felspar::poll::poll_warden::connect(
             } else if (errno == EINPROGRESS) {
                 self->requests[fd].writes.push_back(this);
             } else {
-                /// TODO Keep the exception to throw later on when the IOP's
-                /// await_resume is executed
-                throw felspar::stdexcept::system_error{
-                        errno, std::generic_category(), "connect",
-                        std::move(loc)};
+                exception = std::make_exception_ptr(
+                        felspar::stdexcept::system_error{
+                                errno, std::generic_category(), "connect",
+                                std::move(loc)});
+                handle.resume();
             }
         }
         void try_or_resume() override {
@@ -126,18 +127,18 @@ felspar::poll::iop<void> felspar::poll::poll_warden::connect(
                 if (errvalue == 0) {
                     handle.resume();
                 } else {
-                    /// TODO Keep the exception to throw later on when the IOP's
-                    /// await_resume is executed
-                    throw felspar::stdexcept::system_error{
-                            errno, std::generic_category(), "connect",
-                            std::move(loc)};
+                    exception = std::make_exception_ptr(
+                            felspar::stdexcept::system_error{
+                                    errno, std::generic_category(), "connect",
+                                    std::move(loc)});
+                    handle.resume();
                 }
             } else {
-                /// TODO Keep the exception to throw later on when the IOP's
-                /// await_resume is executed
-                throw felspar::stdexcept::system_error{
-                        errno, std::generic_category(), "connect/getsockopt",
-                        std::move(loc)};
+                exception = std::make_exception_ptr(
+                        felspar::stdexcept::system_error{
+                                errno, std::generic_category(),
+                                "connect/getsockopt", std::move(loc)});
+                handle.resume();
             }
         }
     };
