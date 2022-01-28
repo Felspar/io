@@ -2,12 +2,12 @@
 
 
 #include <felspar/exceptions.hpp>
-#include <felspar/poll/warden.io_uring.hpp>
+#include <felspar/io/warden.io_uring.hpp>
 
 #include <liburing.h>
 
 
-namespace felspar::poll {
+namespace felspar::io {
 
 
     struct io_uring_warden::impl {
@@ -26,57 +26,57 @@ namespace felspar::poll {
     template<typename R>
     struct io_uring_warden::completion :
     public delivery,
-            public poll::completion<R> {
+            public io::completion<R> {
         completion(io_uring_warden *w, felspar::source_location loc)
-        : poll::completion<R>{std::move(loc)}, self{w} {}
+        : io::completion<R>{std::move(loc)}, self{w} {}
 
         io_uring_warden *self;
 
         warden *ward() override { return self; }
         io_uring_sqe *setup_submission(felspar::coro::coroutine_handle<> h) {
-            poll::completion<R>::handle = h;
+            io::completion<R>::handle = h;
             auto sqe = self->ring->next_sqe();
             ::io_uring_sqe_set_data(sqe, this);
             return sqe;
         }
         void deliver(int result) override {
             if (result < 0) {
-                poll::completion<R>::exception = std::make_exception_ptr(
+                io::completion<R>::exception = std::make_exception_ptr(
                         felspar::stdexcept::system_error{
                                 -result, std::generic_category(),
                                 "io_uring IOP",
-                                std::move(poll::completion<R>::loc)});
-                poll::completion<R>::handle.resume();
+                                std::move(io::completion<R>::loc)});
+                io::completion<R>::handle.resume();
             } else {
-                poll::completion<R>::result = result;
-                poll::completion<R>::handle.resume();
+                io::completion<R>::result = result;
+                io::completion<R>::handle.resume();
             }
         }
     };
     template<>
     struct io_uring_warden::completion<void> :
     public delivery,
-            public poll::completion<void> {
+            public io::completion<void> {
         completion(io_uring_warden *w, felspar::source_location loc)
-        : poll::completion<void>{std::move(loc)}, self{w} {}
+        : io::completion<void>{std::move(loc)}, self{w} {}
 
         io_uring_warden *self;
 
         warden *ward() override { return self; }
         io_uring_sqe *setup_submission(felspar::coro::coroutine_handle<> h) {
-            poll::completion<void>::handle = h;
+            io::completion<void>::handle = h;
             auto sqe = self->ring->next_sqe();
             return sqe;
         }
         void deliver(int result) override {
             if (result < 0) {
-                poll::completion<void>::exception = std::make_exception_ptr(
+                io::completion<void>::exception = std::make_exception_ptr(
                         felspar::stdexcept::system_error{
                                 -result, std::generic_category(),
                                 "io_uring IOP",
-                                std::move(poll::completion<void>::loc)});
+                                std::move(io::completion<void>::loc)});
             } else {
-                poll::completion<void>::handle.resume();
+                io::completion<void>::handle.resume();
             }
         }
     };

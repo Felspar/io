@@ -1,8 +1,8 @@
-add_library(felspar-poll-headers-tests STATIC EXCLUDE_FROM_ALL
+add_library(felspar-io-headers-tests STATIC EXCLUDE_FROM_ALL
         accept.cpp
         completion.cpp
         connect.cpp
-        poll.cpp
+        io.cpp
         posix.cpp
         post.cpp
         read.cpp
@@ -11,5 +11,5 @@ add_library(felspar-poll-headers-tests STATIC EXCLUDE_FROM_ALL
         warden.poll.cpp
         write.cpp
     )
-target_link_libraries(felspar-poll-headers-tests felspar-poll)
-add_dependencies(check felspar-poll-headers-tests)
+target_link_libraries(felspar-io-headers-tests felspar-io)
+add_dependencies(check felspar-io-headers-tests)

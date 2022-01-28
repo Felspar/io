@@ -1,4 +1,4 @@
-#include <felspar/poll.hpp>
+#include <felspar/io.hpp>
 #include <felspar/test.hpp>
 
 #include <netinet/in.h>
@@ -11,17 +11,17 @@ namespace {
 
 
     felspar::coro::task<void> echo_connection(
-            felspar::poll::warden &ward, felspar::posix::fd sock) {
+            felspar::io::warden &ward, felspar::posix::fd sock) {
         std::array<std::byte, 256> buffer;
         while (auto bytes = co_await ward.read_some(sock, buffer)) {
             std::span writing{buffer};
-            auto written = co_await felspar::poll::write_all(
+            auto written = co_await felspar::io::write_all(
                     ward, sock, writing.first(bytes));
         }
     }
 
     felspar::coro::task<void>
-            echo_server(felspar::poll::warden &ward, std::uint16_t port) {
+            echo_server(felspar::io::warden &ward, std::uint16_t port) {
         auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
         set_reuse_port(fd);
 
@@ -42,8 +42,8 @@ namespace {
                     errno, std::generic_category(), "Calling listen"};
         }
 
-        felspar::poll::coro_owner co{ward};
-        for (auto acceptor = felspar::poll::accept(ward, fd);
+        felspar::io::coro_owner co{ward};
+        for (auto acceptor = felspar::io::accept(ward, fd);
              auto cnx = co_await acceptor.next();) {
             co.post(echo_connection, ward, felspar::posix::fd{*cnx});
             co.gc();
@@ -51,7 +51,7 @@ namespace {
     }
 
     felspar::coro::task<void>
-            echo_client(felspar::poll::warden &ward, std::uint16_t port) {
+            echo_client(felspar::io::warden &ward, std::uint16_t port) {
         felspar::test::injected check;
 
         auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
@@ -65,9 +65,9 @@ namespace {
                 fd, reinterpret_cast<sockaddr const *>(&in), sizeof(in));
 
         std::array<std::uint8_t, 6> out{1, 2, 3, 4, 5, 6}, buffer{};
-        co_await felspar::poll::write_all(ward, fd, out);
+        co_await felspar::io::write_all(ward, fd, out);
 
-        auto bytes = co_await felspar::poll::read_exactly(ward, fd, buffer);
+        auto bytes = co_await felspar::io::read_exactly(ward, fd, buffer);
         check(bytes) == 6u;
         check(buffer[0]) == out[0];
         check(buffer[1]) == out[1];
@@ -79,14 +79,14 @@ namespace {
 
 
     auto const tp = suite.test("echo/poll", []() {
-        felspar::poll::poll_warden ward;
-        felspar::poll::coro_owner co{ward};
+        felspar::io::poll_warden ward;
+        felspar::io::coro_owner co{ward};
         co.post(echo_server, ward, 5543);
         ward.run(echo_client, 5543);
     });
     auto const tu = suite.test("echo/io_uring", []() {
-        felspar::poll::io_uring_warden ward{10};
-        felspar::poll::coro_owner co{ward};
+        felspar::io::io_uring_warden ward{10};
+        felspar::io::coro_owner co{ward};
         co.post(echo_server, ward, 5547);
         ward.run(echo_client, 5547);
     });

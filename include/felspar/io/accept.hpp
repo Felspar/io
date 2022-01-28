@@ -2,11 +2,11 @@
 
 
 #include <felspar/coro/stream.hpp>
-#include <felspar/poll/posix.hpp>
+#include <felspar/io/posix.hpp>
 #include <felspar/test/source.hpp>
 
 
-namespace felspar::poll {
+namespace felspar::io {
 
 
     class warden;

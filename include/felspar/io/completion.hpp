@@ -7,7 +7,7 @@
 #include <memory>
 
 
-namespace felspar::poll {
+namespace felspar::io {
 
 
     template<typename R>

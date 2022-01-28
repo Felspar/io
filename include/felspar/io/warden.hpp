@@ -1,7 +1,7 @@
 #pragma once
 
-#include <felspar/poll/completion.hpp>
-#include <felspar/poll/posix.hpp>
+#include <felspar/io/completion.hpp>
+#include <felspar/io/posix.hpp>
 #include <felspar/test/source.hpp>
 
 #include <span>
@@ -9,13 +9,12 @@
 #include <netinet/in.h>
 
 
-namespace felspar::poll {
+namespace felspar::io {
 
 
-    /// Executor that allows `poll` based asynchronous IO
     class warden {
         template<typename R>
-        friend struct felspar::poll::iop;
+        friend struct felspar::io::iop;
 
       protected:
         virtual void run_until(felspar::coro::unique_handle<

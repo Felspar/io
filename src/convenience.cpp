@@ -1,12 +1,12 @@
-#include <felspar/poll/accept.hpp>
-#include <felspar/poll/read.hpp>
-#include <felspar/poll/warden.hpp>
-#include <felspar/poll/write.hpp>
+#include <felspar/io/accept.hpp>
+#include <felspar/io/read.hpp>
+#include <felspar/io/warden.hpp>
+#include <felspar/io/write.hpp>
 
 #include <felspar/exceptions.hpp>
 
 
-felspar::coro::stream<int> felspar::poll::accept(
+felspar::coro::stream<int> felspar::io::accept(
         warden &ward, int fd, felspar::source_location loc) {
     while (true) {
         int s = co_await ward.accept(fd, loc);

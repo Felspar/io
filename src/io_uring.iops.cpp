@@ -3,10 +3,10 @@
 #include <poll.h>
 
 
-struct felspar::poll::io_uring_warden::read_some_completion :
+struct felspar::io::io_uring_warden::read_some_completion :
 public completion<std::size_t> {
     read_some_completion(
-            felspar::poll::io_uring_warden *s,
+            io_uring_warden *s,
             int f,
             std::span<std::byte> b,
             felspar::source_location loc)
@@ -19,16 +19,16 @@ public completion<std::size_t> {
         ::io_uring_sqe_set_data(sqe, this);
     }
 };
-felspar::poll::iop<std::size_t> felspar::poll::io_uring_warden::read_some(
+felspar::io::iop<std::size_t> felspar::io::io_uring_warden::read_some(
         int fd, std::span<std::byte> b, felspar::source_location loc) {
     return {new read_some_completion{this, fd, b, std::move(loc)}};
 }
 
 
-struct felspar::poll::io_uring_warden::write_some_completion :
+struct felspar::io::io_uring_warden::write_some_completion :
 public completion<std::size_t> {
     write_some_completion(
-            felspar::poll::io_uring_warden *s,
+            io_uring_warden *s,
             int f,
             std::span<std::byte const> b,
             felspar::source_location loc)
@@ -41,18 +41,15 @@ public completion<std::size_t> {
         ::io_uring_sqe_set_data(sqe, this);
     }
 };
-felspar::poll::iop<std::size_t> felspar::poll::io_uring_warden::write_some(
+felspar::io::iop<std::size_t> felspar::io::io_uring_warden::write_some(
         int fd, std::span<std::byte const> b, felspar::source_location loc) {
     return {new write_some_completion{this, fd, b, std::move(loc)}};
 }
 
 
-struct felspar::poll::io_uring_warden::accept_completion :
+struct felspar::io::io_uring_warden::accept_completion :
 public completion<int> {
-    accept_completion(
-            felspar::poll::io_uring_warden *s,
-            int f,
-            felspar::source_location loc)
+    accept_completion(io_uring_warden *s, int f, felspar::source_location loc)
     : completion<int>{s, std::move(loc)}, fd{f} {}
     int fd = {};
     sockaddr addr = {};
@@ -63,16 +60,16 @@ public completion<int> {
         ::io_uring_sqe_set_data(sqe, this);
     }
 };
-felspar::poll::iop<int> felspar::poll::io_uring_warden::accept(
+felspar::io::iop<int> felspar::io::io_uring_warden::accept(
         int fd, felspar::source_location loc) {
     return {new accept_completion{this, fd, std::move(loc)}};
 }
 
 
-struct felspar::poll::io_uring_warden::connect_completion :
+struct felspar::io::io_uring_warden::connect_completion :
 public completion<void> {
     connect_completion(
-            felspar::poll::io_uring_warden *s,
+            io_uring_warden *s,
             int f,
             sockaddr const *a,
             socklen_t l,
@@ -87,7 +84,7 @@ public completion<void> {
         ::io_uring_sqe_set_data(sqe, this);
     }
 };
-felspar::poll::iop<void> felspar::poll::io_uring_warden::connect(
+felspar::io::iop<void> felspar::io::io_uring_warden::connect(
         int fd,
         sockaddr const *addr,
         socklen_t addrlen,
@@ -96,13 +93,9 @@ felspar::poll::iop<void> felspar::poll::io_uring_warden::connect(
 }
 
 
-struct felspar::poll::io_uring_warden::poll_completion :
-public completion<void> {
+struct felspar::io::io_uring_warden::poll_completion : public completion<void> {
     poll_completion(
-            felspar::poll::io_uring_warden *s,
-            int f,
-            short m,
-            felspar::source_location loc)
+            io_uring_warden *s, int f, short m, felspar::source_location loc)
     : completion<void>{s, std::move(loc)}, fd{f}, mask{m} {}
     int fd = {};
     short mask = {};
@@ -112,11 +105,11 @@ public completion<void> {
         ::io_uring_sqe_set_data(sqe, this);
     }
 };
-felspar::poll::iop<void> felspar::poll::io_uring_warden::read_ready(
+felspar::io::iop<void> felspar::io::io_uring_warden::read_ready(
         int fd, felspar::source_location loc) {
     return {new poll_completion{this, fd, POLLIN, std::move(loc)}};
 }
-felspar::poll::iop<void> felspar::poll::io_uring_warden::write_ready(
+felspar::io::iop<void> felspar::io::io_uring_warden::write_ready(
         int fd, felspar::source_location loc) {
     return {new poll_completion{this, fd, POLLOUT, std::move(loc)}};
 }

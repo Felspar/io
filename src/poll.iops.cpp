@@ -1,13 +1,13 @@
 #include "poll.hpp"
 
 #include <felspar/exceptions.hpp>
-#include <felspar/poll/connect.hpp>
+#include <felspar/io/connect.hpp>
 
 #include <sys/socket.h>
 #include <unistd.h>
 
 
-struct felspar::poll::poll_warden::read_some_completion :
+struct felspar::io::poll_warden::read_some_completion :
 public completion<std::size_t> {
     read_some_completion(
             poll_warden *s,
@@ -30,13 +30,13 @@ public completion<std::size_t> {
         }
     }
 };
-felspar::poll::iop<std::size_t> felspar::poll::poll_warden::read_some(
+felspar::io::iop<std::size_t> felspar::io::poll_warden::read_some(
         int fd, std::span<std::byte> buf, felspar::source_location loc) {
     return {new read_some_completion{this, fd, buf, std::move(loc)}};
 }
 
 
-struct felspar::poll::poll_warden::write_some_completion :
+struct felspar::io::poll_warden::write_some_completion :
 public completion<std::size_t> {
     write_some_completion(
             poll_warden *s,
@@ -59,13 +59,13 @@ public completion<std::size_t> {
         }
     }
 };
-felspar::poll::iop<std::size_t> felspar::poll::poll_warden::write_some(
+felspar::io::iop<std::size_t> felspar::io::poll_warden::write_some(
         int fd, std::span<std::byte const> buf, felspar::source_location loc) {
     return {new write_some_completion{this, fd, buf, std::move(loc)}};
 }
 
 
-struct felspar::poll::poll_warden::accept_completion : public completion<int> {
+struct felspar::io::poll_warden::accept_completion : public completion<int> {
     accept_completion(poll_warden *s, int f, felspar::source_location loc)
     : completion<int>{s, std::move(loc)}, fd{f} {}
     int fd;
@@ -84,14 +84,13 @@ struct felspar::poll::poll_warden::accept_completion : public completion<int> {
         }
     }
 };
-felspar::poll::iop<int> felspar::poll::poll_warden::accept(
-        int fd, felspar::source_location loc) {
+felspar::io::iop<int>
+        felspar::io::poll_warden::accept(int fd, felspar::source_location loc) {
     return {new accept_completion{this, fd, std::move(loc)}};
 }
 
 
-struct felspar::poll::poll_warden::connect_completion :
-public completion<void> {
+struct felspar::io::poll_warden::connect_completion : public completion<void> {
     connect_completion(
             poll_warden *s,
             int f,
@@ -136,7 +135,7 @@ public completion<void> {
         }
     }
 };
-felspar::poll::iop<void> felspar::poll::poll_warden::connect(
+felspar::io::iop<void> felspar::io::poll_warden::connect(
         int fd,
         sockaddr const *addr,
         socklen_t addrlen,
@@ -145,7 +144,7 @@ felspar::poll::iop<void> felspar::poll::poll_warden::connect(
 }
 
 
-struct felspar::poll::poll_warden::read_ready_completion :
+struct felspar::io::poll_warden::read_ready_completion :
 public completion<void> {
     read_ready_completion(poll_warden *s, int f, felspar::source_location loc)
     : completion<void>{s, std::move(loc)}, fd{f} {}
@@ -156,13 +155,13 @@ public completion<void> {
     }
     void try_or_resume() override { handle.resume(); }
 };
-felspar::poll::iop<void> felspar::poll::poll_warden::read_ready(
+felspar::io::iop<void> felspar::io::poll_warden::read_ready(
         int fd, felspar::source_location loc) {
     return {new read_ready_completion{this, fd, std::move(loc)}};
 }
 
 
-struct felspar::poll::poll_warden::write_ready_completion :
+struct felspar::io::poll_warden::write_ready_completion :
 public completion<void> {
     write_ready_completion(poll_warden *s, int f, felspar::source_location loc)
     : completion<void>{s, std::move(loc)}, fd{f} {}
@@ -173,7 +172,7 @@ public completion<void> {
     }
     void try_or_resume() override { handle.resume(); }
 };
-felspar::poll::iop<void> felspar::poll::poll_warden::write_ready(
+felspar::io::iop<void> felspar::io::poll_warden::write_ready(
         int fd, felspar::source_location loc) {
     return {new write_ready_completion{this, fd, std::move(loc)}};
 }

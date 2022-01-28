@@ -1,12 +1,12 @@
 #include "poll.hpp"
 
 #include <felspar/exceptions.hpp>
-#include <felspar/poll/posix.hpp>
+#include <felspar/io/posix.hpp>
 
 #include <poll.h>
 
 
-void felspar::poll::poll_warden::run_until(
+void felspar::io::poll_warden::run_until(
         felspar::coro::unique_handle<felspar::coro::task_promise<void>> coro) {
     coro.resume();
     std::vector<::pollfd> iops;
@@ -51,7 +51,7 @@ void felspar::poll::poll_warden::run_until(
 }
 
 
-felspar::posix::fd felspar::poll::poll_warden::create_socket(
+felspar::posix::fd felspar::io::poll_warden::create_socket(
         int domain, int type, int protocol, felspar::source_location loc) {
     auto fd = warden::create_socket(domain, type, protocol, loc);
     felspar::posix::set_non_blocking(fd);
