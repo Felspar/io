@@ -1,54 +1,94 @@
 #pragma once
 
+#include <felspar/poll/completion.hpp>
+#include <felspar/test/source.hpp>
 
-#include <felspar/coro/task.hpp>
+#include <span>
 
-#include <functional>
-#include <map>
-#include <vector>
-
-#include <poll.h>
+#include <netinet/in.h>
 
 
 namespace felspar::poll {
 
 
-    class warden;
-
-
-    struct iop {
-        /// TODO Want something with much lower overhead than std::function
-        std::function<void(felspar::coro::coroutine_handle<>)> suspend;
-
-        bool await_ready() const noexcept { return false; }
-        void await_suspend(felspar::coro::coroutine_handle<> h) noexcept {
-            suspend(h);
-        }
-        auto await_resume() noexcept {}
-    };
-
-
     /// Executor that allows `poll` based asynchronous IO
     class warden {
-        friend class iop;
+        template<typename R>
+        friend struct felspar::poll::iop;
 
       protected:
-        std::vector<
-                felspar::coro::unique_handle<felspar::coro::task_promise<void>>>
-                live;
-
-      public:
-        template<typename... PArgs, typename... MArgs>
-        void post(coro::task<void> (*f)(warden &, PArgs...), MArgs &&...margs) {
-            auto task = f(*this, std::forward<MArgs>(margs)...);
-            auto coro = task.release();
-            coro.resume();
-            live.push_back(std::move(coro));
+        virtual void run_until(felspar::coro::unique_handle<
+                               felspar::coro::task_promise<void>>) = 0;
+        template<typename R>
+        void cancel(completion<R> *c) {
+            /// TODO Put the memory back into the pool for later re-use
+            delete c;
         }
 
-        virtual iop read_ready(int fd) = 0;
-        virtual iop write_ready(int fd) = 0;
+      public:
+        virtual ~warden() = default;
+
+        template<typename... PArgs, typename... MArgs>
+        void run(coro::task<void> (*f)(warden &, PArgs...), MArgs &&...margs) {
+            auto task = f(*this, std::forward<MArgs>(margs)...);
+            run_until(task.release());
+        }
+
+        /**
+         * ### Reading and writing
+         */
+        /// Read or write bytes from the provided buffer returning the number of
+        /// bytes read/written.
+        virtual iop<std::size_t> read_some(
+                int fd,
+                std::span<std::byte>,
+                felspar::source_location =
+                        felspar::source_location::current()) = 0;
+        virtual iop<std::size_t> write_some(
+                int fd,
+                std::span<std::byte const>,
+                felspar::source_location =
+                        felspar::source_location::current()) = 0;
+
+        /**
+         * ### Socket APIs
+         */
+        virtual int create_socket(
+                int domain,
+                int type,
+                int protocol,
+                felspar::source_location = felspar::source_location::current());
+
+        virtual iop<int>
+                accept(int fd,
+                       felspar::source_location =
+                               felspar::source_location::current()) = 0;
+        virtual iop<void>
+                connect(int fd,
+                        sockaddr const *,
+                        socklen_t,
+                        felspar::source_location =
+                                felspar::source_location::current()) = 0;
+
+        /**
+         * ### File readiness
+         */
+        virtual iop<void> read_ready(
+                int fd,
+                felspar::source_location =
+                        felspar::source_location::current()) = 0;
+        virtual iop<void> write_ready(
+                int fd,
+                felspar::source_location =
+                        felspar::source_location::current()) = 0;
     };
+
+
+    inline iop<void>::~iop() { comp->ward()->cancel(comp); }
+    template<typename R>
+    inline iop<R>::~iop() {
+        comp->ward()->cancel(comp);
+    }
 
 
 }

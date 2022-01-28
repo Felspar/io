@@ -2,6 +2,7 @@
 
 
 #include <felspar/coro/stream.hpp>
+#include <felspar/test/source.hpp>
 
 
 namespace felspar::poll {
@@ -11,7 +12,10 @@ namespace felspar::poll {
 
 
     /// Produce file descriptors for incoming connections to the provided socket
-    felspar::coro::stream<int> accept(warden &, int);
+    felspar::coro::stream<int> accept(
+            warden &,
+            int,
+            felspar::source_location = felspar::source_location::current());
 
 
 }

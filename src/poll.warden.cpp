@@ -1,12 +1,16 @@
+#include "poll.hpp"
+
 #include <felspar/exceptions.hpp>
-#include <felspar/poll/warden.poll.hpp>
+#include <felspar/poll/posix.hpp>
+
+#include <poll.h>
 
 
-void felspar::poll::poll_warden::run(
+void felspar::poll::poll_warden::run_until(
         felspar::coro::unique_handle<felspar::coro::task_promise<void>> coro) {
     coro.resume();
     std::vector<::pollfd> iops;
-    std::vector<felspar::coro::coroutine_handle<>> continuations;
+    std::vector<retrier *> continuations;
     while (not coro.done()) {
         /// IOP loop
         iops.clear();
@@ -39,33 +43,17 @@ void felspar::poll::poll_warden::run(
                 writes.clear();
             }
         }
-        for (auto continuation : continuations) { continuation.resume(); }
-
-        /// Garbage collect old coroutines
-        live.erase(
-                std::remove_if(
-                        live.begin(), live.end(),
-                        [](auto const &h) {
-                            if (h.done()) {
-                                h.promise().consume_value();
-                                return true;
-                            } else {
-                                return false;
-                            }
-                        }),
-                live.end());
+        for (auto continuation : continuations) {
+            continuation->try_or_resume();
+        }
     }
     coro.promise().consume_value();
 }
 
 
-felspar::poll::iop felspar::poll::poll_warden::read_ready(int fd) {
-    return {[this, fd](felspar::coro::coroutine_handle<> h) {
-        requests[fd].reads.push_back(h);
-    }};
-}
-felspar::poll::iop felspar::poll::poll_warden::write_ready(int fd) {
-    return {[this, fd](felspar::coro::coroutine_handle<> h) {
-        requests[fd].writes.push_back(h);
-    }};
+int felspar::poll::poll_warden::create_socket(
+        int domain, int type, int protocol, felspar::source_location loc) {
+    int fd = warden::create_socket(domain, type, protocol, loc);
+    felspar::posix::set_non_blocking(fd);
+    return fd;
 }

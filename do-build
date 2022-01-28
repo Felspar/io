@@ -3,6 +3,9 @@
 time (
         # User specified targets
         ninja -C ./build.tmp/clang-debug $* &&
+        # ASAN
+        ninja -C ./build.tmp/clang-debug-asan all check &&
+        ninja -C ./build.tmp/clang-release-asan all check &&
         # Debug builds
         ninja -C ./build.tmp/clang-debug all check &&
         ninja -C ./build.tmp/gcc-debug all check &&

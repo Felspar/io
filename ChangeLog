@@ -1,2 +1,5 @@
+2022-01-28  Kirit Sælensminde  <kirit@felspar.com>
+ Added io_uring support.
+
 2021-10-16  Kirit Sælensminde  <kirit@felspar.com>
  First commit.
