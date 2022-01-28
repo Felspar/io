@@ -39,6 +39,7 @@ namespace felspar::poll {
                         felspar::stdexcept::system_error{
                                 -result, std::generic_category(),
                                 "io_uring IOP"});
+                poll::completion<R>::handle.resume();
             } else {
                 poll::completion<R>::result = result;
                 poll::completion<R>::handle.resume();
