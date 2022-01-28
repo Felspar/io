@@ -1,4 +1,4 @@
-# Felspar Poll
+# Felspar IO
 
-**C++ coroutine based asynchronous IO using poll**
+**C++ coroutine based asynchronous IO**
 
