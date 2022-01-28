@@ -4,7 +4,7 @@
 
 
 struct felspar::poll::io_uring_warden::read_some_completion :
-public felspar::poll::io_uring_warden::completion<std::size_t> {
+public completion<std::size_t> {
     read_some_completion(
             felspar::poll::io_uring_warden *s,
             int f,
@@ -26,7 +26,7 @@ felspar::poll::iop<std::size_t> felspar::poll::io_uring_warden::read_some(
 
 
 struct felspar::poll::io_uring_warden::write_some_completion :
-public felspar::poll::io_uring_warden::completion<std::size_t> {
+public completion<std::size_t> {
     write_some_completion(
             felspar::poll::io_uring_warden *s,
             int f,
@@ -48,7 +48,7 @@ felspar::poll::iop<std::size_t> felspar::poll::io_uring_warden::write_some(
 
 
 struct felspar::poll::io_uring_warden::accept_completion :
-public felspar::poll::io_uring_warden::completion<int> {
+public completion<int> {
     accept_completion(
             felspar::poll::io_uring_warden *s,
             int f,
@@ -70,7 +70,7 @@ felspar::poll::iop<int> felspar::poll::io_uring_warden::accept(
 
 
 struct felspar::poll::io_uring_warden::connect_completion :
-public felspar::poll::io_uring_warden::completion<void> {
+public completion<void> {
     connect_completion(
             felspar::poll::io_uring_warden *s,
             int f,
@@ -97,7 +97,7 @@ felspar::poll::iop<void> felspar::poll::io_uring_warden::connect(
 
 
 struct felspar::poll::io_uring_warden::poll_completion :
-public felspar::poll::io_uring_warden::completion<void> {
+public completion<void> {
     poll_completion(
             felspar::poll::io_uring_warden *s,
             int f,
