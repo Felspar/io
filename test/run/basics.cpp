@@ -14,7 +14,6 @@ namespace {
 
     felspar::coro::task<void>
             echo_connection(felspar::poll::warden &ward, int fd) {
-        felspar::posix::set_non_blocking(fd);
         std::array<std::byte, 256> buffer;
         while (auto bytes = co_await ward.read_some(fd, buffer)) {
             std::span writing{buffer};
@@ -67,7 +66,6 @@ namespace {
         felspar::test::injected check;
 
         auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
-        felspar::posix::set_non_blocking(fd);
 
         sockaddr_in in;
         in.sin_family = AF_INET;

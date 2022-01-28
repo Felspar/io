@@ -70,7 +70,7 @@ felspar::poll::iop<int> felspar::poll::poll_warden::accept(
         : completion<int>{s, std::move(loc)}, fd{f} {}
         int fd;
         void try_or_resume() override {
-            result = ::accept(fd, nullptr, nullptr);
+            result = ::accept4(fd, nullptr, nullptr, SOCK_NONBLOCK);
             if (result >= 0) {
                 handle.resume();
             } else if (errno == EWOULDBLOCK or errno == EAGAIN) {
