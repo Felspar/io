@@ -38,7 +38,8 @@ namespace felspar::poll {
                 poll::completion<R>::exception = std::make_exception_ptr(
                         felspar::stdexcept::system_error{
                                 -result, std::generic_category(),
-                                "io_uring IOP"});
+                                "io_uring IOP",
+                                std::move(poll::completion<R>::loc)});
                 poll::completion<R>::handle.resume();
             } else {
                 poll::completion<R>::result = result;
@@ -61,7 +62,8 @@ namespace felspar::poll {
                 poll::completion<void>::exception = std::make_exception_ptr(
                         felspar::stdexcept::system_error{
                                 -result, std::generic_category(),
-                                "io_uring IOP"});
+                                "io_uring IOP",
+                                std::move(poll::completion<void>::loc)});
             } else {
                 poll::completion<void>::handle.resume();
             }
