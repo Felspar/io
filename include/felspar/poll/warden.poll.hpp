@@ -23,6 +23,12 @@ namespace felspar::poll {
                 felspar::coro::unique_handle<felspar::coro::task_promise<void>>)
                 override;
 
+        struct read_some_completion;
+        struct write_some_completion;
+        struct accept_completion;
+        struct connect_completion;
+        struct read_ready_completion;
+        struct write_ready_completion;
 
       public:
         iop<std::size_t> read_some(
