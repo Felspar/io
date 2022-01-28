@@ -18,10 +18,10 @@ namespace felspar::poll {
             warden &ward,
             int fd,
             std::span<std::byte const> s,
-            felspar::source_location = felspar::source_location::current()) {
+            felspar::source_location loc = felspar::source_location::current()) {
         auto out{s};
         while (out.size()) {
-            auto const bytes = co_await ward.write_some(fd, out);
+            auto const bytes = co_await ward.write_some(fd, out, loc);
             if (not bytes) { co_return s.size() - out.size(); }
             out = out.subspan(bytes);
         }
@@ -32,22 +32,23 @@ namespace felspar::poll {
             int fd,
             void const *buf,
             std::size_t count,
-            felspar::source_location = felspar::source_location::current()) {
+            felspar::source_location loc = felspar::source_location::current()) {
         return write_all(
                 w, fd,
                 std::span<std::byte const>{
-                        reinterpret_cast<std::byte const *>(buf), count});
+                        reinterpret_cast<std::byte const *>(buf), count},
+                std::move(loc));
     }
     inline felspar::coro::task<std::size_t> write_all(
             warden &w,
             int fd,
             std::span<std::uint8_t const> s,
-            felspar::source_location = felspar::source_location::current()) {
+            felspar::source_location loc = felspar::source_location::current()) {
         return write_all(
                 w, fd,
                 std::span<std::byte const>{
-                        reinterpret_cast<std::byte const *>(s.data()),
-                        s.size()});
+                        reinterpret_cast<std::byte const *>(s.data()), s.size()},
+                std::move(loc));
     }
 
 

@@ -17,10 +17,10 @@ namespace felspar::poll {
             warden &ward,
             int fd,
             std::span<std::byte> s,
-            felspar::source_location = felspar::source_location::current()) {
+            felspar::source_location loc = felspar::source_location::current()) {
         std::span<std::byte> in{s};
         while (in.size()) {
-            auto const bytes = co_await ward.read_some(fd, in);
+            auto const bytes = co_await ward.read_some(fd, in, loc);
             if (not bytes) { co_return s.size() - in.size(); }
             in = in.subspan(bytes);
         }
@@ -31,20 +31,22 @@ namespace felspar::poll {
             int fd,
             void *buf,
             std::size_t count,
-            felspar::source_location = felspar::source_location::current()) {
+            felspar::source_location loc = felspar::source_location::current()) {
         return read_exactly(
                 w, fd,
-                std::span<std::byte>{reinterpret_cast<std::byte *>(buf), count});
+                std::span<std::byte>{reinterpret_cast<std::byte *>(buf), count},
+                std::move(loc));
     }
     inline felspar::coro::task<std::size_t> read_exactly(
             warden &w,
             int fd,
             std::span<std::uint8_t> s,
-            felspar::source_location = felspar::source_location::current()) {
+            felspar::source_location loc = felspar::source_location::current()) {
         return read_exactly(
                 w, fd,
                 std::span<std::byte>{
-                        reinterpret_cast<std::byte *>(s.data()), s.size()});
+                        reinterpret_cast<std::byte *>(s.data()), s.size()},
+                std::move(loc));
     }
 
 
