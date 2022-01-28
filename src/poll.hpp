@@ -16,7 +16,8 @@ namespace felspar::poll {
     struct poll_warden::completion :
     public retrier,
             public poll::completion<R> {
-        completion(poll_warden *w) : self{w} {}
+        completion(poll_warden *w, felspar::source_location loc)
+        : poll::completion<R>{std::move(loc)}, self{w} {}
 
         poll_warden *self;
         warden *ward() override { return self; }

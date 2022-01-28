@@ -14,10 +14,9 @@ felspar::poll::iop<std::size_t> felspar::poll::poll_warden::read_some(
           int f,
           std::span<std::byte> b,
           felspar::source_location loc)
-        : completion<std::size_t>{s}, fd{f}, buf{b}, loc{std::move(loc)} {}
+        : completion<std::size_t>{s, std::move(loc)}, fd{f}, buf{b} {}
         int fd;
         std::span<std::byte> buf;
-        felspar::source_location loc;
         void try_or_resume() override {
             if (auto bytes = ::read(fd, buf.data(), buf.size()); bytes >= 0) {
                 result = bytes;
@@ -41,10 +40,9 @@ felspar::poll::iop<std::size_t> felspar::poll::poll_warden::write_some(
           int f,
           std::span<std::byte const> b,
           felspar::source_location loc)
-        : completion<std::size_t>{s}, fd{f}, buf{b}, loc{std::move(loc)} {}
+        : completion<std::size_t>{s, std::move(loc)}, fd{f}, buf{b} {}
         int fd;
         std::span<std::byte const> buf;
-        felspar::source_location loc;
         void try_or_resume() override {
             if (auto bytes = ::write(fd, buf.data(), buf.size()); bytes >= 0) {
                 result = bytes;
@@ -68,9 +66,8 @@ felspar::poll::iop<int> felspar::poll::poll_warden::accept(
         int fd, felspar::source_location loc) {
     struct c : public completion<int> {
         c(poll_warden *s, int f, felspar::source_location loc)
-        : completion<int>{s}, fd{f}, loc{std::move(loc)} {}
+        : completion<int>{s, std::move(loc)}, fd{f} {}
         int fd;
-        felspar::source_location loc;
         void try_or_resume() override {
             result = ::accept(fd, nullptr, nullptr);
             if (result >= 0) {
@@ -103,12 +100,11 @@ felspar::poll::iop<void> felspar::poll::poll_warden::connect(
           sockaddr const *a,
           socklen_t l,
           felspar::source_location loc)
-        : completion<void>{s}, fd{f}, addr{a}, addrlen{l}, loc{std::move(loc)} {}
+        : completion<void>{s, std::move(loc)}, fd{f}, addr{a}, addrlen{l} {}
         ~c() = default;
         int fd;
         sockaddr const *addr;
         socklen_t addrlen;
-        felspar::source_location loc;
         void await_suspend(felspar::coro::coroutine_handle<> h) override {
             handle = h;
             if (auto err = ::connect(fd, addr, addrlen); err == 0) {
@@ -153,10 +149,9 @@ felspar::poll::iop<void> felspar::poll::poll_warden::read_ready(
         int fd, felspar::source_location loc) {
     struct c : public completion<void> {
         c(poll_warden *s, int f, felspar::source_location loc)
-        : completion<void>{s}, fd{f}, loc{std::move(loc)} {}
+        : completion<void>{s, std::move(loc)}, fd{f} {}
         ~c() = default;
         int fd;
-        felspar::source_location loc;
         void await_suspend(felspar::coro::coroutine_handle<> h) override {
             handle = h;
             self->requests[fd].reads.push_back(this);
@@ -169,10 +164,9 @@ felspar::poll::iop<void> felspar::poll::poll_warden::write_ready(
         int fd, felspar::source_location loc) {
     struct c : public completion<void> {
         c(poll_warden *s, int f, felspar::source_location loc)
-        : completion<void>{s}, fd{f}, loc{std::move(loc)} {}
+        : completion<void>{s, std::move(loc)}, fd{f} {}
         ~c() = default;
         int fd;
-        felspar::source_location loc;
         void await_suspend(
                 felspar::coro::coroutine_handle<> h) noexcept override {
             handle = h;

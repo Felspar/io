@@ -27,7 +27,8 @@ namespace felspar::poll {
     struct io_uring_warden::completion :
     public delivery,
             public poll::completion<R> {
-        completion(io_uring_warden *w) : self{w} {}
+        completion(io_uring_warden *w, felspar::source_location loc)
+        : poll::completion<R>{std::move(loc)}, self{w} {}
 
         io_uring_warden *self;
 
@@ -46,7 +47,8 @@ namespace felspar::poll {
     struct io_uring_warden::completion<void> :
     public delivery,
             public poll::completion<void> {
-        completion(io_uring_warden *w) : self{w} {}
+        completion(io_uring_warden *w, felspar::source_location loc)
+        : poll::completion<void>{std::move(loc)}, self{w} {}
 
         io_uring_warden *self;
 

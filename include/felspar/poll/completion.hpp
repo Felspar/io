@@ -2,6 +2,7 @@
 
 
 #include <felspar/coro/task.hpp>
+#include <felspar/test/source.hpp>
 
 #include <memory>
 
@@ -19,9 +20,11 @@ namespace felspar::poll {
         using result_type = R;
 
         felspar::coro::coroutine_handle<> handle;
+        felspar::source_location loc;
         R result = {};
         std::exception_ptr exception;
 
+        completion(felspar::source_location l) : loc{std::move(l)} {}
         virtual ~completion() = default;
 
         virtual warden *ward() = 0;
@@ -32,8 +35,10 @@ namespace felspar::poll {
         using result_type = void;
 
         felspar::coro::coroutine_handle<> handle;
+        felspar::source_location loc;
         std::exception_ptr exception;
 
+        completion(felspar::source_location l) : loc{std::move(l)} {}
         virtual ~completion() = default;
 
         virtual warden *ward() = 0;
