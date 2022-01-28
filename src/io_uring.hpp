@@ -33,6 +33,12 @@ namespace felspar::poll {
         io_uring_warden *self;
 
         warden *ward() override { return self; }
+        io_uring_sqe *setup_submission(felspar::coro::coroutine_handle<> h) {
+            poll::completion<R>::handle = h;
+            auto sqe = self->ring->next_sqe();
+            ::io_uring_sqe_set_data(sqe, this);
+            return sqe;
+        }
         void deliver(int result) override {
             if (result < 0) {
                 poll::completion<R>::exception = std::make_exception_ptr(
@@ -57,6 +63,11 @@ namespace felspar::poll {
         io_uring_warden *self;
 
         warden *ward() override { return self; }
+        io_uring_sqe *setup_submission(felspar::coro::coroutine_handle<> h) {
+            poll::completion<void>::handle = h;
+            auto sqe = self->ring->next_sqe();
+            return sqe;
+        }
         void deliver(int result) override {
             if (result < 0) {
                 poll::completion<void>::exception = std::make_exception_ptr(

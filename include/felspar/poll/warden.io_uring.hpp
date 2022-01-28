@@ -18,6 +18,12 @@ namespace felspar::poll {
         struct impl;
         std::unique_ptr<impl> ring;
 
+        struct read_some_completion;
+        struct write_some_completion;
+        struct accept_completion;
+        struct connect_completion;
+        struct poll_completion;
+
       public:
         io_uring_warden() : io_uring_warden{100, {}} {}
         explicit io_uring_warden(unsigned entries, unsigned flags = {});
