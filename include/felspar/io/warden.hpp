@@ -17,8 +17,7 @@ namespace felspar::io {
         friend struct felspar::io::iop;
 
       protected:
-        virtual void run_until(felspar::coro::unique_handle<
-                               felspar::coro::task_promise<void>>) = 0;
+        virtual void run_until(felspar::coro::coroutine_handle<>) = 0;
         template<typename R>
         void cancel(completion<R> *c) {
             /// TODO Put the memory back into the pool for later re-use
@@ -28,10 +27,12 @@ namespace felspar::io {
       public:
         virtual ~warden() = default;
 
-        template<typename... PArgs, typename... MArgs>
-        void run(coro::task<void> (*f)(warden &, PArgs...), MArgs &&...margs) {
+        template<typename Ret, typename... PArgs, typename... MArgs>
+        Ret run(coro::task<Ret> (*f)(warden &, PArgs...), MArgs &&...margs) {
             auto task = f(*this, std::forward<MArgs>(margs)...);
-            run_until(task.release());
+            auto handle = task.release();
+            run_until(handle.get());
+            return handle.promise().consume_value();
         }
 
         /**

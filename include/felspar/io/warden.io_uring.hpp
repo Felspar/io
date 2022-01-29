@@ -8,9 +8,7 @@ namespace felspar::io {
 
 
     class io_uring_warden : public warden {
-        void run_until(
-                felspar::coro::unique_handle<felspar::coro::task_promise<void>>)
-                override;
+        void run_until(felspar::coro::coroutine_handle<>) override;
 
         struct delivery;
         template<typename R>

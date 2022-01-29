@@ -19,9 +19,7 @@ namespace felspar::io {
         };
         std::map<int, request> requests;
 
-        void run_until(
-                felspar::coro::unique_handle<felspar::coro::task_promise<void>>)
-                override;
+        void run_until(felspar::coro::coroutine_handle<>) override;
 
         struct read_some_completion;
         struct write_some_completion;

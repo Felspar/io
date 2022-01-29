@@ -20,7 +20,7 @@ felspar::io::io_uring_warden::~io_uring_warden() {
 
 
 void felspar::io::io_uring_warden::run_until(
-        felspar::coro::unique_handle<felspar::coro::task_promise<void>> coro) {
+        felspar::coro::coroutine_handle<> coro) {
     coro.resume();
     while (not coro.done()) {
         ::io_uring_submit(&ring->uring);
@@ -36,7 +36,6 @@ void felspar::io::io_uring_warden::run_until(
             ring->execute(cqe);
         }
     }
-    coro.promise().consume_value();
 }
 
 
