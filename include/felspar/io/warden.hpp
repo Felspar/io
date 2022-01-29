@@ -4,6 +4,7 @@
 #include <felspar/io/posix.hpp>
 #include <felspar/test/source.hpp>
 
+#include <chrono>
 #include <span>
 
 #include <netinet/in.h>
@@ -34,6 +35,14 @@ namespace felspar::io {
             run_until(handle.get());
             return handle.promise().consume_value();
         }
+
+        /**
+         * ### Time management
+         */
+        virtual iop<void>
+                sleep(std::chrono::nanoseconds,
+                      felspar::source_location =
+                              felspar::source_location::current()) = 0;
 
         /**
          * ### Reading and writing

@@ -7,6 +7,12 @@
 #include <unistd.h>
 
 
+felspar::io::iop<void> felspar::io::poll_warden::sleep(
+        std::chrono::nanoseconds, felspar::source_location) {
+    throw felspar::stdexcept::logic_error{"Not implemented"};
+}
+
+
 struct felspar::io::poll_warden::read_some_completion :
 public completion<std::size_t> {
     read_some_completion(
