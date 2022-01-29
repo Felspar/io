@@ -10,8 +10,6 @@
 namespace felspar::io {
 
 
-    template<typename R>
-    class iop;
     class warden;
 
 
@@ -46,28 +44,6 @@ namespace felspar::io {
     };
 
 
-    template<>
-    class iop<void> {
-      public:
-        using result_type = void;
-        using completion_type = completion<result_type>;
-
-        iop(completion_type *c) : comp{c} {}
-        ~iop();
-
-        bool await_ready() const noexcept { return false; }
-        void await_suspend(felspar::coro::coroutine_handle<> h) {
-            comp->await_suspend(h);
-        }
-        auto await_resume() noexcept {
-            if (comp->exception) { std::rethrow_exception(comp->exception); }
-        }
-
-      private:
-        completion_type *comp;
-    };
-
-
     template<typename R>
     class iop {
       public:
@@ -87,6 +63,26 @@ namespace felspar::io {
             } else {
                 return comp->result;
             }
+        }
+
+      private:
+        completion_type *comp;
+    };
+    template<>
+    class iop<void> {
+      public:
+        using result_type = void;
+        using completion_type = completion<result_type>;
+
+        iop(completion_type *c) : comp{c} {}
+        ~iop();
+
+        bool await_ready() const noexcept { return false; }
+        void await_suspend(felspar::coro::coroutine_handle<> h) {
+            comp->await_suspend(h);
+        }
+        auto await_resume() {
+            if (comp->exception) { std::rethrow_exception(comp->exception); }
         }
 
       private:
