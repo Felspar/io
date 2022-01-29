@@ -61,7 +61,7 @@ namespace felspar::io {
             if (comp->exception) {
                 std::rethrow_exception(comp->exception);
             } else {
-                return comp->result;
+                return std::move(comp->result);
             }
         }
 
