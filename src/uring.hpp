@@ -2,7 +2,7 @@
 
 
 #include <felspar/exceptions.hpp>
-#include <felspar/io/warden.io_uring.hpp>
+#include <felspar/io/warden.uring.hpp>
 
 #include <liburing.h>
 
@@ -10,41 +10,39 @@
 namespace felspar::io {
 
 
-    struct io_uring_warden::impl {
+    struct uring_warden::impl {
         ::io_uring uring;
 
-        /// Fetch another SQE from the io_uring
-        io_uring_sqe *next_sqe();
+        /// Fetch another SQE from the uring
+        ::io_uring_sqe *next_sqe();
 
         void execute(::io_uring_cqe *);
     };
 
 
-    struct io_uring_warden::delivery {
+    struct uring_warden::delivery {
         virtual void deliver(int result) = 0;
     };
     template<typename R>
-    struct io_uring_warden::completion :
+    struct uring_warden::completion :
     public delivery,
             public io::completion<R> {
-        completion(io_uring_warden *w, felspar::source_location loc)
+        completion(uring_warden *w, felspar::source_location loc)
         : io::completion<R>{std::move(loc)}, self{w} {}
 
-        io_uring_warden *self;
+        uring_warden *self;
         warden *ward() override { return self; }
 
-        io_uring_sqe *setup_submission(felspar::coro::coroutine_handle<> h) {
+        ::io_uring_sqe *setup_submission(felspar::coro::coroutine_handle<> h) {
             io::completion<R>::handle = h;
-            auto sqe = self->ring->next_sqe();
-            return sqe;
+            return self->ring->next_sqe();
         }
 
         void deliver(int result) override {
             if (result < 0) {
                 io::completion<R>::exception = std::make_exception_ptr(
                         felspar::stdexcept::system_error{
-                                -result, std::generic_category(),
-                                "io_uring IOP",
+                                -result, std::generic_category(), "uring IOP",
                                 std::move(io::completion<R>::loc)});
             } else {
                 io::completion<R>::result = result;
@@ -53,26 +51,25 @@ namespace felspar::io {
         }
     };
     template<>
-    struct io_uring_warden::completion<void> :
+    struct uring_warden::completion<void> :
     public delivery,
             public io::completion<void> {
-        completion(io_uring_warden *w, felspar::source_location loc)
+        completion(uring_warden *w, felspar::source_location loc)
         : io::completion<void>{std::move(loc)}, self{w} {}
 
-        io_uring_warden *self;
-
+        uring_warden *self;
         warden *ward() override { return self; }
-        io_uring_sqe *setup_submission(felspar::coro::coroutine_handle<> h) {
+
+        ::io_uring_sqe *setup_submission(felspar::coro::coroutine_handle<> h) {
             io::completion<void>::handle = h;
-            auto sqe = self->ring->next_sqe();
-            return sqe;
+            return self->ring->next_sqe();
         }
+
         void deliver(int result) override {
             if (result < 0) {
                 io::completion<void>::exception = std::make_exception_ptr(
                         felspar::stdexcept::system_error{
-                                -result, std::generic_category(),
-                                "io_uring IOP",
+                                -result, std::generic_category(), "uring IOP",
                                 std::move(io::completion<void>::loc)});
             }
             io::completion<void>::handle.resume();

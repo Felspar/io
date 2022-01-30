@@ -20,8 +20,8 @@ namespace {
     auto const ss = suite.test("timers/poll", [](auto check) {
                              felspar::io::poll_warden ward;
                              check(ward.run(short_sleep)) == true;
-                         }).test("timers/io_uring", [](auto check) {
-        felspar::io::io_uring_warden ward{5};
+                         }).test("timers/uring", [](auto check) {
+        felspar::io::uring_warden ward{5};
         check(ward.run(short_sleep)) == true;
     });
 

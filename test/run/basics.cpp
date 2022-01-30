@@ -84,8 +84,8 @@ namespace {
         co.post(echo_server, ward, 5543);
         ward.run(echo_client, 5543);
     });
-    auto const tu = suite.test("echo/io_uring", []() {
-        felspar::io::io_uring_warden ward{10};
+    auto const tu = suite.test("echo/uring", []() {
+        felspar::io::uring_warden ward{10};
         felspar::io::coro_owner co{ward};
         co.post(echo_server, ward, 5547);
         ward.run(echo_client, 5547);

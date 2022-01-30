@@ -1,10 +1,10 @@
 add_library(felspar-io
         convenience.cpp
-        io_uring.iops.cpp
-        io_uring.warden.cpp
         poll.iops.cpp
         poll.warden.cpp
         posix.cpp
+        uring.iops.cpp
+        uring.warden.cpp
         warden.cpp
     )
 target_include_directories(felspar-io PUBLIC ../include)

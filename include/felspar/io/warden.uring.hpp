@@ -7,7 +7,7 @@
 namespace felspar::io {
 
 
-    class io_uring_warden : public warden {
+    class uring_warden : public warden {
         void run_until(felspar::coro::coroutine_handle<>) override;
 
         struct delivery;
@@ -24,9 +24,9 @@ namespace felspar::io {
         struct poll_completion;
 
       public:
-        io_uring_warden() : io_uring_warden{100, {}} {}
-        explicit io_uring_warden(unsigned entries, unsigned flags = {});
-        ~io_uring_warden();
+        uring_warden() : uring_warden{100, {}} {}
+        explicit uring_warden(unsigned entries, unsigned flags = {});
+        ~uring_warden();
 
         /// Time
         iop<void>
