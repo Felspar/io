@@ -31,14 +31,14 @@ namespace felspar::io {
         : io::completion<R>{std::move(loc)}, self{w} {}
 
         io_uring_warden *self;
-
         warden *ward() override { return self; }
+
         io_uring_sqe *setup_submission(felspar::coro::coroutine_handle<> h) {
             io::completion<R>::handle = h;
             auto sqe = self->ring->next_sqe();
-            ::io_uring_sqe_set_data(sqe, this);
             return sqe;
         }
+
         void deliver(int result) override {
             if (result < 0) {
                 io::completion<R>::exception = std::make_exception_ptr(
@@ -46,11 +46,10 @@ namespace felspar::io {
                                 -result, std::generic_category(),
                                 "io_uring IOP",
                                 std::move(io::completion<R>::loc)});
-                io::completion<R>::handle.resume();
             } else {
                 io::completion<R>::result = result;
-                io::completion<R>::handle.resume();
             }
+            io::completion<R>::handle.resume();
         }
     };
     template<>
@@ -75,9 +74,8 @@ namespace felspar::io {
                                 -result, std::generic_category(),
                                 "io_uring IOP",
                                 std::move(io::completion<void>::loc)});
-            } else {
-                io::completion<void>::handle.resume();
             }
+            io::completion<void>::handle.resume();
         }
     };
 

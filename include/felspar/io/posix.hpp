@@ -23,7 +23,7 @@ namespace felspar::posix {
         }
 
         fd &operator=(fd &&o) {
-            fd s{std::exchange(f, o.f)};
+            fd s{std::exchange(f, std::exchange(o.f, -1))};
             return *this;
         }
         fd &operator=(fd const &) = delete;

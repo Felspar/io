@@ -4,7 +4,47 @@
 #include <felspar/io/connect.hpp>
 
 #include <sys/socket.h>
+#include <sys/timerfd.h>
 #include <unistd.h>
+
+
+struct felspar::io::poll_warden::sleep_completion : public completion<void> {
+    sleep_completion(
+            poll_warden *s,
+            std::chrono::nanoseconds ns,
+            felspar::source_location loc)
+    : completion<void>{s, std::move(loc)} {
+        spec.it_value.tv_nsec = ns.count();
+    }
+    posix::fd timer;
+    ::itimerspec spec = {};
+    void await_suspend(felspar::coro::coroutine_handle<> h) override {
+        handle = h;
+        timer = posix::fd{::timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK)};
+        if (not timer) {
+            exception =
+                    std::make_exception_ptr(felspar::stdexcept::system_error{
+                            errno, std::generic_category(), "timerfd_create",
+                            std::move(loc)});
+            handle.resume();
+        } else if (
+                ::timerfd_settime(timer.native_handle(), 0, &spec, nullptr)
+                == -1) {
+            exception =
+                    std::make_exception_ptr(felspar::stdexcept::system_error{
+                            errno, std::generic_category(), "timerfd_settime",
+                            std::move(loc)});
+            handle.resume();
+        } else {
+            self->requests[timer.native_handle()].reads.push_back(this);
+        }
+    }
+    void try_or_resume() override { handle.resume(); }
+};
+felspar::io::iop<void> felspar::io::poll_warden::sleep(
+        std::chrono::nanoseconds ns, felspar::source_location loc) {
+    return {new sleep_completion{this, ns, std::move(loc)}};
+}
 
 
 struct felspar::io::poll_warden::read_some_completion :

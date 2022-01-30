@@ -6,8 +6,7 @@
 #include <poll.h>
 
 
-void felspar::io::poll_warden::run_until(
-        felspar::coro::unique_handle<felspar::coro::task_promise<void>> coro) {
+void felspar::io::poll_warden::run_until(felspar::coro::coroutine_handle<> coro) {
     coro.resume();
     std::vector<::pollfd> iops;
     std::vector<retrier *> continuations;
@@ -47,7 +46,6 @@ void felspar::io::poll_warden::run_until(
             continuation->try_or_resume();
         }
     }
-    coro.promise().consume_value();
 }
 
 

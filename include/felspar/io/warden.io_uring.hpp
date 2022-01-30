@@ -8,9 +8,7 @@ namespace felspar::io {
 
 
     class io_uring_warden : public warden {
-        void run_until(
-                felspar::coro::unique_handle<felspar::coro::task_promise<void>>)
-                override;
+        void run_until(felspar::coro::coroutine_handle<>) override;
 
         struct delivery;
         template<typename R>
@@ -18,6 +16,7 @@ namespace felspar::io {
         struct impl;
         std::unique_ptr<impl> ring;
 
+        struct sleep_completion;
         struct read_some_completion;
         struct write_some_completion;
         struct accept_completion;
@@ -29,6 +28,13 @@ namespace felspar::io {
         explicit io_uring_warden(unsigned entries, unsigned flags = {});
         ~io_uring_warden();
 
+        /// Time
+        iop<void>
+                sleep(std::chrono::nanoseconds,
+                      felspar::source_location =
+                              felspar::source_location::current()) override;
+
+        /// Read & write
         iop<std::size_t> read_some(
                 int fd,
                 std::span<std::byte>,
@@ -40,6 +46,7 @@ namespace felspar::io {
                 felspar::source_location =
                         felspar::source_location::current()) override;
 
+        /// Sockets
         iop<int>
                 accept(int fd,
                        felspar::source_location =
@@ -51,6 +58,7 @@ namespace felspar::io {
                         felspar::source_location =
                                 felspar::source_location::current()) override;
 
+        /// File descriptor readiness
         iop<void> read_ready(
                 int fd,
                 felspar::source_location =

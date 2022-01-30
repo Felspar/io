@@ -19,10 +19,9 @@ namespace felspar::io {
         };
         std::map<int, request> requests;
 
-        void run_until(
-                felspar::coro::unique_handle<felspar::coro::task_promise<void>>)
-                override;
+        void run_until(felspar::coro::coroutine_handle<>) override;
 
+        struct sleep_completion;
         struct read_some_completion;
         struct write_some_completion;
         struct accept_completion;
@@ -31,6 +30,12 @@ namespace felspar::io {
         struct write_ready_completion;
 
       public:
+        /// Time
+        iop<void>
+                sleep(std::chrono::nanoseconds,
+                      felspar::source_location =
+                              felspar::source_location::current()) override;
+
         /// Read & Write
         iop<std::size_t> read_some(
                 int fd,

@@ -2,6 +2,31 @@
 
 #include <poll.h>
 
+#include <iostream>
+
+
+struct felspar::io::io_uring_warden::sleep_completion :
+public completion<void> {
+    sleep_completion(
+            io_uring_warden *s,
+            std::chrono::nanoseconds ns,
+            felspar::source_location loc)
+    : completion<void>{s, std::move(loc)}, ts{{}, ns.count()} {}
+    __kernel_timespec ts;
+    void await_suspend(felspar::coro::coroutine_handle<> h) override {
+        auto sqe = setup_submission(h);
+        ::io_uring_prep_timeout(sqe, &ts, 0, 0);
+        ::io_uring_sqe_set_data(sqe, this);
+    }
+    void deliver(int result) override {
+        completion<void>::deliver(result == -ETIME ? 0 : result);
+    }
+};
+felspar::io::iop<void> felspar::io::io_uring_warden::sleep(
+        std::chrono::nanoseconds ns, felspar::source_location loc) {
+    return {new sleep_completion{this, ns, std::move(loc)}};
+}
+
 
 struct felspar::io::io_uring_warden::read_some_completion :
 public completion<std::size_t> {
