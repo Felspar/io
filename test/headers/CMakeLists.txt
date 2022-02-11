@@ -4,7 +4,6 @@ add_library(felspar-io-headers-tests STATIC EXCLUDE_FROM_ALL
         connect.cpp
         io.cpp
         posix.cpp
-        post.cpp
         read.cpp
         warden.cpp
         warden.poll.cpp
