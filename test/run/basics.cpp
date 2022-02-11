@@ -5,6 +5,9 @@
 #include <netinet/in.h>
 
 
+using namespace std::literals;
+
+
 namespace {
 
 
@@ -76,6 +79,14 @@ namespace {
         check(buffer[3]) == out[3];
         check(buffer[4]) == out[4];
         check(buffer[5]) == out[5];
+
+        /// Check read time out
+        try {
+            // co_await felspar::io::read_exactly(ward, fd, buffer, 10ms);
+            // check(false) == true;
+        } catch (felspar::io::timeout const &) {
+            check(true) == true;
+        } catch (...) { check(false) == true; }
     }
 
 
