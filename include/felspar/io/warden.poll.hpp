@@ -42,6 +42,7 @@ namespace felspar::io {
         iop<std::size_t> read_some(
                 int fd,
                 std::span<std::byte>,
+                std::optional<std::chrono::nanoseconds> = {},
                 felspar::source_location =
                         felspar::source_location::current()) override;
         using warden::write_some;

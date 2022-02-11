@@ -44,7 +44,10 @@ public completion<std::size_t> {
     }
 };
 felspar::io::iop<std::size_t> felspar::io::uring_warden::read_some(
-        int fd, std::span<std::byte> b, felspar::source_location loc) {
+        int fd,
+        std::span<std::byte> b,
+        std::optional<std::chrono::nanoseconds>,
+        felspar::source_location loc) {
     return {new read_some_completion{this, fd, b, std::move(loc)}};
 }
 

@@ -18,10 +18,11 @@ namespace felspar::io {
             warden &ward,
             S &&sock,
             std::span<std::byte> b,
+            std::optional<std::chrono::nanoseconds> timeout = {},
             felspar::source_location loc = felspar::source_location::current()) {
         std::span<std::byte> in{b};
         while (in.size()) {
-            auto const bytes = co_await ward.read_some(sock, in, loc);
+            auto const bytes = co_await ward.read_some(sock, in, timeout, loc);
             if (not bytes) { co_return b.size() - in.size(); }
             in = in.subspan(bytes);
         }
@@ -33,23 +34,25 @@ namespace felspar::io {
             S &&s,
             void *buf,
             std::size_t count,
+            std::optional<std::chrono::nanoseconds> timeout = {},
             felspar::source_location loc = felspar::source_location::current()) {
         return read_exactly(
                 w, std::forward<S>(s),
                 std::span<std::byte>{reinterpret_cast<std::byte *>(buf), count},
-                std::move(loc));
+                std::move(timeout), std::move(loc));
     }
     template<typename S>
     inline felspar::coro::task<std::size_t> read_exactly(
             warden &w,
             S &&s,
             std::span<std::uint8_t> b,
+            std::optional<std::chrono::nanoseconds> timeout = {},
             felspar::source_location loc = felspar::source_location::current()) {
         return read_exactly(
                 w, std::forward<S>(s),
                 std::span<std::byte>{
                         reinterpret_cast<std::byte *>(b.data()), b.size()},
-                std::move(loc));
+                std::move(timeout), std::move(loc));
     }
 
 
