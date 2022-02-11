@@ -3,6 +3,7 @@
 
 #include <felspar/io/accept.hpp>
 #include <felspar/io/connect.hpp>
+#include <felspar/io/exceptions.hpp>
 #include <felspar/io/posix.hpp>
 #include <felspar/io/read.hpp>
 #include <felspar/io/warden.poll.hpp>
