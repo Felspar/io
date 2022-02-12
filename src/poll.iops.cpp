@@ -53,29 +53,37 @@ public completion<std::size_t> {
             poll_warden *s,
             int f,
             std::span<std::byte> b,
+            std::optional<std::chrono::nanoseconds> timeout,
             felspar::source_location loc)
-    : completion<std::size_t>{s, std::move(loc)}, fd{f}, buf{b} {}
+    : completion<std::size_t>{s, std::move(timeout), std::move(loc)},
+      fd{f},
+      buf{b} {}
     int fd;
     std::span<std::byte> buf;
+    void iop_timedout() override {
+        std::erase(self->requests[fd].reads, this);
+        completion<std::size_t>::iop_timedout();
+    }
     void try_or_resume() override {
         if (auto bytes = ::read(fd, buf.data(), buf.size()); bytes >= 0) {
             result = bytes;
-            handle.resume();
+            cancel_timeout_then_resume();
         } else if (errno == EAGAIN or errno == EWOULDBLOCK) {
             self->requests[fd].reads.push_back(this);
         } else {
             exception = std::make_exception_ptr(felspar::stdexcept::system_error{
                     errno, std::generic_category(), "read", std::move(loc)});
-            handle.resume();
+            cancel_timeout_then_resume();
         }
     }
 };
 felspar::io::iop<std::size_t> felspar::io::poll_warden::read_some(
         int fd,
         std::span<std::byte> buf,
-        std::optional<std::chrono::nanoseconds>,
+        std::optional<std::chrono::nanoseconds> timeout,
         felspar::source_location loc) {
-    return {new read_some_completion{this, fd, buf, std::move(loc)}};
+    return {new read_some_completion{
+            this, fd, buf, std::move(timeout), std::move(loc)}};
 }
 
 

@@ -20,30 +20,54 @@ void felspar::io::poll_warden::run_until(felspar::coro::coroutine_handle<> coro)
             iops.push_back({req.first, flags, {}});
         }
 
-        /// Do the poll dance
-        if (::poll(iops.data(), iops.size(), -1) == -1) {
+        int pr;
+        if (timeouts.begin() != timeouts.end()) {
+            pr = ::poll(
+                    iops.data(), iops.size(),
+                    std::max(
+                            std::chrono::milliseconds{},
+                            std::chrono::duration_cast<std::chrono::milliseconds>(
+                                    timeouts.begin()->first
+                                    - std::chrono::steady_clock::now()))
+                            .count());
+        } else {
+            pr = ::poll(iops.data(), iops.size(), -1);
+        }
+        if (pr == -1) {
             throw felspar::stdexcept::system_error{
                     errno, std::generic_category(), "poll"};
-        }
-
-        /// Continuations loop
-        continuations.clear();
-        for (auto events : iops) {
-            if (events.revents & POLLIN) {
-                auto &reads = requests[events.fd].reads;
-                continuations.insert(
-                        continuations.end(), reads.begin(), reads.end());
-                reads.clear();
+        } else if (pr == 0) {
+            /// Process time outs
+            while (timeouts.begin() != timeouts.end()) {
+                auto const tdiff = timeouts.begin()->first
+                        - std::chrono::steady_clock::now();
+                if (tdiff < std::chrono::milliseconds{1}) {
+                    timeouts.begin()->second->iop_timedout();
+                    timeouts.erase(timeouts.begin());
+                } else {
+                    break;
+                }
             }
-            if (events.revents & POLLOUT) {
-                auto &writes = requests[events.fd].writes;
-                continuations.insert(
-                        continuations.end(), writes.begin(), writes.end());
-                writes.clear();
+        } else {
+            /// Continuations loop
+            continuations.clear();
+            for (auto events : iops) {
+                if (events.revents & POLLIN) {
+                    auto &reads = requests[events.fd].reads;
+                    continuations.insert(
+                            continuations.end(), reads.begin(), reads.end());
+                    reads.clear();
+                }
+                if (events.revents & POLLOUT) {
+                    auto &writes = requests[events.fd].writes;
+                    continuations.insert(
+                            continuations.end(), writes.begin(), writes.end());
+                    writes.clear();
+                }
             }
-        }
-        for (auto continuation : continuations) {
-            continuation->try_or_resume();
+            for (auto continuation : continuations) {
+                continuation->try_or_resume();
+            }
         }
     }
 }
