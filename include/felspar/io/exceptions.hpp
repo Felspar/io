@@ -12,7 +12,10 @@ namespace felspar::io {
         using superclass = stdexcept::system_error;
 
       public:
-        using superclass::system_error;
+        timeout(std::string msg, felspar::source_location loc)
+        : superclass{
+                ETIME, std::generic_category(), std::move(msg),
+                std::move(loc)} {}
     };
 
 

@@ -17,6 +17,7 @@ namespace felspar::io {
     struct completion {
         using result_type = R;
 
+        std::size_t iop_count = 1;
         felspar::coro::coroutine_handle<> handle;
         felspar::source_location loc;
         R result = {};
@@ -32,6 +33,7 @@ namespace felspar::io {
     struct completion<void> {
         using result_type = void;
 
+        std::size_t iop_count = 1;
         felspar::coro::coroutine_handle<> handle;
         felspar::source_location loc;
         std::exception_ptr exception;

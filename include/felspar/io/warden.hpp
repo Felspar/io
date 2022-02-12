@@ -21,8 +21,7 @@ namespace felspar::io {
         virtual void run_until(felspar::coro::coroutine_handle<>) = 0;
         template<typename R>
         void cancel(completion<R> *c) {
-            /// TODO Put the memory back into the pool for later re-use
-            delete c;
+            if (--c->iop_count == 0) { delete c; }
         }
 
       public:

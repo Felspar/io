@@ -17,7 +17,7 @@ namespace {
     felspar::coro::task<void> echo_connection(
             felspar::io::warden &ward, felspar::posix::fd sock) {
         std::array<std::byte, 256> buffer;
-        while (auto bytes = co_await ward.read_some(sock, buffer)) {
+        while (auto bytes = co_await ward.read_some(sock, buffer, 20ms)) {
             std::span writing{buffer};
             auto written = co_await felspar::io::write_all(
                     ward, sock, writing.first(bytes));
@@ -71,7 +71,7 @@ namespace {
         std::array<std::uint8_t, 6> out{1, 2, 3, 4, 5, 6}, buffer{};
         co_await felspar::io::write_all(ward, fd, out);
 
-        auto bytes = co_await felspar::io::read_exactly(ward, fd, buffer);
+        auto bytes = co_await felspar::io::read_exactly(ward, fd, buffer, 20ms);
         check(bytes) == 6u;
         check(buffer[0]) == out[0];
         check(buffer[1]) == out[1];
@@ -82,20 +82,20 @@ namespace {
 
         /// Check read time out
         try {
-            // co_await felspar::io::read_exactly(ward, fd, buffer, 10ms);
-            // check(false) == true;
+            co_await felspar::io::read_exactly(ward, fd, buffer, 10ms);
+            check(false) == true;
         } catch (felspar::io::timeout const &) {
             check(true) == true;
         } catch (...) { check(false) == true; }
     }
 
 
-    auto const tp = suite.test("echo/poll", []() {
-        felspar::io::poll_warden ward;
-        felspar::coro::starter<felspar::coro::task<void>> co;
-        co.post(echo_server, ward, 5543);
-        ward.run(echo_client, 5543);
-    });
+    // auto const tp = suite.test("echo/poll", []() {
+    //     felspar::io::poll_warden ward;
+    //     felspar::coro::starter<felspar::coro::task<void>> co;
+    //     co.post(echo_server, ward, 5543);
+    //     ward.run(echo_client, 5543);
+    // });
     auto const tu = suite.test("echo/uring", []() {
         felspar::io::uring_warden ward{10};
         felspar::coro::starter<felspar::coro::task<void>> co;
