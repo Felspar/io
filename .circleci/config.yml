@@ -35,6 +35,9 @@ jobs:
       - run:
           name: check tests
           command: ninja -j1 -C .circleci check
+      - run:
+          name: stress tests
+          command: ninja -j1 -C .circleci stress
 
 workflows:
   all-tests:
