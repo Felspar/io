@@ -10,8 +10,26 @@ void felspar::io::poll_warden::run_until(felspar::coro::coroutine_handle<> coro)
     coro.resume();
     std::vector<::pollfd> iops;
     std::vector<retrier *> continuations;
+
+    auto const clear_timeouts = [&]() -> int {
+        while (timeouts.begin() != timeouts.end()) {
+            auto const tdiff =
+                    timeouts.begin()->first - std::chrono::steady_clock::now();
+            if (tdiff < std::chrono::milliseconds{1}) {
+                timeouts.begin()->second->iop_timedout().resume();
+                timeouts.erase(timeouts.begin());
+            } else {
+                return std::chrono::duration_cast<std::chrono::milliseconds>(
+                               tdiff)
+                        .count();
+            }
+        }
+        return -1;
+    };
+
     while (not coro.done()) {
-        /// IOP loop
+        auto const timeout = clear_timeouts();
+
         iops.clear();
         for (auto const &req : requests) {
             short flags = {};
@@ -20,36 +38,11 @@ void felspar::io::poll_warden::run_until(felspar::coro::coroutine_handle<> coro)
             iops.push_back({req.first, flags, {}});
         }
 
-        int pr;
-        if (timeouts.begin() != timeouts.end()) {
-            pr = ::poll(
-                    iops.data(), iops.size(),
-                    std::max(
-                            std::chrono::milliseconds{},
-                            std::chrono::duration_cast<std::chrono::milliseconds>(
-                                    timeouts.begin()->first
-                                    - std::chrono::steady_clock::now()))
-                            .count());
-        } else {
-            pr = ::poll(iops.data(), iops.size(), -1);
-        }
+        int const pr = ::poll(iops.data(), iops.size(), timeout);
         if (pr == -1) {
             throw felspar::stdexcept::system_error{
                     errno, std::generic_category(), "poll"};
-        } else if (pr == 0) {
-            /// Process time outs
-            while (timeouts.begin() != timeouts.end()) {
-                auto const tdiff = timeouts.begin()->first
-                        - std::chrono::steady_clock::now();
-                if (tdiff < std::chrono::milliseconds{1}) {
-                    timeouts.begin()->second->iop_timedout();
-                    timeouts.erase(timeouts.begin());
-                } else {
-                    break;
-                }
-            }
-        } else {
-            /// Continuations loop
+        } else if (pr > 0) {
             continuations.clear();
             for (auto events : iops) {
                 if (events.revents & POLLIN) {

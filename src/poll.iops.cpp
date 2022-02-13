@@ -64,9 +64,9 @@ public completion<std::size_t> {
       buf{b} {}
     int fd;
     std::span<std::byte> buf;
-    void iop_timedout() override {
+    felspar::coro::coroutine_handle<> iop_timedout() override {
         std::erase(self->requests[fd].reads, this);
-        completion<std::size_t>::iop_timedout();
+        return completion<std::size_t>::iop_timedout();
     }
     felspar::coro::coroutine_handle<> try_or_resume() override {
         if (auto bytes = ::read(fd, buf.data(), buf.size()); bytes >= 0) {
@@ -103,9 +103,9 @@ public completion<std::size_t> {
     : completion<std::size_t>{s, std::move(t), std::move(loc)}, fd{f}, buf{b} {}
     int fd;
     std::span<std::byte const> buf;
-    void iop_timedout() override {
+    felspar::coro::coroutine_handle<> iop_timedout() override {
         std::erase(self->requests[fd].writes, this);
-        completion<std::size_t>::iop_timedout();
+        return completion<std::size_t>::iop_timedout();
     }
     felspar::coro::coroutine_handle<> try_or_resume() override {
         if (auto bytes = ::write(fd, buf.data(), buf.size()); bytes >= 0) {
@@ -139,9 +139,9 @@ struct felspar::io::poll_warden::accept_completion : public completion<int> {
             felspar::source_location loc)
     : completion<int>{s, std::move(t), std::move(loc)}, fd{f} {}
     int fd;
-    void iop_timedout() override {
+    felspar::coro::coroutine_handle<> iop_timedout() override {
         std::erase(self->requests[fd].reads, this);
-        completion<int>::iop_timedout();
+        return completion<int>::iop_timedout();
     }
     felspar::coro::coroutine_handle<> try_or_resume() override {
         result = ::accept4(fd, nullptr, nullptr, SOCK_NONBLOCK);
@@ -239,9 +239,9 @@ public completion<void> {
             felspar::source_location loc)
     : completion<void>{s, std::move(t), std::move(loc)}, fd{f} {}
     int fd;
-    void iop_timedout() override {
+    felspar::coro::coroutine_handle<> iop_timedout() override {
         std::erase(self->requests[fd].reads, this);
-        completion<void>::iop_timedout();
+        return completion<void>::iop_timedout();
     }
     felspar::coro::coroutine_handle<>
             await_suspend(felspar::coro::coroutine_handle<> h) override {
@@ -272,9 +272,9 @@ public completion<void> {
             felspar::source_location loc)
     : completion<void>{s, std::move(t), std::move(loc)}, fd{f} {}
     int fd;
-    void iop_timedout() override {
+    felspar::coro::coroutine_handle<> iop_timedout() override {
         std::erase(self->requests[fd].writes, this);
-        completion<void>::iop_timedout();
+        return completion<void>::iop_timedout();
     }
     felspar::coro::coroutine_handle<> await_suspend(
             felspar::coro::coroutine_handle<> h) noexcept override {
