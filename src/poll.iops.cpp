@@ -218,6 +218,7 @@ felspar::io::iop<void> felspar::io::poll_warden::connect(
         int fd,
         sockaddr const *addr,
         socklen_t addrlen,
+        std::optional<std::chrono::nanoseconds> timeout,
         felspar::source_location loc) {
     return {new connect_completion{this, fd, addr, addrlen, std::move(loc)}};
 }

@@ -4,3 +4,8 @@ if(TARGET check)
             timers.cpp
         )
 endif()
+if(TARGET stress)
+    add_test_run(stress felspar-io TESTS
+            timers.connect.cpp
+        )
+endif()

@@ -73,6 +73,7 @@ namespace felspar::io {
                 connect(int fd,
                         sockaddr const *,
                         socklen_t,
+                        std::optional<std::chrono::nanoseconds> timeout = {},
                         felspar::source_location =
                                 felspar::source_location::current()) override;
 

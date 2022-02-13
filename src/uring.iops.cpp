@@ -116,8 +116,12 @@ struct felspar::io::uring_warden::connect_completion : public completion<void> {
             int f,
             sockaddr const *a,
             socklen_t l,
+            std::optional<std::chrono::nanoseconds> t,
             felspar::source_location loc)
-    : completion<void>{s, std::move(loc)}, fd{f}, addr{a}, addrlen{l} {}
+    : completion<void>{s, std::move(t), std::move(loc)},
+      fd{f},
+      addr{a},
+      addrlen{l} {}
     int fd = {};
     sockaddr const *addr = {};
     socklen_t addrlen = {};
@@ -125,16 +129,17 @@ struct felspar::io::uring_warden::connect_completion : public completion<void> {
             await_suspend(felspar::coro::coroutine_handle<> h) override {
         auto sqe = setup_submission(h);
         ::io_uring_prep_connect(sqe, fd, addr, addrlen);
-        ::io_uring_sqe_set_data(sqe, this);
-        return felspar::coro::noop_coroutine();
+        return setup_timeout(sqe);
     }
 };
 felspar::io::iop<void> felspar::io::uring_warden::connect(
         int fd,
         sockaddr const *addr,
         socklen_t addrlen,
+        std::optional<std::chrono::nanoseconds> timeout,
         felspar::source_location loc) {
-    return {new connect_completion{this, fd, addr, addrlen, std::move(loc)}};
+    return {new connect_completion{
+            this, fd, addr, addrlen, std::move(timeout), std::move(loc)}};
 }
 
 

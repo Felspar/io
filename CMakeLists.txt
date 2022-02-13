@@ -3,6 +3,7 @@ project(felspar-io)
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${PROJECT_SOURCE_DIR})
     add_custom_target(check)
+    add_custom_target(stress)
     include(requirements.cmake)
 endif()
 

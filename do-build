@@ -4,14 +4,14 @@ time (
         # User specified targets
         ninja -C ./build.tmp/clang-debug $* &&
         # ASAN
-        ninja -C ./build.tmp/clang-debug-asan all check &&
-        ninja -C ./build.tmp/clang-release-asan all check &&
+        ninja -C ./build.tmp/clang-debug-asan all check stress &&
+        ninja -C ./build.tmp/clang-release-asan all check stress &&
         # Debug builds
-        ninja -C ./build.tmp/clang-debug all check &&
-        ninja -C ./build.tmp/gcc-debug all check &&
+        ninja -C ./build.tmp/clang-debug all check stress &&
+        ninja -C ./build.tmp/gcc-debug all check stress &&
         # Release builds
-        ninja -C ./build.tmp/clang-release all check &&
-        ninja -C ./build.tmp/gcc-release all check &&
+        ninja -C ./build.tmp/clang-release all check stress &&
+        ninja -C ./build.tmp/gcc-release all check stress &&
         true
     ) && (
         find ./include/ ./src/ ./test/ -name \*.\?pp -print | xargs clang-format -i

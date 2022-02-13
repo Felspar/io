@@ -107,15 +107,19 @@ namespace felspar::io {
                 connect(int fd,
                         sockaddr const *,
                         socklen_t,
+                        std::optional<std::chrono::nanoseconds> timeout = {},
                         felspar::source_location =
                                 felspar::source_location::current()) = 0;
         iop<void>
                 connect(posix::fd const &sock,
                         sockaddr const *addr,
                         socklen_t addrlen,
+                        std::optional<std::chrono::nanoseconds> timeout = {},
                         felspar::source_location loc =
                                 felspar::source_location::current()) {
-            return connect(sock.native_handle(), addr, addrlen, std::move(loc));
+            return connect(
+                    sock.native_handle(), addr, addrlen, std::move(timeout),
+                    std::move(loc));
         }
 
 
