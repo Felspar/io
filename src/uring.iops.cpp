@@ -60,19 +60,24 @@ public completion<std::size_t> {
             uring_warden *s,
             int f,
             std::span<std::byte const> b,
+            std::optional<std::chrono::nanoseconds> t,
             felspar::source_location loc)
-    : completion<std::size_t>{s, std::move(loc)}, fd{f}, bytes{b} {}
+    : completion<std::size_t>{s, std::move(t), std::move(loc)}, fd{f}, bytes{b} {}
     int fd;
     std::span<std::byte const> bytes;
     void await_suspend(felspar::coro::coroutine_handle<> h) override {
         auto sqe = setup_submission(h);
         ::io_uring_prep_write(sqe, fd, bytes.data(), bytes.size(), 0);
-        ::io_uring_sqe_set_data(sqe, this);
+        setup_timeout(sqe);
     }
 };
 felspar::io::iop<std::size_t> felspar::io::uring_warden::write_some(
-        int fd, std::span<std::byte const> b, felspar::source_location loc) {
-    return {new write_some_completion{this, fd, b, std::move(loc)}};
+        int fd,
+        std::span<std::byte const> b,
+        std::optional<std::chrono::nanoseconds> t,
+        felspar::source_location loc) {
+    return {new write_some_completion{
+            this, fd, b, std::move(t), std::move(loc)}};
 }
 
 

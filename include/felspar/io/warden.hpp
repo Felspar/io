@@ -65,14 +65,17 @@ namespace felspar::io {
         virtual iop<std::size_t> write_some(
                 int fd,
                 std::span<std::byte const>,
+                std::optional<std::chrono::nanoseconds> timeout = {},
                 felspar::source_location =
                         felspar::source_location::current()) = 0;
         iop<std::size_t> write_some(
                 posix::fd const &s,
                 std::span<std::byte const> b,
+                std::optional<std::chrono::nanoseconds> timeout = {},
                 felspar::source_location l =
                         felspar::source_location::current()) {
-            return write_some(s.native_handle(), b, std::move(l));
+            return write_some(
+                    s.native_handle(), b, std::move(timeout), std::move(l));
         }
 
         /**

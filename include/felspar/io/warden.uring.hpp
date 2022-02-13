@@ -47,6 +47,7 @@ namespace felspar::io {
         iop<std::size_t> write_some(
                 int fd,
                 std::span<std::byte const>,
+                std::optional<std::chrono::nanoseconds> timeout = {},
                 felspar::source_location =
                         felspar::source_location::current()) override;
 

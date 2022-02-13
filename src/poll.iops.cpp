@@ -93,26 +93,35 @@ public completion<std::size_t> {
             poll_warden *s,
             int f,
             std::span<std::byte const> b,
+            std::optional<std::chrono::nanoseconds> t,
             felspar::source_location loc)
-    : completion<std::size_t>{s, std::move(loc)}, fd{f}, buf{b} {}
+    : completion<std::size_t>{s, std::move(t), std::move(loc)}, fd{f}, buf{b} {}
     int fd;
     std::span<std::byte const> buf;
+    void iop_timedout() override {
+        std::erase(self->requests[fd].writes, this);
+        completion<std::size_t>::iop_timedout();
+    }
     void try_or_resume() override {
         if (auto bytes = ::write(fd, buf.data(), buf.size()); bytes >= 0) {
             result = bytes;
-            handle.resume();
+            cancel_timeout_then_resume();
         } else if (errno == EAGAIN or errno == EWOULDBLOCK) {
             self->requests[fd].writes.push_back(this);
         } else {
             exception = std::make_exception_ptr(felspar::stdexcept::system_error{
                     errno, std::generic_category(), "write", std::move(loc)});
-            handle.resume();
+            cancel_timeout_then_resume();
         }
     }
 };
 felspar::io::iop<std::size_t> felspar::io::poll_warden::write_some(
-        int fd, std::span<std::byte const> buf, felspar::source_location loc) {
-    return {new write_some_completion{this, fd, buf, std::move(loc)}};
+        int fd,
+        std::span<std::byte const> buf,
+        std::optional<std::chrono::nanoseconds> t,
+        felspar::source_location loc) {
+    return {new write_some_completion{
+            this, fd, buf, std::move(t), std::move(loc)}};
 }
 
 
