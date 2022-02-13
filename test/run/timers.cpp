@@ -31,8 +31,8 @@ namespace {
     felspar::coro::task<void>
             accept_writer(felspar::io::warden &ward, std::uint16_t port) {
         auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
-        set_reuse_port(fd);
-        bind_to_any_address(fd, port);
+        felspar::posix::set_reuse_port(fd);
+        felspar::posix::bind_to_any_address(fd, port);
 
         int constexpr backlog = 64;
         if (::listen(fd.native_handle(), backlog) == -1) {
