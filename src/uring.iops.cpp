@@ -10,12 +10,13 @@ struct felspar::io::uring_warden::sleep_completion : public completion<void> {
             uring_warden *s,
             std::chrono::nanoseconds ns,
             felspar::source_location loc)
-    : completion<void>{s, std::move(loc)}, ts{{}, ns.count()} {}
-    __kernel_timespec ts;
+    : completion<void>{s, {}, std::move(loc)} {
+        kts = {{}, ns.count()};
+    }
     felspar::coro::coroutine_handle<>
             await_suspend(felspar::coro::coroutine_handle<> h) override {
         auto sqe = setup_submission(h);
-        ::io_uring_prep_timeout(sqe, &ts, 0, 0);
+        ::io_uring_prep_timeout(sqe, &kts, 0, 0);
         ::io_uring_sqe_set_data(sqe, this);
         return felspar::coro::noop_coroutine();
     }

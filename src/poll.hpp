@@ -21,8 +21,6 @@ namespace felspar::io {
                 std::optional<std::chrono::nanoseconds> t,
                 felspar::source_location loc)
         : io::completion<R>{std::move(loc)}, self{w}, timeout{std::move(t)} {}
-        completion(poll_warden *w, felspar::source_location loc)
-        : io::completion<R>{std::move(loc)}, self{w} {}
 
         poll_warden *self;
         warden *ward() override { return self; }

@@ -13,7 +13,7 @@ struct felspar::io::poll_warden::sleep_completion : public completion<void> {
             poll_warden *s,
             std::chrono::nanoseconds ns,
             felspar::source_location loc)
-    : completion<void>{s, std::move(loc)} {
+    : completion<void>{s, {}, std::move(loc)} {
         spec.it_value.tv_nsec = ns.count();
     }
     posix::fd timer;
