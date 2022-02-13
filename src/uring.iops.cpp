@@ -86,8 +86,12 @@ felspar::io::iop<std::size_t> felspar::io::uring_warden::write_some(
 
 
 struct felspar::io::uring_warden::accept_completion : public completion<int> {
-    accept_completion(uring_warden *s, int f, felspar::source_location loc)
-    : completion<int>{s, std::move(loc)}, fd{f} {}
+    accept_completion(
+            uring_warden *s,
+            int f,
+            std::optional<std::chrono::nanoseconds> t,
+            felspar::source_location loc)
+    : completion<int>{s, std::move(t), std::move(loc)}, fd{f} {}
     int fd = {};
     sockaddr addr = {};
     socklen_t addrlen = {};
@@ -95,13 +99,14 @@ struct felspar::io::uring_warden::accept_completion : public completion<int> {
             await_suspend(felspar::coro::coroutine_handle<> h) override {
         auto sqe = setup_submission(h);
         ::io_uring_prep_accept(sqe, fd, &addr, &addrlen, 0);
-        ::io_uring_sqe_set_data(sqe, this);
-        return felspar::coro::noop_coroutine();
+        return setup_timeout(sqe);
     }
 };
 felspar::io::iop<int> felspar::io::uring_warden::accept(
-        int fd, felspar::source_location loc) {
-    return {new accept_completion{this, fd, std::move(loc)}};
+        int fd,
+        std::optional<std::chrono::nanoseconds> timeout,
+        felspar::source_location loc) {
+    return {new accept_completion{this, fd, std::move(timeout), std::move(loc)}};
 }
 
 

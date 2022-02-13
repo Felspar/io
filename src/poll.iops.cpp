@@ -132,28 +132,38 @@ felspar::io::iop<std::size_t> felspar::io::poll_warden::write_some(
 
 
 struct felspar::io::poll_warden::accept_completion : public completion<int> {
-    accept_completion(poll_warden *s, int f, felspar::source_location loc)
-    : completion<int>{s, std::move(loc)}, fd{f} {}
+    accept_completion(
+            poll_warden *s,
+            int f,
+            std::optional<std::chrono::nanoseconds> t,
+            felspar::source_location loc)
+    : completion<int>{s, std::move(t), std::move(loc)}, fd{f} {}
     int fd;
+    void iop_timedout() override {
+        std::erase(self->requests[fd].reads, this);
+        completion<int>::iop_timedout();
+    }
     felspar::coro::coroutine_handle<> try_or_resume() override {
         result = ::accept4(fd, nullptr, nullptr, SOCK_NONBLOCK);
         if (result >= 0) {
-            return handle;
+            return cancel_timeout_then_resume();
         } else if (errno == EWOULDBLOCK or errno == EAGAIN) {
             self->requests[fd].reads.push_back(this);
             return felspar::coro::noop_coroutine();
         } else if (errno == EBADF) {
-            return handle;
+            return cancel_timeout_then_resume();
         } else {
             exception = std::make_exception_ptr(felspar::stdexcept::system_error{
                     errno, std::generic_category(), "accept", std::move(loc)});
-            return handle;
+            return cancel_timeout_then_resume();
         }
     }
 };
-felspar::io::iop<int>
-        felspar::io::poll_warden::accept(int fd, felspar::source_location loc) {
-    return {new accept_completion{this, fd, std::move(loc)}};
+felspar::io::iop<int> felspar::io::poll_warden::accept(
+        int fd,
+        std::optional<std::chrono::nanoseconds> timeout,
+        felspar::source_location loc) {
+    return {new accept_completion{this, fd, std::move(timeout), std::move(loc)}};
 }
 
 

@@ -76,4 +76,35 @@ namespace {
     });
 
 
+    felspar::coro::task<void>
+            short_accept(felspar::io::warden &ward, std::uint16_t port) {
+        felspar::test::injected check;
+
+        auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
+        set_reuse_port(fd);
+        bind_to_any_address(fd, port);
+
+        int constexpr backlog = 64;
+        if (::listen(fd.native_handle(), backlog) == -1) {
+            throw felspar::stdexcept::system_error{
+                    errno, std::generic_category(), "Calling listen"};
+        }
+
+        try {
+            co_await ward.accept(fd, 10ms);
+            check(false) == true;
+        } catch (felspar::io::timeout const &) {
+            check(true) == true;
+        } catch (...) { check(false) == true; }
+    }
+    auto const ap = suite.test("write/poll", []() {
+        felspar::io::poll_warden ward;
+        ward.run(short_accept, 5538);
+    });
+    auto const au = suite.test("accept/io_uring", []() {
+        felspar::io::uring_warden ward;
+        ward.run(short_accept, 5540);
+    });
+
+
 }

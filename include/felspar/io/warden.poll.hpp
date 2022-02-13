@@ -65,6 +65,7 @@ namespace felspar::io {
         using warden::accept;
         iop<int>
                 accept(int fd,
+                       std::optional<std::chrono::nanoseconds> timeout = {},
                        felspar::source_location =
                                felspar::source_location::current()) override;
         using warden::connect;

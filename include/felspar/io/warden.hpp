@@ -92,13 +92,16 @@ namespace felspar::io {
 
         virtual iop<int>
                 accept(int fd,
+                       std::optional<std::chrono::nanoseconds> timeout = {},
                        felspar::source_location =
                                felspar::source_location::current()) = 0;
         iop<int>
                 accept(posix::fd const &sock,
+                       std::optional<std::chrono::nanoseconds> timeout = {},
                        felspar::source_location loc =
                                felspar::source_location::current()) {
-            return accept(sock.native_handle(), std::move(loc));
+            return accept(
+                    sock.native_handle(), std::move(timeout), std::move(loc));
         }
         virtual iop<void>
                 connect(int fd,
