@@ -173,8 +173,12 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
             int f,
             sockaddr const *a,
             socklen_t l,
+            std::optional<std::chrono::nanoseconds> t,
             felspar::source_location loc)
-    : completion<void>{s, std::move(loc)}, fd{f}, addr{a}, addrlen{l} {}
+    : completion<void>{s, std::move(t), std::move(loc)},
+      fd{f},
+      addr{a},
+      addrlen{l} {}
     int fd;
     sockaddr const *addr;
     socklen_t addrlen;
@@ -185,6 +189,7 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
             return handle;
         } else if (errno == EINPROGRESS) {
             self->requests[fd].writes.push_back(this);
+            insert_timeout();
             return felspar::coro::noop_coroutine();
         } else {
             exception = std::make_exception_ptr(felspar::stdexcept::system_error{
@@ -197,20 +202,20 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
         ::socklen_t length{};
         if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &errvalue, &length) == 0) {
             if (errvalue == 0) {
-                return handle;
+                return cancel_timeout_then_resume();
             } else {
                 exception = std::make_exception_ptr(
                         felspar::stdexcept::system_error{
                                 errno, std::generic_category(), "connect",
                                 std::move(loc)});
-                return handle;
+                return cancel_timeout_then_resume();
             }
         } else {
             exception =
                     std::make_exception_ptr(felspar::stdexcept::system_error{
                             errno, std::generic_category(),
                             "connect/getsockopt", std::move(loc)});
-            return handle;
+            return cancel_timeout_then_resume();
         }
     }
 };
@@ -220,7 +225,8 @@ felspar::io::iop<void> felspar::io::poll_warden::connect(
         socklen_t addrlen,
         std::optional<std::chrono::nanoseconds> timeout,
         felspar::source_location loc) {
-    return {new connect_completion{this, fd, addr, addrlen, std::move(loc)}};
+    return {new connect_completion{
+            this, fd, addr, addrlen, std::move(timeout), std::move(loc)}};
 }
 
 

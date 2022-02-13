@@ -39,7 +39,11 @@ namespace {
             check(true) == true;
         } catch (...) { check(false) == true; }
     }
-    auto const p = suite.test("uring", []() {
+    auto const p = suite.test("poll", []() {
+        felspar::io::poll_warden ward;
+        ward.run(timed_connect);
+    });
+    auto const u = suite.test("uring", []() {
         felspar::io::uring_warden ward{5};
         ward.run(timed_connect);
     });
