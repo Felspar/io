@@ -2,8 +2,6 @@
 #include <felspar/coro/start.hpp>
 #include <felspar/test.hpp>
 
-#include <netinet/in.h>
-
 
 using namespace std::literals;
 
@@ -28,17 +26,7 @@ namespace {
             echo_server(felspar::io::warden &ward, std::uint16_t port) {
         auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
         set_reuse_port(fd);
-
-        sockaddr_in in;
-        in.sin_family = AF_INET;
-        in.sin_port = htons(port);
-        in.sin_addr.s_addr = htonl(INADDR_ANY);
-        if (::bind(fd.native_handle(), reinterpret_cast<sockaddr const *>(&in),
-                   sizeof(in))
-            != 0) {
-            throw felspar::stdexcept::system_error{
-                    errno, std::generic_category(), "Binding server socket"};
-        }
+        bind_to_any_address(fd, port);
 
         int constexpr backlog = 64;
         if (::listen(fd.native_handle(), backlog) == -1) {
