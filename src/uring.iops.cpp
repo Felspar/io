@@ -140,23 +140,32 @@ felspar::io::iop<void> felspar::io::uring_warden::connect(
 
 struct felspar::io::uring_warden::poll_completion : public completion<void> {
     poll_completion(
-            uring_warden *s, int f, short m, felspar::source_location loc)
-    : completion<void>{s, std::move(loc)}, fd{f}, mask{m} {}
+            uring_warden *s,
+            int f,
+            short m,
+            std::optional<std::chrono::nanoseconds> t,
+            felspar::source_location loc)
+    : completion<void>{s, std::move(t), std::move(loc)}, fd{f}, mask{m} {}
     int fd = {};
     short mask = {};
     felspar::coro::coroutine_handle<>
             await_suspend(felspar::coro::coroutine_handle<> h) override {
         auto sqe = setup_submission(h);
         ::io_uring_prep_poll_add(sqe, fd, mask);
-        ::io_uring_sqe_set_data(sqe, this);
-        return felspar::coro::noop_coroutine();
+        return setup_timeout(sqe);
     }
 };
 felspar::io::iop<void> felspar::io::uring_warden::read_ready(
-        int fd, felspar::source_location loc) {
-    return {new poll_completion{this, fd, POLLIN, std::move(loc)}};
+        int fd,
+        std::optional<std::chrono::nanoseconds> timeout,
+        felspar::source_location loc) {
+    return {new poll_completion{
+            this, fd, POLLIN, std::move(timeout), std::move(loc)}};
 }
 felspar::io::iop<void> felspar::io::uring_warden::write_ready(
-        int fd, felspar::source_location loc) {
-    return {new poll_completion{this, fd, POLLOUT, std::move(loc)}};
+        int fd,
+        std::optional<std::chrono::nanoseconds> timeout,
+        felspar::source_location loc) {
+    return {new poll_completion{
+            this, fd, POLLOUT, std::move(timeout), std::move(loc)}};
 }

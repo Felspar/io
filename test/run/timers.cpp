@@ -61,6 +61,12 @@ namespace {
         } catch (felspar::io::timeout const &) {
             check(true) == true;
         } catch (...) { check(false) == true; }
+        try {
+            co_await ward.write_ready(fd, 10ms);
+            check(false) == true;
+        } catch (felspar::io::timeout const &) {
+            check(true) == true;
+        } catch (...) { check(false) == true; }
     }
     auto const wp = suite.test("write/poll", []() {
         felspar::io::poll_warden ward;

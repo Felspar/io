@@ -29,14 +29,17 @@ namespace felspar::io {
 
         std::optional<std::chrono::nanoseconds> timeout = {};
 
-        felspar::coro::coroutine_handle<>
-                await_suspend(felspar::coro::coroutine_handle<> h) override {
-            io::completion<R>::handle = h;
+        void insert_timeout() {
             if (timeout) {
                 auto const deadline =
                         std::chrono::steady_clock::now() + *timeout;
                 self->timeouts.insert({deadline, this});
             }
+        }
+        felspar::coro::coroutine_handle<>
+                await_suspend(felspar::coro::coroutine_handle<> h) override {
+            io::completion<R>::handle = h;
+            insert_timeout();
             return try_or_resume();
         }
         void iop_timedout() override {

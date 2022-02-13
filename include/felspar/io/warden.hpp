@@ -124,12 +124,30 @@ namespace felspar::io {
          */
         virtual iop<void> read_ready(
                 int fd,
+                std::optional<std::chrono::nanoseconds> timeout = {},
                 felspar::source_location =
                         felspar::source_location::current()) = 0;
+        iop<void> read_ready(
+                posix::fd const &sock,
+                std::optional<std::chrono::nanoseconds> timeout = {},
+                felspar::source_location loc =
+                        felspar::source_location::current()) {
+            return read_ready(
+                    sock.native_handle(), std::move(timeout), std::move(loc));
+        }
         virtual iop<void> write_ready(
                 int fd,
+                std::optional<std::chrono::nanoseconds> timeout = {},
                 felspar::source_location =
                         felspar::source_location::current()) = 0;
+        iop<void> write_ready(
+                posix::fd const &sock,
+                std::optional<std::chrono::nanoseconds> timeout = {},
+                felspar::source_location loc =
+                        felspar::source_location::current()) {
+            return write_ready(
+                    sock.native_handle(), std::move(timeout), std::move(loc));
+        }
     };
 
 

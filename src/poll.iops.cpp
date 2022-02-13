@@ -225,41 +225,65 @@ felspar::io::iop<void> felspar::io::poll_warden::connect(
 
 struct felspar::io::poll_warden::read_ready_completion :
 public completion<void> {
-    read_ready_completion(poll_warden *s, int f, felspar::source_location loc)
-    : completion<void>{s, std::move(loc)}, fd{f} {}
+    read_ready_completion(
+            poll_warden *s,
+            int f,
+            std::optional<std::chrono::nanoseconds> t,
+            felspar::source_location loc)
+    : completion<void>{s, std::move(t), std::move(loc)}, fd{f} {}
     int fd;
+    void iop_timedout() override {
+        std::erase(self->requests[fd].reads, this);
+        completion<void>::iop_timedout();
+    }
     felspar::coro::coroutine_handle<>
             await_suspend(felspar::coro::coroutine_handle<> h) override {
         handle = h;
         self->requests[fd].reads.push_back(this);
+        insert_timeout();
         return felspar::coro::noop_coroutine();
     }
     felspar::coro::coroutine_handle<> try_or_resume() override {
-        return handle;
+        return cancel_timeout_then_resume();
     }
 };
 felspar::io::iop<void> felspar::io::poll_warden::read_ready(
-        int fd, felspar::source_location loc) {
-    return {new read_ready_completion{this, fd, std::move(loc)}};
+        int fd,
+        std::optional<std::chrono::nanoseconds> timeout,
+        felspar::source_location loc) {
+    return {new read_ready_completion{
+            this, fd, std::move(timeout), std::move(loc)}};
 }
 
 
 struct felspar::io::poll_warden::write_ready_completion :
 public completion<void> {
-    write_ready_completion(poll_warden *s, int f, felspar::source_location loc)
-    : completion<void>{s, std::move(loc)}, fd{f} {}
+    write_ready_completion(
+            poll_warden *s,
+            int f,
+            std::optional<std::chrono::nanoseconds> t,
+            felspar::source_location loc)
+    : completion<void>{s, std::move(t), std::move(loc)}, fd{f} {}
     int fd;
+    void iop_timedout() override {
+        std::erase(self->requests[fd].writes, this);
+        completion<void>::iop_timedout();
+    }
     felspar::coro::coroutine_handle<> await_suspend(
             felspar::coro::coroutine_handle<> h) noexcept override {
         handle = h;
         self->requests[fd].writes.push_back(this);
+        insert_timeout();
         return felspar::coro::noop_coroutine();
     }
     felspar::coro::coroutine_handle<> try_or_resume() override {
-        return handle;
+        return cancel_timeout_then_resume();
     }
 };
 felspar::io::iop<void> felspar::io::poll_warden::write_ready(
-        int fd, felspar::source_location loc) {
-    return {new write_ready_completion{this, fd, std::move(loc)}};
+        int fd,
+        std::optional<std::chrono::nanoseconds> timeout,
+        felspar::source_location loc) {
+    return {new write_ready_completion{
+            this, fd, std::move(timeout), std::move(loc)}};
 }

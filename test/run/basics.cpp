@@ -75,6 +75,13 @@ namespace {
         } catch (felspar::io::timeout const &) {
             check(true) == true;
         } catch (...) { check(false) == true; }
+        /// Check read_ready time out
+        try {
+            co_await ward.read_ready(fd, 10ms);
+            check(false) == true;
+        } catch (felspar::io::timeout const &) {
+            check(true) == true;
+        } catch (...) { check(false) == true; }
     }
 
 

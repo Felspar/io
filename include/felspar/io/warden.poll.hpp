@@ -80,11 +80,13 @@ namespace felspar::io {
         using warden::read_ready;
         iop<void> read_ready(
                 int fd,
+                std::optional<std::chrono::nanoseconds> timeout = {},
                 felspar::source_location =
                         felspar::source_location::current()) override;
         using warden::write_ready;
         iop<void> write_ready(
                 int fd,
+                std::optional<std::chrono::nanoseconds> timeout = {},
                 felspar::source_location =
                         felspar::source_location::current()) override;
     };
