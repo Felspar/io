@@ -12,10 +12,12 @@ struct felspar::io::uring_warden::sleep_completion : public completion<void> {
             felspar::source_location loc)
     : completion<void>{s, std::move(loc)}, ts{{}, ns.count()} {}
     __kernel_timespec ts;
-    void await_suspend(felspar::coro::coroutine_handle<> h) override {
+    felspar::coro::coroutine_handle<>
+            await_suspend(felspar::coro::coroutine_handle<> h) override {
         auto sqe = setup_submission(h);
         ::io_uring_prep_timeout(sqe, &ts, 0, 0);
         ::io_uring_sqe_set_data(sqe, this);
+        return felspar::coro::noop_coroutine();
     }
     void deliver(int result) override {
         completion<void>::deliver(result == -ETIME ? 0 : result);
@@ -38,10 +40,11 @@ public completion<std::size_t> {
     : completion<std::size_t>{s, std::move(t), std::move(loc)}, fd{f}, bytes{b} {}
     int fd;
     std::span<std::byte> bytes;
-    void await_suspend(felspar::coro::coroutine_handle<> h) override {
+    felspar::coro::coroutine_handle<>
+            await_suspend(felspar::coro::coroutine_handle<> h) override {
         auto sqe = setup_submission(h);
         ::io_uring_prep_read(sqe, fd, bytes.data(), bytes.size(), 0);
-        setup_timeout(sqe);
+        return setup_timeout(sqe);
     }
 };
 felspar::io::iop<std::size_t> felspar::io::uring_warden::read_some(
@@ -65,10 +68,11 @@ public completion<std::size_t> {
     : completion<std::size_t>{s, std::move(t), std::move(loc)}, fd{f}, bytes{b} {}
     int fd;
     std::span<std::byte const> bytes;
-    void await_suspend(felspar::coro::coroutine_handle<> h) override {
+    felspar::coro::coroutine_handle<>
+            await_suspend(felspar::coro::coroutine_handle<> h) override {
         auto sqe = setup_submission(h);
         ::io_uring_prep_write(sqe, fd, bytes.data(), bytes.size(), 0);
-        setup_timeout(sqe);
+        return setup_timeout(sqe);
     }
 };
 felspar::io::iop<std::size_t> felspar::io::uring_warden::write_some(
@@ -87,10 +91,12 @@ struct felspar::io::uring_warden::accept_completion : public completion<int> {
     int fd = {};
     sockaddr addr = {};
     socklen_t addrlen = {};
-    void await_suspend(felspar::coro::coroutine_handle<> h) override {
+    felspar::coro::coroutine_handle<>
+            await_suspend(felspar::coro::coroutine_handle<> h) override {
         auto sqe = setup_submission(h);
         ::io_uring_prep_accept(sqe, fd, &addr, &addrlen, 0);
         ::io_uring_sqe_set_data(sqe, this);
+        return felspar::coro::noop_coroutine();
     }
 };
 felspar::io::iop<int> felspar::io::uring_warden::accept(
@@ -110,10 +116,12 @@ struct felspar::io::uring_warden::connect_completion : public completion<void> {
     int fd = {};
     sockaddr const *addr = {};
     socklen_t addrlen = {};
-    void await_suspend(felspar::coro::coroutine_handle<> h) override {
+    felspar::coro::coroutine_handle<>
+            await_suspend(felspar::coro::coroutine_handle<> h) override {
         auto sqe = setup_submission(h);
         ::io_uring_prep_connect(sqe, fd, addr, addrlen);
         ::io_uring_sqe_set_data(sqe, this);
+        return felspar::coro::noop_coroutine();
     }
 };
 felspar::io::iop<void> felspar::io::uring_warden::connect(
@@ -131,10 +139,12 @@ struct felspar::io::uring_warden::poll_completion : public completion<void> {
     : completion<void>{s, std::move(loc)}, fd{f}, mask{m} {}
     int fd = {};
     short mask = {};
-    void await_suspend(felspar::coro::coroutine_handle<> h) override {
+    felspar::coro::coroutine_handle<>
+            await_suspend(felspar::coro::coroutine_handle<> h) override {
         auto sqe = setup_submission(h);
         ::io_uring_prep_poll_add(sqe, fd, mask);
         ::io_uring_sqe_set_data(sqe, this);
+        return felspar::coro::noop_coroutine();
     }
 };
 felspar::io::iop<void> felspar::io::uring_warden::read_ready(

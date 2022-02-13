@@ -18,7 +18,8 @@ struct felspar::io::poll_warden::sleep_completion : public completion<void> {
     }
     posix::fd timer;
     ::itimerspec spec = {};
-    void await_suspend(felspar::coro::coroutine_handle<> h) override {
+    felspar::coro::coroutine_handle<>
+            await_suspend(felspar::coro::coroutine_handle<> h) override {
         handle = h;
         timer = posix::fd{::timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK)};
         if (not timer) {
@@ -26,7 +27,7 @@ struct felspar::io::poll_warden::sleep_completion : public completion<void> {
                     std::make_exception_ptr(felspar::stdexcept::system_error{
                             errno, std::generic_category(), "timerfd_create",
                             std::move(loc)});
-            handle.resume();
+            return handle;
         } else if (
                 ::timerfd_settime(timer.native_handle(), 0, &spec, nullptr)
                 == -1) {
@@ -34,12 +35,15 @@ struct felspar::io::poll_warden::sleep_completion : public completion<void> {
                     std::make_exception_ptr(felspar::stdexcept::system_error{
                             errno, std::generic_category(), "timerfd_settime",
                             std::move(loc)});
-            handle.resume();
+            return handle;
         } else {
             self->requests[timer.native_handle()].reads.push_back(this);
+            return felspar::coro::noop_coroutine();
         }
     }
-    void try_or_resume() override { handle.resume(); }
+    felspar::coro::coroutine_handle<> try_or_resume() override {
+        return handle;
+    }
 };
 felspar::io::iop<void> felspar::io::poll_warden::sleep(
         std::chrono::nanoseconds ns, felspar::source_location loc) {
@@ -64,16 +68,17 @@ public completion<std::size_t> {
         std::erase(self->requests[fd].reads, this);
         completion<std::size_t>::iop_timedout();
     }
-    void try_or_resume() override {
+    felspar::coro::coroutine_handle<> try_or_resume() override {
         if (auto bytes = ::read(fd, buf.data(), buf.size()); bytes >= 0) {
             result = bytes;
-            cancel_timeout_then_resume();
+            return cancel_timeout_then_resume();
         } else if (errno == EAGAIN or errno == EWOULDBLOCK) {
             self->requests[fd].reads.push_back(this);
+            return felspar::coro::noop_coroutine();
         } else {
             exception = std::make_exception_ptr(felspar::stdexcept::system_error{
                     errno, std::generic_category(), "read", std::move(loc)});
-            cancel_timeout_then_resume();
+            return cancel_timeout_then_resume();
         }
     }
 };
@@ -102,16 +107,17 @@ public completion<std::size_t> {
         std::erase(self->requests[fd].writes, this);
         completion<std::size_t>::iop_timedout();
     }
-    void try_or_resume() override {
+    felspar::coro::coroutine_handle<> try_or_resume() override {
         if (auto bytes = ::write(fd, buf.data(), buf.size()); bytes >= 0) {
             result = bytes;
-            cancel_timeout_then_resume();
+            return cancel_timeout_then_resume();
         } else if (errno == EAGAIN or errno == EWOULDBLOCK) {
             self->requests[fd].writes.push_back(this);
+            return felspar::coro::noop_coroutine();
         } else {
             exception = std::make_exception_ptr(felspar::stdexcept::system_error{
                     errno, std::generic_category(), "write", std::move(loc)});
-            cancel_timeout_then_resume();
+            return cancel_timeout_then_resume();
         }
     }
 };
@@ -129,18 +135,19 @@ struct felspar::io::poll_warden::accept_completion : public completion<int> {
     accept_completion(poll_warden *s, int f, felspar::source_location loc)
     : completion<int>{s, std::move(loc)}, fd{f} {}
     int fd;
-    void try_or_resume() override {
+    felspar::coro::coroutine_handle<> try_or_resume() override {
         result = ::accept4(fd, nullptr, nullptr, SOCK_NONBLOCK);
         if (result >= 0) {
-            handle.resume();
+            return handle;
         } else if (errno == EWOULDBLOCK or errno == EAGAIN) {
             self->requests[fd].reads.push_back(this);
+            return felspar::coro::noop_coroutine();
         } else if (errno == EBADF) {
-            handle.resume();
+            return handle;
         } else {
             exception = std::make_exception_ptr(felspar::stdexcept::system_error{
                     errno, std::generic_category(), "accept", std::move(loc)});
-            handle.resume();
+            return handle;
         }
     }
 };
@@ -161,37 +168,39 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
     int fd;
     sockaddr const *addr;
     socklen_t addrlen;
-    void await_suspend(felspar::coro::coroutine_handle<> h) override {
+    felspar::coro::coroutine_handle<>
+            await_suspend(felspar::coro::coroutine_handle<> h) override {
         handle = h;
         if (auto err = ::connect(fd, addr, addrlen); err == 0) {
-            handle.resume();
+            return handle;
         } else if (errno == EINPROGRESS) {
             self->requests[fd].writes.push_back(this);
+            return felspar::coro::noop_coroutine();
         } else {
             exception = std::make_exception_ptr(felspar::stdexcept::system_error{
                     errno, std::generic_category(), "connect", std::move(loc)});
-            handle.resume();
+            return handle;
         }
     }
-    void try_or_resume() override {
+    felspar::coro::coroutine_handle<> try_or_resume() override {
         int errvalue{};
         ::socklen_t length{};
         if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &errvalue, &length) == 0) {
             if (errvalue == 0) {
-                handle.resume();
+                return handle;
             } else {
                 exception = std::make_exception_ptr(
                         felspar::stdexcept::system_error{
                                 errno, std::generic_category(), "connect",
                                 std::move(loc)});
-                handle.resume();
+                return handle;
             }
         } else {
             exception =
                     std::make_exception_ptr(felspar::stdexcept::system_error{
                             errno, std::generic_category(),
                             "connect/getsockopt", std::move(loc)});
-            handle.resume();
+            return handle;
         }
     }
 };
@@ -209,11 +218,15 @@ public completion<void> {
     read_ready_completion(poll_warden *s, int f, felspar::source_location loc)
     : completion<void>{s, std::move(loc)}, fd{f} {}
     int fd;
-    void await_suspend(felspar::coro::coroutine_handle<> h) override {
+    felspar::coro::coroutine_handle<>
+            await_suspend(felspar::coro::coroutine_handle<> h) override {
         handle = h;
         self->requests[fd].reads.push_back(this);
+        return felspar::coro::noop_coroutine();
     }
-    void try_or_resume() override { handle.resume(); }
+    felspar::coro::coroutine_handle<> try_or_resume() override {
+        return handle;
+    }
 };
 felspar::io::iop<void> felspar::io::poll_warden::read_ready(
         int fd, felspar::source_location loc) {
@@ -226,11 +239,15 @@ public completion<void> {
     write_ready_completion(poll_warden *s, int f, felspar::source_location loc)
     : completion<void>{s, std::move(loc)}, fd{f} {}
     int fd;
-    void await_suspend(felspar::coro::coroutine_handle<> h) noexcept override {
+    felspar::coro::coroutine_handle<> await_suspend(
+            felspar::coro::coroutine_handle<> h) noexcept override {
         handle = h;
         self->requests[fd].writes.push_back(this);
+        return felspar::coro::noop_coroutine();
     }
-    void try_or_resume() override { handle.resume(); }
+    felspar::coro::coroutine_handle<> try_or_resume() override {
+        return handle;
+    }
 };
 felspar::io::iop<void> felspar::io::poll_warden::write_ready(
         int fd, felspar::source_location loc) {

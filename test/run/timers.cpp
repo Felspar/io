@@ -48,8 +48,7 @@ namespace {
             write_forever(felspar::io::warden &ward, std::uint16_t port) {
         felspar::test::injected check;
 
-        /// TODO Lots of small writes will fail here (i.e. 1<<10)
-        std::array<std::byte, 1 << 20> buffer;
+        std::array<std::byte, 1 << 10> buffer;
         auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
         sockaddr_in in;
         in.sin_family = AF_INET;

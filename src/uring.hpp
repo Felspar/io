@@ -46,7 +46,7 @@ namespace felspar::io {
             io::completion<R>::handle = h;
             return self->ring->next_sqe();
         }
-        void setup_timeout(::io_uring_sqe *sqe) {
+        felspar::coro::coroutine_handle<> setup_timeout(::io_uring_sqe *sqe) {
             ::io_uring_sqe_set_data(sqe, this);
             if (timeout) {
                 sqe->flags |= IOSQE_IO_LINK;
@@ -57,6 +57,7 @@ namespace felspar::io {
                 ::io_uring_sqe_set_data(tsqe, this);
                 io::completion<R>::iop_count = 2;
             }
+            return felspar::coro::noop_coroutine();
         }
 
         void deliver(int result) override {

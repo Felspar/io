@@ -66,7 +66,7 @@ void felspar::io::poll_warden::run_until(felspar::coro::coroutine_handle<> coro)
                 }
             }
             for (auto continuation : continuations) {
-                continuation->try_or_resume();
+                continuation->try_or_resume().resume();
             }
         }
     }
