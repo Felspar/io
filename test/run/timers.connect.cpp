@@ -26,17 +26,26 @@ namespace {
 
         sockaddr_in address =
                 *reinterpret_cast<sockaddr_in *>(addresses->ai_addr);
-        address.sin_port = ::htons(808);
         freeaddrinfo(addresses);
 
-        auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
         try {
+            address.sin_port = ::htons(80);
+            auto fd1 = ward.create_socket(AF_INET, SOCK_STREAM, 0);
             co_await ward.connect(
-                    fd, reinterpret_cast<sockaddr const *>(&address),
+                    fd1, reinterpret_cast<sockaddr const *>(&address),
+                    sizeof(address), 5s);
+
+            address.sin_port = ::htons(808);
+            auto fd2 = ward.create_socket(AF_INET, SOCK_STREAM, 0);
+            co_await ward.connect(
+                    fd2, reinterpret_cast<sockaddr const *>(&address),
                     sizeof(address), 10ms);
+
             check(false) == true;
         } catch (felspar::io::timeout const &) {
             check(true) == true;
+        } catch (std::exception const &e) {
+            check(e.what()) == ""; /// Print out the exception message
         } catch (...) { check(false) == true; }
     }
     auto const p = suite.test("poll", []() {
