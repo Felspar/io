@@ -21,8 +21,7 @@ namespace felspar::io {
         virtual void run_until(felspar::coro::coroutine_handle<>) = 0;
         template<typename R>
         void cancel(completion<R> *c) {
-            /// TODO Put the memory back into the pool for later re-use
-            delete c;
+            if (--c->iop_count == 0) { delete c; }
         }
 
       public:
@@ -52,31 +51,39 @@ namespace felspar::io {
         virtual iop<std::size_t> read_some(
                 int fd,
                 std::span<std::byte>,
+                std::optional<std::chrono::nanoseconds> timeout = {},
                 felspar::source_location =
                         felspar::source_location::current()) = 0;
         iop<std::size_t> read_some(
                 posix::fd const &s,
                 std::span<std::byte> b,
+                std::optional<std::chrono::nanoseconds> timeout = {},
                 felspar::source_location l =
                         felspar::source_location::current()) {
-            return read_some(s.native_handle(), b, std::move(l));
+            return read_some(s.native_handle(), b, timeout, std::move(l));
         }
         virtual iop<std::size_t> write_some(
                 int fd,
                 std::span<std::byte const>,
+                std::optional<std::chrono::nanoseconds> timeout = {},
                 felspar::source_location =
                         felspar::source_location::current()) = 0;
         iop<std::size_t> write_some(
                 posix::fd const &s,
                 std::span<std::byte const> b,
+                std::optional<std::chrono::nanoseconds> timeout = {},
                 felspar::source_location l =
                         felspar::source_location::current()) {
-            return write_some(s.native_handle(), b, std::move(l));
+            return write_some(
+                    s.native_handle(), b, std::move(timeout), std::move(l));
         }
 
         /**
          * ### Socket APIs
          */
+        /// Some wardens may need special socket options to be set, so in order
+        /// to be portable across wardens use this API instead of the POSIX
+        /// `::socket` one.
         virtual posix::fd create_socket(
                 int domain,
                 int type,
@@ -85,27 +92,34 @@ namespace felspar::io {
 
         virtual iop<int>
                 accept(int fd,
+                       std::optional<std::chrono::nanoseconds> timeout = {},
                        felspar::source_location =
                                felspar::source_location::current()) = 0;
         iop<int>
                 accept(posix::fd const &sock,
+                       std::optional<std::chrono::nanoseconds> timeout = {},
                        felspar::source_location loc =
                                felspar::source_location::current()) {
-            return accept(sock.native_handle(), std::move(loc));
+            return accept(
+                    sock.native_handle(), std::move(timeout), std::move(loc));
         }
         virtual iop<void>
                 connect(int fd,
                         sockaddr const *,
                         socklen_t,
+                        std::optional<std::chrono::nanoseconds> timeout = {},
                         felspar::source_location =
                                 felspar::source_location::current()) = 0;
         iop<void>
                 connect(posix::fd const &sock,
                         sockaddr const *addr,
                         socklen_t addrlen,
+                        std::optional<std::chrono::nanoseconds> timeout = {},
                         felspar::source_location loc =
                                 felspar::source_location::current()) {
-            return connect(sock.native_handle(), addr, addrlen, std::move(loc));
+            return connect(
+                    sock.native_handle(), addr, addrlen, std::move(timeout),
+                    std::move(loc));
         }
 
 
@@ -114,12 +128,30 @@ namespace felspar::io {
          */
         virtual iop<void> read_ready(
                 int fd,
+                std::optional<std::chrono::nanoseconds> timeout = {},
                 felspar::source_location =
                         felspar::source_location::current()) = 0;
+        iop<void> read_ready(
+                posix::fd const &sock,
+                std::optional<std::chrono::nanoseconds> timeout = {},
+                felspar::source_location loc =
+                        felspar::source_location::current()) {
+            return read_ready(
+                    sock.native_handle(), std::move(timeout), std::move(loc));
+        }
         virtual iop<void> write_ready(
                 int fd,
+                std::optional<std::chrono::nanoseconds> timeout = {},
                 felspar::source_location =
                         felspar::source_location::current()) = 0;
+        iop<void> write_ready(
+                posix::fd const &sock,
+                std::optional<std::chrono::nanoseconds> timeout = {},
+                felspar::source_location loc =
+                        felspar::source_location::current()) {
+            return write_ready(
+                    sock.native_handle(), std::move(timeout), std::move(loc));
+        }
     };
 
 

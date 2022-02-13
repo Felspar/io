@@ -17,6 +17,7 @@ namespace felspar::io {
     struct completion {
         using result_type = R;
 
+        std::size_t iop_count = 1;
         felspar::coro::coroutine_handle<> handle;
         felspar::source_location loc;
         R result = {};
@@ -26,12 +27,14 @@ namespace felspar::io {
         virtual ~completion() = default;
 
         virtual warden *ward() = 0;
-        virtual void await_suspend(felspar::coro::coroutine_handle<>) = 0;
+        virtual felspar::coro::coroutine_handle<>
+                await_suspend(felspar::coro::coroutine_handle<>) = 0;
     };
     template<>
     struct completion<void> {
         using result_type = void;
 
+        std::size_t iop_count = 1;
         felspar::coro::coroutine_handle<> handle;
         felspar::source_location loc;
         std::exception_ptr exception;
@@ -40,7 +43,8 @@ namespace felspar::io {
         virtual ~completion() = default;
 
         virtual warden *ward() = 0;
-        virtual void await_suspend(felspar::coro::coroutine_handle<> h) = 0;
+        virtual felspar::coro::coroutine_handle<>
+                await_suspend(felspar::coro::coroutine_handle<> h) = 0;
     };
 
 
@@ -54,8 +58,9 @@ namespace felspar::io {
         ~iop();
 
         bool await_ready() const noexcept { return false; }
-        void await_suspend(felspar::coro::coroutine_handle<> h) {
-            comp->await_suspend(h);
+        felspar::coro::coroutine_handle<>
+                await_suspend(felspar::coro::coroutine_handle<> h) {
+            return comp->await_suspend(h);
         }
         R await_resume() {
             if (comp->exception) {
@@ -78,8 +83,9 @@ namespace felspar::io {
         ~iop();
 
         bool await_ready() const noexcept { return false; }
-        void await_suspend(felspar::coro::coroutine_handle<> h) {
-            comp->await_suspend(h);
+        felspar::coro::coroutine_handle<>
+                await_suspend(felspar::coro::coroutine_handle<> h) {
+            return comp->await_suspend(h);
         }
         auto await_resume() {
             if (comp->exception) { std::rethrow_exception(comp->exception); }

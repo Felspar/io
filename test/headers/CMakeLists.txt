@@ -2,6 +2,7 @@ add_library(felspar-io-headers-tests STATIC EXCLUDE_FROM_ALL
         accept.cpp
         completion.cpp
         connect.cpp
+        exceptions.cpp
         io.cpp
         posix.cpp
         read.cpp

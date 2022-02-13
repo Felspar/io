@@ -9,7 +9,7 @@
 felspar::coro::stream<int> felspar::io::accept(
         warden &ward, int fd, felspar::source_location loc) {
     while (true) {
-        int s = co_await ward.accept(fd, loc);
+        int s = co_await ward.accept(fd, {}, loc);
         if (s >= 0) {
             co_yield s;
         } else if (s == -11) {
