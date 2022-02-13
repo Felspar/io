@@ -81,6 +81,9 @@ namespace felspar::io {
         /**
          * ### Socket APIs
          */
+        /// Some wardens may need special socket options to be set, so in order
+        /// to be portable across wardens use this API instead of the POSIX
+        /// `::socket` one.
         virtual posix::fd create_socket(
                 int domain,
                 int type,
