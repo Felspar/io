@@ -1,3 +1,6 @@
+2022-02-13  Kirit Sælensminde  <kirit@felspar.com>
+ Added timeouts to all IOPs
+
 2022-01-28  Kirit Sælensminde  <kirit@felspar.com>
  Added io_uring support.
 
