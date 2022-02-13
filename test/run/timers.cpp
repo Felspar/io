@@ -17,10 +17,11 @@ namespace {
         auto const slept = std::chrono::steady_clock::now() - start;
         co_return slept >= 20ms and slept <= 30ms;
     }
-    auto const ss = suite.test("timers/poll", [](auto check) {
-                             felspar::io::poll_warden ward;
-                             check(ward.run(short_sleep)) == true;
-                         }).test("timers/uring", [](auto check) {
+    auto const ssp = suite.test("timers/poll", [](auto check) {
+        felspar::io::poll_warden ward;
+        check(ward.run(short_sleep)) == true;
+    });
+    auto const ssu = suite.test("timers/uring", [](auto check) {
         felspar::io::uring_warden ward{5};
         check(ward.run(short_sleep)) == true;
     });
