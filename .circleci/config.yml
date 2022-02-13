@@ -11,7 +11,7 @@ executors:
       LD_FLAGS: "-stdlib=libc++"
   clang-asan:
     docker:
-    - image: fost/circleci
+    - image: kayess/cpp
     environment:
       CC: clang
       CXX: clang++
