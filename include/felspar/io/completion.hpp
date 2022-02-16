@@ -14,28 +14,35 @@ namespace felspar::io {
     class warden;
 
 
+    namespace detail {
+        struct error_store {
+            felspar::source_location loc;
+            std::error_code code = {};
+            char const *message = "";
+            [[noreturn]] void throw_exception() {
+                if (code == timeout::error) {
+                    throw timeout{message, std::move(loc)};
+                } else {
+                    throw felspar::stdexcept::system_error{
+                            code, message, std::move(loc)};
+                }
+            }
+            explicit operator bool() const noexcept {
+                return static_cast<bool>(code);
+            }
+        };
+    }
+
     template<typename R>
     struct completion {
         using result_type = R;
 
         std::size_t iop_count = 1;
         felspar::coro::coroutine_handle<> handle;
+        detail::error_store error;
         R result = {};
 
-        /// Error fields
-        felspar::source_location loc;
-        std::error_code error = {};
-        char const *message = "";
-        [[noreturn]] void throw_exception() {
-            if (error == timeout::error) {
-                throw timeout{message, std::move(loc)};
-            } else {
-                throw felspar::stdexcept::system_error{
-                        error, message, std::move(loc)};
-            }
-        }
-
-        completion(felspar::source_location l) : loc{std::move(l)} {}
+        completion(felspar::source_location l) : error{std::move(l)} {}
         virtual ~completion() = default;
 
         virtual warden *ward() = 0;
@@ -48,21 +55,9 @@ namespace felspar::io {
 
         std::size_t iop_count = 1;
         felspar::coro::coroutine_handle<> handle;
+        detail::error_store error;
 
-        /// Error fields
-        felspar::source_location loc;
-        std::error_code error = {};
-        char const *message = "";
-        [[noreturn]] void throw_exception() {
-            if (error == std::error_code{ETIME, std::system_category()}) {
-                throw timeout{message, std::move(loc)};
-            } else {
-                throw felspar::stdexcept::system_error{
-                        error, message, std::move(loc)};
-            }
-        }
-
-        completion(felspar::source_location l) : loc{std::move(l)} {}
+        completion(felspar::source_location l) : error{std::move(l)} {}
         virtual ~completion() = default;
 
         virtual warden *ward() = 0;
@@ -87,7 +82,7 @@ namespace felspar::io {
         }
         R await_resume() {
             if (comp->error) {
-                comp->throw_exception();
+                comp->error.throw_exception();
             } else {
                 return std::move(comp->result);
             }
@@ -111,7 +106,7 @@ namespace felspar::io {
             return comp->await_suspend(h);
         }
         auto await_resume() {
-            if (comp->error) { comp->throw_exception(); }
+            if (comp->error) { comp->error.throw_exception(); }
         }
 
       private:

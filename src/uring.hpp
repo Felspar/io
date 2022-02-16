@@ -59,18 +59,15 @@ namespace felspar::io {
 
         void deliver(int result) override {
             if (result < 0) {
-                if (result == -ETIME) {
-                    io::completion<R>::error = {ETIME, std::system_category()};
-                    io::completion<R>::message = "uring IOP timeout";
-                } else if (timeout and result == -ECANCELED) {
+                if (timeout and result == -ECANCELED) {
                     /// This is the cancelled IOP so we ignore it as we've timed
                     /// out
                     self->cancel(this);
                     return;
                 } else {
-                    io::completion<R>::error = {
+                    io::completion<R>::error.code = {
                             -result, std::system_category()};
-                    io::completion<R>::message = "uring IOP";
+                    io::completion<R>::error.message = "uring IOP";
                 }
             } else {
                 io::completion<R>::result = result;
@@ -116,16 +113,18 @@ namespace felspar::io {
 
         void deliver(int result) override {
             if (result == -ETIME) {
-                io::completion<void>::error = {ETIME, std::system_category()};
-                io::completion<void>::message = "uring IOP timeout";
+                io::completion<void>::error.code = {
+                        ETIME, std::system_category()};
+                io::completion<void>::error.message = "uring IOP timeout";
             } else if (timeout and result == -ECANCELED) {
                 /// This is the cancelled IOP so we ignore it as we've timed
                 /// out
                 self->cancel(this);
                 return;
             } else if (result < 0) {
-                io::completion<void>::error = {-result, std::system_category()};
-                io::completion<void>::message = "uring IOP";
+                io::completion<void>::error.code = {
+                        -result, std::system_category()};
+                io::completion<void>::error.message = "uring IOP";
                 ;
             }
             io::completion<void>::handle.resume();

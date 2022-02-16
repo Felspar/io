@@ -41,8 +41,8 @@ namespace felspar::io {
             return try_or_resume();
         }
         felspar::coro::coroutine_handle<> iop_timedout() override {
-            io::completion<R>::error = {ETIME, std::system_category()};
-            io::completion<R>::message = "IOP timed out";
+            io::completion<R>::error.code = timeout::error;
+            io::completion<R>::error.message = "IOP timed out";
             return io::completion<R>::handle;
         }
         felspar::coro::coroutine_handle<> cancel_timeout_then_resume() {

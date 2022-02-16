@@ -23,14 +23,14 @@ struct felspar::io::poll_warden::sleep_completion : public completion<void> {
         handle = h;
         timer = posix::fd{::timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK)};
         if (not timer) {
-            error = {errno, std::system_category()};
-            message = "timerfd_create";
+            error.code = {errno, std::system_category()};
+            error.message = "timerfd_create";
             return handle;
         } else if (
                 ::timerfd_settime(timer.native_handle(), 0, &spec, nullptr)
                 == -1) {
-            error = {errno, std::system_category()};
-            message = "timerfd_settime";
+            error.code = {errno, std::system_category()};
+            error.message = "timerfd_settime";
             return handle;
         } else {
             self->requests[timer.native_handle()].reads.push_back(this);
@@ -72,8 +72,8 @@ public completion<std::size_t> {
             self->requests[fd].reads.push_back(this);
             return felspar::coro::noop_coroutine();
         } else {
-            error = {errno, std::system_category()};
-            message = "read";
+            error.code = {errno, std::system_category()};
+            error.message = "read";
             return cancel_timeout_then_resume();
         }
     }
@@ -111,8 +111,8 @@ public completion<std::size_t> {
             self->requests[fd].writes.push_back(this);
             return felspar::coro::noop_coroutine();
         } else {
-            error = {errno, std::system_category()};
-            message = "write";
+            error.code = {errno, std::system_category()};
+            error.message = "write";
             return cancel_timeout_then_resume();
         }
     }
@@ -149,8 +149,8 @@ struct felspar::io::poll_warden::accept_completion : public completion<int> {
         } else if (errno == EBADF) {
             return cancel_timeout_then_resume();
         } else {
-            error = {errno, std::system_category()};
-            message = "accept";
+            error.code = {errno, std::system_category()};
+            error.message = "accept";
             return cancel_timeout_then_resume();
         }
     }
@@ -188,8 +188,8 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
             insert_timeout();
             return felspar::coro::noop_coroutine();
         } else {
-            error = {errno, std::system_category()};
-            message = "connect";
+            error.code = {errno, std::system_category()};
+            error.message = "connect";
             return handle;
         }
     }
@@ -200,13 +200,13 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
             if (errvalue == 0) {
                 return cancel_timeout_then_resume();
             } else {
-                error = {errno, std::system_category()};
-                message = "connect";
+                error.code = {errno, std::system_category()};
+                error.message = "connect";
                 return cancel_timeout_then_resume();
             }
         } else {
-            error = {errno, std::system_category()};
-            message = "connect/getsockopt";
+            error.code = {errno, std::system_category()};
+            error.message = "connect/getsockopt";
             return cancel_timeout_then_resume();
         }
     }
