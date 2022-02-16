@@ -75,6 +75,14 @@ namespace felspar::io {
         iop(completion_type *c) : comp{c} {}
         ~iop();
 
+        iop(iop const &) = delete;
+        iop &operator=(iop const &) = delete;
+        iop(iop &&i) : comp{std::exchange(i.comp, {})} {}
+        iop &operator=(iop &&i) {
+            std::swap(i.comp, comp);
+            return *this;
+        }
+
         bool await_ready() const noexcept { return false; }
         felspar::coro::coroutine_handle<>
                 await_suspend(felspar::coro::coroutine_handle<> h) {
@@ -99,6 +107,14 @@ namespace felspar::io {
 
         iop(completion_type *c) : comp{c} {}
         ~iop();
+
+        iop(iop const &) = delete;
+        iop &operator=(iop const &) = delete;
+        iop(iop &&i) : comp{std::exchange(i.comp, {})} {}
+        iop &operator=(iop &&i) {
+            std::swap(i.comp, comp);
+            return *this;
+        }
 
         bool await_ready() const noexcept { return false; }
         felspar::coro::coroutine_handle<>
