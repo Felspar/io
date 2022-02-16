@@ -69,6 +69,17 @@ namespace {
         } catch (felspar::io::timeout const &) {
             check(true) == true;
         } catch (...) { check(false) == true; }
+
+        while (true) {
+            felspar::io::result<std::size_t> const result{
+                    co_await felspar::io::ec{ward.write_some(fd, buffer, 10ms)}};
+            if (not result and result.error == felspar::io::timeout::error) {
+                co_return;
+            } else if (not result) {
+                check(result.error)
+                        == std::error_code{}; // Force print result.error
+            }
+        }
     }
     auto const wp = suite.test("write/poll", []() {
         felspar::io::poll_warden ward;

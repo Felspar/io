@@ -11,6 +11,10 @@
 namespace felspar::io {
 
 
+    template<typename R>
+    class ec;
+    template<typename R>
+    class result;
     class warden;
 
 
@@ -68,6 +72,9 @@ namespace felspar::io {
 
     template<typename R>
     class iop {
+        template<typename E>
+        friend class ec;
+
       public:
         using result_type = R;
         using completion_type = completion<result_type>;
@@ -101,6 +108,9 @@ namespace felspar::io {
     };
     template<>
     class iop<void> {
+        template<typename E>
+        friend class ec;
+
       public:
         using result_type = void;
         using completion_type = completion<result_type>;

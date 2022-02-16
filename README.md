@@ -65,6 +65,17 @@ felspar::coro::task<void>
 }
 ```
 
+The default behaviour for all errors is to throw an exception, but this can be altered by wrapping the IOP in an `felspar::io::ec` call:
+
+```cpp
+if (auto result = co_await ward.read_some(fd, buffer, 200ms); result) {
+    process(buffer.first(*result.value));
+} else {
+    log_error("read error", result.error);
+}
+```
+
+This only works for IOPs (directly APIs on the warden). Compound convenience APIs will always throw exceptions. *felspar-io* uses *felspar-exception* in order to track source code locations for errors thrown -- this means the call site of the IO API will be in the exception `what()` string.
 
 
 ### Wardens
