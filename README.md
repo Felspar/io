@@ -65,7 +65,15 @@ felspar::coro::task<void>
 }
 ```
 
-The library is built around the notion of "wardens". There is an abstract `felspar::io::warden` type that provides an API for various IOPs, and in the future, polymorphic allocation for memory required to execute the IOPs and coroutines that make use of them.
+
+
+### Wardens
+
+The library is built around the notion of "wardens". There is an abstract `felspar::io::warden` type that provides an API for various IOPs (and in the future) polymorphic allocation for memory required to execute the IOPs and coroutines that make use of them.
+
+Concrete warden implementation make use of a particular API family to implement the required asynchronous IO and timing APIs. At the moment there are the `felspar::io::poll_warden` and the `felspar::io::uring_warden`. The first makes use of the `poll()` system call and the latter the `io_uring` facilities. The library design is centred around the capabilities of io_uring rather than poll, with poll being treated as a compatibility fallback for use on platforms where io_uring is not available. **The intention is not to expose the entirety of the io_uring API space, just those IOPs that are most useful to a wide range of applications (e.g. a focus on network and file IO).**
+
+Different wardens will have slight differences in observable behaviour as a consequence of their differing APIs. For example, sleeps using poll will have best case jitter of just over 1 millisecond, wheres on io_uring this figure should be at least one order of magnitude lower.
 
 
 ### Time outs
