@@ -105,7 +105,7 @@ namespace {
             check(true) == true;
         } catch (...) { check(false) == true; }
     }
-    auto const ap = suite.test("write/poll", []() {
+    auto const ap = suite.test("accept/poll", []() {
         felspar::io::poll_warden ward;
         ward.run(short_accept, 5538);
     });
