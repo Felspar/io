@@ -66,3 +66,15 @@ felspar::coro::task<void>
 ```
 
 The library is built around the notion of "wardens". There is an abstract `felspar::io::warden` type that provides an API for various IOPs, and in the future, polymorphic allocation for memory required to execute the IOPs and coroutines that make use of them.
+
+
+### Time outs
+
+All of the operations support time outs which can be passed as an extra final parameter:
+
+```cpp
+co_await felspar::io::read_exactly(ward, fd, buffer, 100ms);
+```
+
+The timeouts operate on a per-IOP basis on the warden in use, so compound APIs like `read_exactly` (that may issue several IOPs) can take longer to time out. When a time out expires an exception of type `felspar::io::timeout` (a sub-class of `std::system_error`) is thrown. The error code in the exception will be equal to `felspar::io::timeout::error`.
+
