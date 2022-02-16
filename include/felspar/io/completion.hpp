@@ -27,7 +27,7 @@ namespace felspar::io {
         std::error_code error = {};
         char const *message = "";
         [[noreturn]] void throw_exception() {
-            if (error == std::error_code{ETIME, std::system_category()}) {
+            if (error == timeout::error) {
                 throw timeout{message, std::move(loc)};
             } else {
                 throw felspar::stdexcept::system_error{
