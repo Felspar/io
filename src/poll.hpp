@@ -41,8 +41,8 @@ namespace felspar::io {
             return try_or_resume();
         }
         felspar::coro::coroutine_handle<> iop_timedout() override {
-            io::completion<R>::exception = std::make_exception_ptr(io::timeout{
-                    "poll IOP timeout", std::move(io::completion<R>::loc)});
+            io::completion<R>::error = {ETIME, std::system_category()};
+            io::completion<R>::message = "IOP timed out";
             return io::completion<R>::handle;
         }
         felspar::coro::coroutine_handle<> cancel_timeout_then_resume() {

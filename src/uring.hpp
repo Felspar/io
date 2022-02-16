@@ -2,7 +2,6 @@
 
 
 #include <felspar/exceptions.hpp>
-#include <felspar/io/exceptions.hpp>
 #include <felspar/io/warden.uring.hpp>
 
 #include <liburing.h>
@@ -61,21 +60,17 @@ namespace felspar::io {
         void deliver(int result) override {
             if (result < 0) {
                 if (result == -ETIME) {
-                    io::completion<R>::exception =
-                            std::make_exception_ptr(io::timeout{
-                                    "uring IOP timeout",
-                                    std::move(io::completion<R>::loc)});
+                    io::completion<R>::error = {ETIME, std::system_category()};
+                    io::completion<R>::message = "uring IOP timeout";
                 } else if (timeout and result == -ECANCELED) {
                     /// This is the cancelled IOP so we ignore it as we've timed
                     /// out
                     self->cancel(this);
                     return;
                 } else {
-                    io::completion<R>::exception =
-                            std::make_exception_ptr(stdexcept::system_error{
-                                    -result, std::generic_category(),
-                                    "uring IOP",
-                                    std::move(io::completion<R>::loc)});
+                    io::completion<R>::error = {
+                            -result, std::system_category()};
+                    io::completion<R>::message = "uring IOP";
                 }
             } else {
                 io::completion<R>::result = result;
@@ -121,20 +116,17 @@ namespace felspar::io {
 
         void deliver(int result) override {
             if (result == -ETIME) {
-                io::completion<void>::exception =
-                        std::make_exception_ptr(io::timeout{
-                                "uring IOP timeout",
-                                std::move(io::completion<void>::loc)});
+                io::completion<void>::error = {ETIME, std::system_category()};
+                io::completion<void>::message = "uring IOP timeout";
             } else if (timeout and result == -ECANCELED) {
                 /// This is the cancelled IOP so we ignore it as we've timed
                 /// out
                 self->cancel(this);
                 return;
             } else if (result < 0) {
-                io::completion<void>::exception = std::make_exception_ptr(
-                        felspar::stdexcept::system_error{
-                                -result, std::generic_category(), "uring IOP",
-                                std::move(io::completion<void>::loc)});
+                io::completion<void>::error = {-result, std::system_category()};
+                io::completion<void>::message = "uring IOP";
+                ;
             }
             io::completion<void>::handle.resume();
         }

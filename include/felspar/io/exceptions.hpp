@@ -14,7 +14,7 @@ namespace felspar::io {
       public:
         timeout(std::string msg, felspar::source_location loc)
         : superclass{
-                ETIME, std::generic_category(), std::move(msg),
+                ETIME, std::system_category(), std::move(msg),
                 std::move(loc)} {}
     };
 

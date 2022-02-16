@@ -31,7 +31,7 @@ namespace {
         int constexpr backlog = 64;
         if (::listen(fd.native_handle(), backlog) == -1) {
             throw felspar::stdexcept::system_error{
-                    errno, std::generic_category(), "Calling listen"};
+                    errno, std::system_category(), "Calling listen"};
         }
 
         felspar::coro::starter<felspar::coro::task<void>> co;
@@ -74,6 +74,8 @@ namespace {
             check(false) == true;
         } catch (felspar::io::timeout const &) {
             check(true) == true;
+        } catch (std::exception const &e) {
+            check(e.what()) == ""; // Print exception `what`
         } catch (...) { check(false) == true; }
         /// Check read_ready time out
         try {

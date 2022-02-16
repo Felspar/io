@@ -53,7 +53,7 @@ felspar::coro::task<void>
     int constexpr backlog = 64;
     if (::listen(fd.native_handle(), backlog) == -1) {
         throw felspar::stdexcept::system_error{
-                errno, std::generic_category(), "Calling listen"};
+                errno, std::system_category(), "Calling listen"};
     }
 
     felspar::coro::starter<felspar::coro::task<void>> co;

@@ -1,10 +1,11 @@
 #pragma once
 
-
 #include <felspar/coro/task.hpp>
+#include <felspar/io/exceptions.hpp>
 #include <felspar/test/source.hpp>
 
 #include <memory>
+#include <system_error>
 
 
 namespace felspar::io {
@@ -19,9 +20,20 @@ namespace felspar::io {
 
         std::size_t iop_count = 1;
         felspar::coro::coroutine_handle<> handle;
-        felspar::source_location loc;
         R result = {};
-        std::exception_ptr exception;
+
+        /// Error fields
+        felspar::source_location loc;
+        std::error_code error = {};
+        char const *message = "";
+        [[noreturn]] void throw_exception() {
+            if (error == std::error_code{ETIME, std::system_category()}) {
+                throw timeout{message, std::move(loc)};
+            } else {
+                throw felspar::stdexcept::system_error{
+                        error, message, std::move(loc)};
+            }
+        }
 
         completion(felspar::source_location l) : loc{std::move(l)} {}
         virtual ~completion() = default;
@@ -36,8 +48,19 @@ namespace felspar::io {
 
         std::size_t iop_count = 1;
         felspar::coro::coroutine_handle<> handle;
+
+        /// Error fields
         felspar::source_location loc;
-        std::exception_ptr exception;
+        std::error_code error = {};
+        char const *message = "";
+        [[noreturn]] void throw_exception() {
+            if (error == std::error_code{ETIME, std::system_category()}) {
+                throw timeout{message, std::move(loc)};
+            } else {
+                throw felspar::stdexcept::system_error{
+                        error, message, std::move(loc)};
+            }
+        }
 
         completion(felspar::source_location l) : loc{std::move(l)} {}
         virtual ~completion() = default;
@@ -63,8 +86,8 @@ namespace felspar::io {
             return comp->await_suspend(h);
         }
         R await_resume() {
-            if (comp->exception) {
-                std::rethrow_exception(comp->exception);
+            if (comp->error) {
+                comp->throw_exception();
             } else {
                 return std::move(comp->result);
             }
@@ -88,7 +111,7 @@ namespace felspar::io {
             return comp->await_suspend(h);
         }
         auto await_resume() {
-            if (comp->exception) { std::rethrow_exception(comp->exception); }
+            if (comp->error) { comp->throw_exception(); }
         }
 
       private:

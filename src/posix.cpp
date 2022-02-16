@@ -10,7 +10,7 @@ void felspar::posix::set_non_blocking(int sock, felspar::source_location loc) {
                 ::fcntl(sock, F_SETFL, ::fcntl(sock, F_GETFL, 0) | O_NONBLOCK);
         err != 0) {
         throw felspar::stdexcept::system_error{
-                errno, std::generic_category(), "fcntl F_SETFL error",
+                errno, std::system_category(), "fcntl F_SETFL error",
                 std::move(loc)};
     }
 }
@@ -21,7 +21,7 @@ void felspar::posix::set_reuse_port(int sock, felspar::source_location loc) {
     if (::setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval))
         == -1) {
         throw felspar::stdexcept::system_error{
-                errno, std::generic_category(),
+                errno, std::system_category(),
                 "setsockopt SO_REUSEPORT failed"};
     }
 }
@@ -36,6 +36,6 @@ void felspar::posix::bind_to_any_address(
     if (::bind(sock, reinterpret_cast<sockaddr const *>(&in), sizeof(in))
         != 0) {
         throw felspar::stdexcept::system_error{
-                errno, std::generic_category(), "Binding server socket"};
+                errno, std::system_category(), "Binding server socket"};
     }
 }
