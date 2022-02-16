@@ -31,7 +31,7 @@ namespace felspar::io {
                 uring_warden *w,
                 std::optional<std::chrono::nanoseconds> tout,
                 felspar::source_location loc)
-        : io::completion<R>{std::move(loc)}, self{w}, timeout{std::move(tout)} {}
+        : io::completion<R>{loc}, self{w}, timeout{tout} {}
 
         uring_warden *self = nullptr;
         warden *ward() override { return self; }
@@ -83,9 +83,7 @@ namespace felspar::io {
                 uring_warden *w,
                 std::optional<std::chrono::nanoseconds> tout,
                 felspar::source_location loc)
-        : io::completion<void>{std::move(loc)},
-          self{w},
-          timeout{std::move(tout)} {}
+        : io::completion<void>{loc}, self{w}, timeout{tout} {}
 
         uring_warden *self;
         warden *ward() override { return self; }

@@ -49,7 +49,7 @@ namespace felspar::posix {
     inline void set_non_blocking(
             fd const &sock,
             felspar::source_location loc = felspar::source_location::current()) {
-        return set_non_blocking(sock.native_handle(), std::move(loc));
+        return set_non_blocking(sock.native_handle(), loc);
     }
 
 
@@ -60,7 +60,7 @@ namespace felspar::posix {
     inline void set_reuse_port(
             fd const &sock,
             felspar::source_location loc = felspar::source_location::current()) {
-        return set_reuse_port(sock.native_handle(), std::move(loc));
+        return set_reuse_port(sock.native_handle(), loc);
     }
 
 
@@ -73,7 +73,7 @@ namespace felspar::posix {
             fd const &sock,
             std::uint16_t const port,
             felspar::source_location loc = felspar::source_location::current()) {
-        return bind_to_any_address(sock.native_handle(), port, std::move(loc));
+        return bind_to_any_address(sock.native_handle(), port, loc);
     }
 
 

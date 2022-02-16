@@ -13,7 +13,7 @@ struct felspar::io::poll_warden::sleep_completion : public completion<void> {
             poll_warden *s,
             std::chrono::nanoseconds ns,
             felspar::source_location loc)
-    : completion<void>{s, {}, std::move(loc)} {
+    : completion<void>{s, {}, loc} {
         spec.it_value.tv_nsec = ns.count();
     }
     posix::fd timer;
@@ -43,7 +43,7 @@ struct felspar::io::poll_warden::sleep_completion : public completion<void> {
 };
 felspar::io::iop<void> felspar::io::poll_warden::sleep(
         std::chrono::nanoseconds ns, felspar::source_location loc) {
-    return {new sleep_completion{this, ns, std::move(loc)}};
+    return {new sleep_completion{this, ns, loc}};
 }
 
 
@@ -55,9 +55,7 @@ public completion<std::size_t> {
             std::span<std::byte> b,
             std::optional<std::chrono::nanoseconds> timeout,
             felspar::source_location loc)
-    : completion<std::size_t>{s, std::move(timeout), std::move(loc)},
-      fd{f},
-      buf{b} {}
+    : completion<std::size_t>{s, timeout, loc}, fd{f}, buf{b} {}
     int fd;
     std::span<std::byte> buf;
     felspar::coro::coroutine_handle<> iop_timedout() override {
@@ -83,8 +81,7 @@ felspar::io::iop<std::size_t> felspar::io::poll_warden::read_some(
         std::span<std::byte> buf,
         std::optional<std::chrono::nanoseconds> timeout,
         felspar::source_location loc) {
-    return {new read_some_completion{
-            this, fd, buf, std::move(timeout), std::move(loc)}};
+    return {new read_some_completion{this, fd, buf, timeout, loc}};
 }
 
 
@@ -96,7 +93,7 @@ public completion<std::size_t> {
             std::span<std::byte const> b,
             std::optional<std::chrono::nanoseconds> t,
             felspar::source_location loc)
-    : completion<std::size_t>{s, std::move(t), std::move(loc)}, fd{f}, buf{b} {}
+    : completion<std::size_t>{s, t, loc}, fd{f}, buf{b} {}
     int fd;
     std::span<std::byte const> buf;
     felspar::coro::coroutine_handle<> iop_timedout() override {
@@ -122,8 +119,7 @@ felspar::io::iop<std::size_t> felspar::io::poll_warden::write_some(
         std::span<std::byte const> buf,
         std::optional<std::chrono::nanoseconds> t,
         felspar::source_location loc) {
-    return {new write_some_completion{
-            this, fd, buf, std::move(t), std::move(loc)}};
+    return {new write_some_completion{this, fd, buf, t, loc}};
 }
 
 
@@ -133,7 +129,7 @@ struct felspar::io::poll_warden::accept_completion : public completion<int> {
             int f,
             std::optional<std::chrono::nanoseconds> t,
             felspar::source_location loc)
-    : completion<int>{s, std::move(t), std::move(loc)}, fd{f} {}
+    : completion<int>{s, t, loc}, fd{f} {}
     int fd;
     felspar::coro::coroutine_handle<> iop_timedout() override {
         std::erase(self->requests[fd].reads, this);
@@ -159,7 +155,7 @@ felspar::io::iop<int> felspar::io::poll_warden::accept(
         int fd,
         std::optional<std::chrono::nanoseconds> timeout,
         felspar::source_location loc) {
-    return {new accept_completion{this, fd, std::move(timeout), std::move(loc)}};
+    return {new accept_completion{this, fd, timeout, loc}};
 }
 
 
@@ -171,10 +167,7 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
             socklen_t l,
             std::optional<std::chrono::nanoseconds> t,
             felspar::source_location loc)
-    : completion<void>{s, std::move(t), std::move(loc)},
-      fd{f},
-      addr{a},
-      addrlen{l} {}
+    : completion<void>{s, t, loc}, fd{f}, addr{a}, addrlen{l} {}
     int fd;
     sockaddr const *addr;
     socklen_t addrlen;
@@ -217,8 +210,7 @@ felspar::io::iop<void> felspar::io::poll_warden::connect(
         socklen_t addrlen,
         std::optional<std::chrono::nanoseconds> timeout,
         felspar::source_location loc) {
-    return {new connect_completion{
-            this, fd, addr, addrlen, std::move(timeout), std::move(loc)}};
+    return {new connect_completion{this, fd, addr, addrlen, timeout, loc}};
 }
 
 
@@ -229,7 +221,7 @@ public completion<void> {
             int f,
             std::optional<std::chrono::nanoseconds> t,
             felspar::source_location loc)
-    : completion<void>{s, std::move(t), std::move(loc)}, fd{f} {}
+    : completion<void>{s, t, loc}, fd{f} {}
     int fd;
     felspar::coro::coroutine_handle<> iop_timedout() override {
         std::erase(self->requests[fd].reads, this);
@@ -250,8 +242,7 @@ felspar::io::iop<void> felspar::io::poll_warden::read_ready(
         int fd,
         std::optional<std::chrono::nanoseconds> timeout,
         felspar::source_location loc) {
-    return {new read_ready_completion{
-            this, fd, std::move(timeout), std::move(loc)}};
+    return {new read_ready_completion{this, fd, timeout, loc}};
 }
 
 
@@ -262,7 +253,7 @@ public completion<void> {
             int f,
             std::optional<std::chrono::nanoseconds> t,
             felspar::source_location loc)
-    : completion<void>{s, std::move(t), std::move(loc)}, fd{f} {}
+    : completion<void>{s, t, loc}, fd{f} {}
     int fd;
     felspar::coro::coroutine_handle<> iop_timedout() override {
         std::erase(self->requests[fd].writes, this);
@@ -283,6 +274,5 @@ felspar::io::iop<void> felspar::io::poll_warden::write_ready(
         int fd,
         std::optional<std::chrono::nanoseconds> timeout,
         felspar::source_location loc) {
-    return {new write_ready_completion{
-            this, fd, std::move(timeout), std::move(loc)}};
+    return {new write_ready_completion{this, fd, timeout, loc}};
 }

@@ -25,10 +25,9 @@ namespace felspar::io {
             char const *message = "";
             [[noreturn]] void throw_exception() {
                 if (code == timeout::error) {
-                    throw timeout{message, std::move(loc)};
+                    throw timeout{message, loc};
                 } else {
-                    throw felspar::stdexcept::system_error{
-                            code, message, std::move(loc)};
+                    throw felspar::stdexcept::system_error{code, message, loc};
                 }
             }
             explicit operator bool() const noexcept {
@@ -46,7 +45,7 @@ namespace felspar::io {
         detail::error_store error;
         R result = {};
 
-        completion(felspar::source_location l) : error{std::move(l)} {}
+        completion(felspar::source_location l) : error{l} {}
         virtual ~completion() = default;
 
         virtual warden *ward() = 0;
@@ -61,7 +60,7 @@ namespace felspar::io {
         felspar::coro::coroutine_handle<> handle;
         detail::error_store error;
 
-        completion(felspar::source_location l) : error{std::move(l)} {}
+        completion(felspar::source_location l) : error{l} {}
         virtual ~completion() = default;
 
         virtual warden *ward() = 0;

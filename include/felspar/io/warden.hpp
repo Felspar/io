@@ -60,7 +60,7 @@ namespace felspar::io {
                 std::optional<std::chrono::nanoseconds> timeout = {},
                 felspar::source_location l =
                         felspar::source_location::current()) {
-            return read_some(s.native_handle(), b, timeout, std::move(l));
+            return read_some(s.native_handle(), b, timeout, l);
         }
         virtual iop<std::size_t> write_some(
                 int fd,
@@ -74,8 +74,7 @@ namespace felspar::io {
                 std::optional<std::chrono::nanoseconds> timeout = {},
                 felspar::source_location l =
                         felspar::source_location::current()) {
-            return write_some(
-                    s.native_handle(), b, std::move(timeout), std::move(l));
+            return write_some(s.native_handle(), b, timeout, l);
         }
 
         /**
@@ -100,8 +99,7 @@ namespace felspar::io {
                        std::optional<std::chrono::nanoseconds> timeout = {},
                        felspar::source_location loc =
                                felspar::source_location::current()) {
-            return accept(
-                    sock.native_handle(), std::move(timeout), std::move(loc));
+            return accept(sock.native_handle(), timeout, loc);
         }
         virtual iop<void>
                 connect(int fd,
@@ -117,9 +115,7 @@ namespace felspar::io {
                         std::optional<std::chrono::nanoseconds> timeout = {},
                         felspar::source_location loc =
                                 felspar::source_location::current()) {
-            return connect(
-                    sock.native_handle(), addr, addrlen, std::move(timeout),
-                    std::move(loc));
+            return connect(sock.native_handle(), addr, addrlen, timeout, loc);
         }
 
 
@@ -136,8 +132,7 @@ namespace felspar::io {
                 std::optional<std::chrono::nanoseconds> timeout = {},
                 felspar::source_location loc =
                         felspar::source_location::current()) {
-            return read_ready(
-                    sock.native_handle(), std::move(timeout), std::move(loc));
+            return read_ready(sock.native_handle(), timeout, loc);
         }
         virtual iop<void> write_ready(
                 int fd,
@@ -149,8 +144,7 @@ namespace felspar::io {
                 std::optional<std::chrono::nanoseconds> timeout = {},
                 felspar::source_location loc =
                         felspar::source_location::current()) {
-            return write_ready(
-                    sock.native_handle(), std::move(timeout), std::move(loc));
+            return write_ready(sock.native_handle(), timeout, loc);
         }
     };
 

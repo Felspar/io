@@ -7,8 +7,7 @@ felspar::posix::fd felspar::io::warden::create_socket(
     posix::fd s{::socket(domain, type, protocol)};
     if (not s) {
         throw felspar::stdexcept::system_error{
-                errno, std::system_category(), "Creating server socket",
-                std::move(loc)};
+                errno, std::system_category(), "Creating server socket", loc};
     } else {
         return s;
     }

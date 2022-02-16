@@ -21,7 +21,7 @@ namespace felspar::io {
             warden &w,
             posix::fd const &sock,
             felspar::source_location loc = felspar::source_location::current()) {
-        return accept(w, sock.native_handle(), std::move(loc));
+        return accept(w, sock.native_handle(), loc);
     }
 
 

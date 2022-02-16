@@ -42,7 +42,7 @@ namespace felspar::io {
                 w, std::forward<S>(fd),
                 std::span<std::byte const>{
                         reinterpret_cast<std::byte const *>(buf), count},
-                std::move(timeout), std::move(loc));
+                std::move(timeout), loc);
     }
     template<typename S>
     inline felspar::coro::task<std::size_t> write_all(
@@ -55,7 +55,7 @@ namespace felspar::io {
                 w, std::forward<S>(fd),
                 std::span<std::byte const>{
                         reinterpret_cast<std::byte const *>(s.data()), s.size()},
-                std::move(timeout), std::move(loc));
+                std::move(timeout), loc);
     }
 
 
