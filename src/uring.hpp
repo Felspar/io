@@ -65,9 +65,9 @@ namespace felspar::io {
                     self->cancel(this);
                     return;
                 } else {
-                    io::completion<R>::error.code = {
+                    io::completion<R>::result.error = {
                             -result, std::system_category()};
-                    io::completion<R>::error.message = "uring IOP";
+                    io::completion<R>::result.message = "uring IOP";
                 }
             } else {
                 io::completion<R>::result = result;
@@ -111,18 +111,16 @@ namespace felspar::io {
 
         void deliver(int result) override {
             if (result == -ETIME) {
-                io::completion<void>::error.code = {
-                        ETIME, std::system_category()};
-                io::completion<void>::error.message = "uring IOP timeout";
+                io::completion<void>::result = {
+                        {ETIME, std::system_category()}, "uring IOP timeout"};
             } else if (timeout and result == -ECANCELED) {
                 /// This is the cancelled IOP so we ignore it as we've timed
                 /// out
                 self->cancel(this);
                 return;
             } else if (result < 0) {
-                io::completion<void>::error.code = {
-                        -result, std::system_category()};
-                io::completion<void>::error.message = "uring IOP";
+                io::completion<void>::result = {
+                        {-result, std::system_category()}, "uring IOP"};
                 ;
             }
             io::completion<void>::handle.resume();

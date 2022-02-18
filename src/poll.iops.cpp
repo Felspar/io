@@ -23,14 +23,14 @@ struct felspar::io::poll_warden::sleep_completion : public completion<void> {
         handle = h;
         timer = posix::fd{::timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK)};
         if (not timer) {
-            error.code = {errno, std::system_category()};
-            error.message = "timerfd_create";
+            result.error = {errno, std::system_category()};
+            result.message = "timerfd_create";
             return handle;
         } else if (
                 ::timerfd_settime(timer.native_handle(), 0, &spec, nullptr)
                 == -1) {
-            error.code = {errno, std::system_category()};
-            error.message = "timerfd_settime";
+            result.error = {errno, std::system_category()};
+            result.message = "timerfd_settime";
             return handle;
         } else {
             self->requests[timer.native_handle()].reads.push_back(this);
@@ -70,8 +70,8 @@ public completion<std::size_t> {
             self->requests[fd].reads.push_back(this);
             return felspar::coro::noop_coroutine();
         } else {
-            error.code = {errno, std::system_category()};
-            error.message = "read";
+            result.error = {errno, std::system_category()};
+            result.message = "read";
             return cancel_timeout_then_resume();
         }
     }
@@ -108,8 +108,8 @@ public completion<std::size_t> {
             self->requests[fd].writes.push_back(this);
             return felspar::coro::noop_coroutine();
         } else {
-            error.code = {errno, std::system_category()};
-            error.message = "write";
+            result.error = {errno, std::system_category()};
+            result.message = "write";
             return cancel_timeout_then_resume();
         }
     }
@@ -136,17 +136,19 @@ struct felspar::io::poll_warden::accept_completion : public completion<int> {
         return completion<int>::iop_timedout();
     }
     felspar::coro::coroutine_handle<> try_or_resume() override {
-        result = ::accept4(fd, nullptr, nullptr, SOCK_NONBLOCK);
-        if (result >= 0) {
+        auto const r = ::accept4(fd, nullptr, nullptr, SOCK_NONBLOCK);
+        if (r >= 0) {
+            result = r;
             return cancel_timeout_then_resume();
         } else if (errno == EWOULDBLOCK or errno == EAGAIN) {
             self->requests[fd].reads.push_back(this);
             return felspar::coro::noop_coroutine();
         } else if (errno == EBADF) {
+            result = r;
             return cancel_timeout_then_resume();
         } else {
-            error.code = {errno, std::system_category()};
-            error.message = "accept";
+            result.error = {errno, std::system_category()};
+            result.message = "accept";
             return cancel_timeout_then_resume();
         }
     }
@@ -181,8 +183,8 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
             insert_timeout();
             return felspar::coro::noop_coroutine();
         } else {
-            error.code = {errno, std::system_category()};
-            error.message = "connect";
+            result.error = {errno, std::system_category()};
+            result.message = "connect";
             return handle;
         }
     }
@@ -193,13 +195,13 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
             if (errvalue == 0) {
                 return cancel_timeout_then_resume();
             } else {
-                error.code = {errno, std::system_category()};
-                error.message = "connect";
+                result.error = {errno, std::system_category()};
+                result.message = "connect";
                 return cancel_timeout_then_resume();
             }
         } else {
-            error.code = {errno, std::system_category()};
-            error.message = "connect/getsockopt";
+            result.error = {errno, std::system_category()};
+            result.message = "connect/getsockopt";
             return cancel_timeout_then_resume();
         }
     }

@@ -71,8 +71,8 @@ namespace {
         } catch (...) { check(false) == true; }
 
         while (true) {
-            felspar::io::result<std::size_t> const result{
-                    co_await felspar::io::ec{ward.write_some(fd, buffer, 10ms)}};
+            auto const result{co_await felspar::io::ec{
+                    ward.write_some(fd, buffer, 10ms)}};
             if (not result and result.error == felspar::io::timeout::error) {
                 co_return;
             } else if (not result) {

@@ -13,59 +13,60 @@ namespace felspar::io {
 
     template<typename R>
     class ec;
-    template<typename R>
-    class result;
     class warden;
 
 
-    namespace detail {
-        struct error_store {
-            felspar::source_location loc;
-            std::error_code code = {};
-            char const *message = "";
-            [[noreturn]] void throw_exception() {
-                if (code == timeout::error) {
-                    throw timeout{message, loc};
-                } else {
-                    throw felspar::stdexcept::system_error{code, message, loc};
-                }
+    template<typename R>
+    struct outcome;
+    template<>
+    struct outcome<void> {
+        std::error_code error = {};
+        char const *message = "";
+        [[noreturn]] void throw_exception(
+                felspar::source_location loc =
+                        felspar::source_location::current()) {
+            if (error == timeout::error) {
+                throw timeout{message, loc};
+            } else {
+                throw felspar::stdexcept::system_error{error, message, loc};
             }
-            explicit operator bool() const noexcept {
-                return static_cast<bool>(code);
-            }
-        };
-    }
+        }
+        explicit operator bool() const noexcept {
+            return not static_cast<bool>(error);
+        }
+    };
+    template<typename R>
+    struct outcome : private outcome<void> {
+        using outcome<void>::error;
+        using outcome<void>::message;
+        using outcome<void>::throw_exception;
+        using outcome<void>::operator bool;
+
+        std::optional<R> result = {};
+
+        outcome &operator=(R r) {
+            result = std::move(r);
+            return *this;
+        }
+        R const &operator()() const { return result.value(); }
+    };
+
 
     template<typename R>
     struct completion {
         using result_type = R;
 
         std::size_t iop_count = 1;
-        felspar::coro::coroutine_handle<> handle;
-        detail::error_store error;
-        R result = {};
+        felspar::coro::coroutine_handle<> handle = {};
+        felspar::source_location loc;
+        outcome<R> result = {};
 
-        completion(felspar::source_location l) : error{l} {}
+        completion(felspar::source_location l) : loc{l} {}
         virtual ~completion() = default;
 
         virtual warden *ward() = 0;
         virtual felspar::coro::coroutine_handle<>
                 await_suspend(felspar::coro::coroutine_handle<>) = 0;
-    };
-    template<>
-    struct completion<void> {
-        using result_type = void;
-
-        std::size_t iop_count = 1;
-        felspar::coro::coroutine_handle<> handle;
-        detail::error_store error;
-
-        completion(felspar::source_location l) : error{l} {}
-        virtual ~completion() = default;
-
-        virtual warden *ward() = 0;
-        virtual felspar::coro::coroutine_handle<>
-                await_suspend(felspar::coro::coroutine_handle<> h) = 0;
     };
 
 
@@ -95,10 +96,10 @@ namespace felspar::io {
             return comp->await_suspend(h);
         }
         R await_resume() {
-            if (comp->error) {
-                comp->error.throw_exception();
+            if (comp->result.error) {
+                comp->result.throw_exception(comp->loc);
             } else {
-                return std::move(comp->result);
+                return std::move(comp->result.result.value());
             }
         }
 
@@ -131,7 +132,7 @@ namespace felspar::io {
             return comp->await_suspend(h);
         }
         auto await_resume() {
-            if (comp->error) { comp->error.throw_exception(); }
+            if (comp->result.error) { comp->result.throw_exception(comp->loc); }
         }
 
       private:
