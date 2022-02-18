@@ -65,9 +65,8 @@ namespace felspar::io {
                     self->cancel(this);
                     return;
                 } else {
-                    io::completion<R>::result.error = {
-                            -result, std::system_category()};
-                    io::completion<R>::result.message = "uring IOP";
+                    io::completion<R>::result = {
+                            {-result, std::system_category()}, "uring IOP"};
                 }
             } else {
                 io::completion<R>::result = result;

@@ -60,6 +60,11 @@ namespace felspar::io {
             result = std::move(r);
             return *this;
         }
+        outcome &operator=(outcome<void> r) {
+            error = r.error;
+            message = r.message;
+            return *this;
+        }
 
         /// Consume the value, or throw the exception
         R value(felspar::source_location loc =
