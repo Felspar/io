@@ -11,7 +11,7 @@ felspar::io::uring_warden::uring_warden(unsigned entries, unsigned flags)
     if (auto const ret =
                 ::io_uring_queue_init(entries, &ring->uring, flags) < 0) {
         throw felspar::stdexcept::system_error{
-                -ret, std::generic_category(), "uring_queue_init"};
+                -ret, std::system_category(), "uring_queue_init"};
     }
 }
 felspar::io::uring_warden::~uring_warden() {
@@ -29,7 +29,7 @@ void felspar::io::uring_warden::run_until(
         auto const ret = ::io_uring_wait_cqe(&ring->uring, &cqe);
         if (ret < 0) {
             throw felspar::stdexcept::system_error{
-                    -ret, std::generic_category(), "uring_wait_cqe"};
+                    -ret, std::system_category(), "uring_wait_cqe"};
         }
         ring->execute(cqe);
         while (::io_uring_peek_cqe(&ring->uring, &cqe) == 0) {

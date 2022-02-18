@@ -13,7 +13,7 @@ struct felspar::io::poll_warden::sleep_completion : public completion<void> {
             poll_warden *s,
             std::chrono::nanoseconds ns,
             felspar::source_location loc)
-    : completion<void>{s, {}, std::move(loc)} {
+    : completion<void>{s, {}, loc} {
         spec.it_value.tv_nsec = ns.count();
     }
     posix::fd timer;
@@ -23,18 +23,12 @@ struct felspar::io::poll_warden::sleep_completion : public completion<void> {
         handle = h;
         timer = posix::fd{::timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK)};
         if (not timer) {
-            exception =
-                    std::make_exception_ptr(felspar::stdexcept::system_error{
-                            errno, std::generic_category(), "timerfd_create",
-                            std::move(loc)});
+            result = {{errno, std::system_category()}, "timerfd_create"};
             return handle;
         } else if (
                 ::timerfd_settime(timer.native_handle(), 0, &spec, nullptr)
                 == -1) {
-            exception =
-                    std::make_exception_ptr(felspar::stdexcept::system_error{
-                            errno, std::generic_category(), "timerfd_settime",
-                            std::move(loc)});
+            result = {{errno, std::system_category()}, "timerfd_settime"};
             return handle;
         } else {
             self->requests[timer.native_handle()].reads.push_back(this);
@@ -47,7 +41,7 @@ struct felspar::io::poll_warden::sleep_completion : public completion<void> {
 };
 felspar::io::iop<void> felspar::io::poll_warden::sleep(
         std::chrono::nanoseconds ns, felspar::source_location loc) {
-    return {new sleep_completion{this, ns, std::move(loc)}};
+    return {new sleep_completion{this, ns, loc}};
 }
 
 
@@ -59,9 +53,7 @@ public completion<std::size_t> {
             std::span<std::byte> b,
             std::optional<std::chrono::nanoseconds> timeout,
             felspar::source_location loc)
-    : completion<std::size_t>{s, std::move(timeout), std::move(loc)},
-      fd{f},
-      buf{b} {}
+    : completion<std::size_t>{s, timeout, loc}, fd{f}, buf{b} {}
     int fd;
     std::span<std::byte> buf;
     felspar::coro::coroutine_handle<> iop_timedout() override {
@@ -76,8 +68,7 @@ public completion<std::size_t> {
             self->requests[fd].reads.push_back(this);
             return felspar::coro::noop_coroutine();
         } else {
-            exception = std::make_exception_ptr(felspar::stdexcept::system_error{
-                    errno, std::generic_category(), "read", std::move(loc)});
+            result = {{errno, std::system_category()}, "read"};
             return cancel_timeout_then_resume();
         }
     }
@@ -87,8 +78,7 @@ felspar::io::iop<std::size_t> felspar::io::poll_warden::read_some(
         std::span<std::byte> buf,
         std::optional<std::chrono::nanoseconds> timeout,
         felspar::source_location loc) {
-    return {new read_some_completion{
-            this, fd, buf, std::move(timeout), std::move(loc)}};
+    return {new read_some_completion{this, fd, buf, timeout, loc}};
 }
 
 
@@ -100,7 +90,7 @@ public completion<std::size_t> {
             std::span<std::byte const> b,
             std::optional<std::chrono::nanoseconds> t,
             felspar::source_location loc)
-    : completion<std::size_t>{s, std::move(t), std::move(loc)}, fd{f}, buf{b} {}
+    : completion<std::size_t>{s, t, loc}, fd{f}, buf{b} {}
     int fd;
     std::span<std::byte const> buf;
     felspar::coro::coroutine_handle<> iop_timedout() override {
@@ -115,8 +105,7 @@ public completion<std::size_t> {
             self->requests[fd].writes.push_back(this);
             return felspar::coro::noop_coroutine();
         } else {
-            exception = std::make_exception_ptr(felspar::stdexcept::system_error{
-                    errno, std::generic_category(), "write", std::move(loc)});
+            result = {{errno, std::system_category()}, "write"};
             return cancel_timeout_then_resume();
         }
     }
@@ -126,8 +115,7 @@ felspar::io::iop<std::size_t> felspar::io::poll_warden::write_some(
         std::span<std::byte const> buf,
         std::optional<std::chrono::nanoseconds> t,
         felspar::source_location loc) {
-    return {new write_some_completion{
-            this, fd, buf, std::move(t), std::move(loc)}};
+    return {new write_some_completion{this, fd, buf, t, loc}};
 }
 
 
@@ -137,24 +125,25 @@ struct felspar::io::poll_warden::accept_completion : public completion<int> {
             int f,
             std::optional<std::chrono::nanoseconds> t,
             felspar::source_location loc)
-    : completion<int>{s, std::move(t), std::move(loc)}, fd{f} {}
+    : completion<int>{s, t, loc}, fd{f} {}
     int fd;
     felspar::coro::coroutine_handle<> iop_timedout() override {
         std::erase(self->requests[fd].reads, this);
         return completion<int>::iop_timedout();
     }
     felspar::coro::coroutine_handle<> try_or_resume() override {
-        result = ::accept4(fd, nullptr, nullptr, SOCK_NONBLOCK);
-        if (result >= 0) {
+        auto const r = ::accept4(fd, nullptr, nullptr, SOCK_NONBLOCK);
+        if (r >= 0) {
+            result = r;
             return cancel_timeout_then_resume();
         } else if (errno == EWOULDBLOCK or errno == EAGAIN) {
             self->requests[fd].reads.push_back(this);
             return felspar::coro::noop_coroutine();
         } else if (errno == EBADF) {
+            result = r;
             return cancel_timeout_then_resume();
         } else {
-            exception = std::make_exception_ptr(felspar::stdexcept::system_error{
-                    errno, std::generic_category(), "accept", std::move(loc)});
+            result = {{errno, std::system_category()}, "accept"};
             return cancel_timeout_then_resume();
         }
     }
@@ -163,7 +152,7 @@ felspar::io::iop<int> felspar::io::poll_warden::accept(
         int fd,
         std::optional<std::chrono::nanoseconds> timeout,
         felspar::source_location loc) {
-    return {new accept_completion{this, fd, std::move(timeout), std::move(loc)}};
+    return {new accept_completion{this, fd, timeout, loc}};
 }
 
 
@@ -175,10 +164,7 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
             socklen_t l,
             std::optional<std::chrono::nanoseconds> t,
             felspar::source_location loc)
-    : completion<void>{s, std::move(t), std::move(loc)},
-      fd{f},
-      addr{a},
-      addrlen{l} {}
+    : completion<void>{s, t, loc}, fd{f}, addr{a}, addrlen{l} {}
     int fd;
     sockaddr const *addr;
     socklen_t addrlen;
@@ -192,8 +178,7 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
             insert_timeout();
             return felspar::coro::noop_coroutine();
         } else {
-            exception = std::make_exception_ptr(felspar::stdexcept::system_error{
-                    errno, std::generic_category(), "connect", std::move(loc)});
+            result = {{errno, std::system_category()}, "connect"};
             return handle;
         }
     }
@@ -204,17 +189,11 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
             if (errvalue == 0) {
                 return cancel_timeout_then_resume();
             } else {
-                exception = std::make_exception_ptr(
-                        felspar::stdexcept::system_error{
-                                errno, std::generic_category(), "connect",
-                                std::move(loc)});
+                result = {{errno, std::system_category()}, "connect"};
                 return cancel_timeout_then_resume();
             }
         } else {
-            exception =
-                    std::make_exception_ptr(felspar::stdexcept::system_error{
-                            errno, std::generic_category(),
-                            "connect/getsockopt", std::move(loc)});
+            result = {{errno, std::system_category()}, "connect/getsockopt"};
             return cancel_timeout_then_resume();
         }
     }
@@ -225,8 +204,7 @@ felspar::io::iop<void> felspar::io::poll_warden::connect(
         socklen_t addrlen,
         std::optional<std::chrono::nanoseconds> timeout,
         felspar::source_location loc) {
-    return {new connect_completion{
-            this, fd, addr, addrlen, std::move(timeout), std::move(loc)}};
+    return {new connect_completion{this, fd, addr, addrlen, timeout, loc}};
 }
 
 
@@ -237,7 +215,7 @@ public completion<void> {
             int f,
             std::optional<std::chrono::nanoseconds> t,
             felspar::source_location loc)
-    : completion<void>{s, std::move(t), std::move(loc)}, fd{f} {}
+    : completion<void>{s, t, loc}, fd{f} {}
     int fd;
     felspar::coro::coroutine_handle<> iop_timedout() override {
         std::erase(self->requests[fd].reads, this);
@@ -258,8 +236,7 @@ felspar::io::iop<void> felspar::io::poll_warden::read_ready(
         int fd,
         std::optional<std::chrono::nanoseconds> timeout,
         felspar::source_location loc) {
-    return {new read_ready_completion{
-            this, fd, std::move(timeout), std::move(loc)}};
+    return {new read_ready_completion{this, fd, timeout, loc}};
 }
 
 
@@ -270,7 +247,7 @@ public completion<void> {
             int f,
             std::optional<std::chrono::nanoseconds> t,
             felspar::source_location loc)
-    : completion<void>{s, std::move(t), std::move(loc)}, fd{f} {}
+    : completion<void>{s, t, loc}, fd{f} {}
     int fd;
     felspar::coro::coroutine_handle<> iop_timedout() override {
         std::erase(self->requests[fd].writes, this);
@@ -291,6 +268,5 @@ felspar::io::iop<void> felspar::io::poll_warden::write_ready(
         int fd,
         std::optional<std::chrono::nanoseconds> timeout,
         felspar::source_location loc) {
-    return {new write_ready_completion{
-            this, fd, std::move(timeout), std::move(loc)}};
+    return {new write_ready_completion{this, fd, timeout, loc}};
 }

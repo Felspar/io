@@ -1,3 +1,6 @@
+2022-02-16  Kirit Sælensminde  <kirit@felspar.com>
+ Exceptions for low-level IOPs can now be opted out of.
+
 2022-02-13  Kirit Sælensminde  <kirit@felspar.com>
  Added timeouts to all IOPs
 

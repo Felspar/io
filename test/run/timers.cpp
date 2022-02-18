@@ -37,7 +37,7 @@ namespace {
         int constexpr backlog = 64;
         if (::listen(fd.native_handle(), backlog) == -1) {
             throw felspar::stdexcept::system_error{
-                    errno, std::generic_category(), "Calling listen"};
+                    errno, std::system_category(), "Calling listen"};
         }
 
         auto acceptor = felspar::io::accept(ward, fd);
@@ -69,6 +69,17 @@ namespace {
         } catch (felspar::io::timeout const &) {
             check(true) == true;
         } catch (...) { check(false) == true; }
+
+        while (true) {
+            auto const result{co_await felspar::io::ec{
+                    ward.write_some(fd, buffer, 10ms)}};
+            if (not result and result.error == felspar::io::timeout::error) {
+                co_return;
+            } else if (not result) {
+                check(result.error)
+                        == std::error_code{}; // Force print result.error
+            }
+        }
     }
     auto const wp = suite.test("write/poll", []() {
         felspar::io::poll_warden ward;
@@ -95,7 +106,7 @@ namespace {
         int constexpr backlog = 64;
         if (::listen(fd.native_handle(), backlog) == -1) {
             throw felspar::stdexcept::system_error{
-                    errno, std::generic_category(), "Calling listen"};
+                    errno, std::system_category(), "Calling listen"};
         }
 
         try {
@@ -105,7 +116,7 @@ namespace {
             check(true) == true;
         } catch (...) { check(false) == true; }
     }
-    auto const ap = suite.test("write/poll", []() {
+    auto const ap = suite.test("accept/poll", []() {
         felspar::io::poll_warden ward;
         ward.run(short_accept, 5538);
     });

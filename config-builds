@@ -23,6 +23,7 @@ CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-release \
     -DCMAKE_BUILD_TYPE=Release
 
 
+# We can't use `undefined` sanitizer with coroutines due to clang bug :-(
 export CXXFLAGS="${CXXFLAGS} -fsanitize=address"
 
 CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-debug-asan \

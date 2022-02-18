@@ -2,7 +2,6 @@
 
 
 #include <felspar/exceptions.hpp>
-#include <felspar/io/exceptions.hpp>
 #include <felspar/io/warden.uring.hpp>
 
 #include <liburing.h>
@@ -32,7 +31,7 @@ namespace felspar::io {
                 uring_warden *w,
                 std::optional<std::chrono::nanoseconds> tout,
                 felspar::source_location loc)
-        : io::completion<R>{std::move(loc)}, self{w}, timeout{std::move(tout)} {}
+        : io::completion<R>{loc}, self{w}, timeout{tout} {}
 
         uring_warden *self = nullptr;
         warden *ward() override { return self; }
@@ -60,22 +59,14 @@ namespace felspar::io {
 
         void deliver(int result) override {
             if (result < 0) {
-                if (result == -ETIME) {
-                    io::completion<R>::exception =
-                            std::make_exception_ptr(io::timeout{
-                                    "uring IOP timeout",
-                                    std::move(io::completion<R>::loc)});
-                } else if (timeout and result == -ECANCELED) {
+                if (timeout and result == -ECANCELED) {
                     /// This is the cancelled IOP so we ignore it as we've timed
                     /// out
                     self->cancel(this);
                     return;
                 } else {
-                    io::completion<R>::exception =
-                            std::make_exception_ptr(stdexcept::system_error{
-                                    -result, std::generic_category(),
-                                    "uring IOP",
-                                    std::move(io::completion<R>::loc)});
+                    io::completion<R>::result = {
+                            {-result, std::system_category()}, "uring IOP"};
                 }
             } else {
                 io::completion<R>::result = result;
@@ -91,9 +82,7 @@ namespace felspar::io {
                 uring_warden *w,
                 std::optional<std::chrono::nanoseconds> tout,
                 felspar::source_location loc)
-        : io::completion<void>{std::move(loc)},
-          self{w},
-          timeout{std::move(tout)} {}
+        : io::completion<void>{loc}, self{w}, timeout{tout} {}
 
         uring_warden *self;
         warden *ward() override { return self; }
@@ -121,20 +110,17 @@ namespace felspar::io {
 
         void deliver(int result) override {
             if (result == -ETIME) {
-                io::completion<void>::exception =
-                        std::make_exception_ptr(io::timeout{
-                                "uring IOP timeout",
-                                std::move(io::completion<void>::loc)});
+                io::completion<void>::result = {
+                        {ETIME, std::system_category()}, "uring IOP timeout"};
             } else if (timeout and result == -ECANCELED) {
                 /// This is the cancelled IOP so we ignore it as we've timed
                 /// out
                 self->cancel(this);
                 return;
             } else if (result < 0) {
-                io::completion<void>::exception = std::make_exception_ptr(
-                        felspar::stdexcept::system_error{
-                                -result, std::generic_category(), "uring IOP",
-                                std::move(io::completion<void>::loc)});
+                io::completion<void>::result = {
+                        {-result, std::system_category()}, "uring IOP"};
+                ;
             }
             io::completion<void>::handle.resume();
         }

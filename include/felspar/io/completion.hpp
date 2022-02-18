@@ -1,55 +1,109 @@
 #pragma once
 
-
 #include <felspar/coro/task.hpp>
+#include <felspar/io/exceptions.hpp>
 #include <felspar/test/source.hpp>
 
 #include <memory>
+#include <system_error>
 
 
 namespace felspar::io {
 
 
+    template<typename R>
+    class ec;
     class warden;
 
 
+    /// Describe the outcome of an API
+    template<typename R>
+    struct outcome;
+    template<>
+    struct outcome<void> {
+        std::error_code error = {};
+        char const *message = "";
+
+        /// Returns true if no error occurred
+        explicit operator bool() const noexcept {
+            return not static_cast<bool>(error);
+        }
+        /// Throw the exception associated with the error
+        [[noreturn]] void throw_exception(
+                felspar::source_location loc =
+                        felspar::source_location::current()) {
+            if (error == timeout::error) {
+                throw timeout{message, loc};
+            } else {
+                throw felspar::stdexcept::system_error{error, message, loc};
+            }
+        }
+        /// Throw the exception if there was one
+        void
+                value(felspar::source_location loc =
+                              felspar::source_location::current()) {
+            if (error) { throw_exception(loc); }
+        }
+    };
+    template<typename R>
+    struct outcome : private outcome<void> {
+        using outcome<void>::error;
+        using outcome<void>::message;
+        using outcome<void>::throw_exception;
+        using outcome<void>::operator bool;
+
+        /// Contains the result (if one was recorded)
+        std::optional<R> result = {};
+
+        /// Assign a value to the outcome
+        outcome &operator=(R r) {
+            result = std::move(r);
+            return *this;
+        }
+        outcome &operator=(outcome<void> r) {
+            error = r.error;
+            message = r.message;
+            return *this;
+        }
+
+        /// Consume the value, or throw the exception
+        R value(felspar::source_location loc =
+                        felspar::source_location::current()) && {
+            if (error) {
+                throw_exception(loc);
+            } else {
+                return std::move(result.value());
+            }
+        }
+    };
+
+
+    /// A completion is always created in response to an IOP request and is used
+    /// to track and manage the IOP as it executes
     template<typename R>
     struct completion {
         using result_type = R;
 
         std::size_t iop_count = 1;
-        felspar::coro::coroutine_handle<> handle;
+        felspar::coro::coroutine_handle<> handle = {};
         felspar::source_location loc;
-        R result = {};
-        std::exception_ptr exception;
+        outcome<R> result = {};
 
-        completion(felspar::source_location l) : loc{std::move(l)} {}
+        completion(felspar::source_location l) : loc{l} {}
         virtual ~completion() = default;
 
         virtual warden *ward() = 0;
         virtual felspar::coro::coroutine_handle<>
                 await_suspend(felspar::coro::coroutine_handle<>) = 0;
     };
-    template<>
-    struct completion<void> {
-        using result_type = void;
-
-        std::size_t iop_count = 1;
-        felspar::coro::coroutine_handle<> handle;
-        felspar::source_location loc;
-        std::exception_ptr exception;
-
-        completion(felspar::source_location l) : loc{std::move(l)} {}
-        virtual ~completion() = default;
-
-        virtual warden *ward() = 0;
-        virtual felspar::coro::coroutine_handle<>
-                await_suspend(felspar::coro::coroutine_handle<> h) = 0;
-    };
 
 
+    /// The awaitable type associated with all IOPs.
     template<typename R>
     class iop {
+        template<typename E>
+        friend class ec;
+
       public:
         using result_type = R;
         using completion_type = completion<result_type>;
@@ -57,39 +111,20 @@ namespace felspar::io {
         iop(completion_type *c) : comp{c} {}
         ~iop();
 
-        bool await_ready() const noexcept { return false; }
-        felspar::coro::coroutine_handle<>
-                await_suspend(felspar::coro::coroutine_handle<> h) {
-            return comp->await_suspend(h);
+        iop(iop const &) = delete;
+        iop &operator=(iop const &) = delete;
+        iop(iop &&i) : comp{std::exchange(i.comp, {})} {}
+        iop &operator=(iop &&i) {
+            std::swap(i.comp, comp);
+            return *this;
         }
-        R await_resume() {
-            if (comp->exception) {
-                std::rethrow_exception(comp->exception);
-            } else {
-                return std::move(comp->result);
-            }
-        }
-
-      private:
-        completion_type *comp;
-    };
-    template<>
-    class iop<void> {
-      public:
-        using result_type = void;
-        using completion_type = completion<result_type>;
-
-        iop(completion_type *c) : comp{c} {}
-        ~iop();
 
         bool await_ready() const noexcept { return false; }
         felspar::coro::coroutine_handle<>
                 await_suspend(felspar::coro::coroutine_handle<> h) {
             return comp->await_suspend(h);
         }
-        auto await_resume() {
-            if (comp->exception) { std::rethrow_exception(comp->exception); }
-        }
+        R await_resume() { return std::move(comp->result).value(); }
 
       private:
         completion_type *comp;

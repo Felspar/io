@@ -41,7 +41,7 @@ void felspar::io::poll_warden::run_until(felspar::coro::coroutine_handle<> coro)
         int const pr = ::poll(iops.data(), iops.size(), timeout);
         if (pr == -1) {
             throw felspar::stdexcept::system_error{
-                    errno, std::generic_category(), "poll"};
+                    errno, std::system_category(), "poll"};
         } else if (pr > 0) {
             continuations.clear();
             for (auto events : iops) {

@@ -39,7 +39,7 @@ namespace felspar::io {
         return read_exactly(
                 w, std::forward<S>(s),
                 std::span<std::byte>{reinterpret_cast<std::byte *>(buf), count},
-                std::move(timeout), std::move(loc));
+                std::move(timeout), loc);
     }
     template<typename S>
     inline felspar::coro::task<std::size_t> read_exactly(
@@ -52,7 +52,7 @@ namespace felspar::io {
                 w, std::forward<S>(s),
                 std::span<std::byte>{
                         reinterpret_cast<std::byte *>(b.data()), b.size()},
-                std::move(timeout), std::move(loc));
+                std::move(timeout), loc);
     }
 
 

@@ -53,7 +53,7 @@ felspar::coro::task<void>
     int constexpr backlog = 64;
     if (::listen(fd.native_handle(), backlog) == -1) {
         throw felspar::stdexcept::system_error{
-                errno, std::generic_category(), "Calling listen"};
+                errno, std::system_category(), "Calling listen"};
     }
 
     felspar::coro::starter<felspar::coro::task<void>> co;
@@ -65,4 +65,35 @@ felspar::coro::task<void>
 }
 ```
 
-The library is built around the notion of "wardens". There is an abstract `felspar::io::warden` type that provides an API for various IOPs, and in the future, polymorphic allocation for memory required to execute the IOPs and coroutines that make use of them.
+The default behaviour for all errors is to throw an exception, but this can be altered by wrapping the IOP in an `felspar::io::ec` call:
+
+```cpp
+if (auto result = co_await ward.read_some(fd, buffer, 200ms); result) {
+    process(buffer.first(*result.value));
+} else {
+    log_error("read error", result.error);
+}
+```
+
+This only works for IOPs (directly APIs on the warden). Compound convenience APIs will always throw exceptions. *felspar-io* uses *felspar-exception* in order to track source code locations for errors thrown -- this means the call site of the IO API will be in the exception `what()` string.
+
+
+### Wardens
+
+The library is built around the notion of "wardens". There is an abstract `felspar::io::warden` type that provides an API for various IOPs (and in the future) polymorphic allocation for memory required to execute the IOPs and coroutines that make use of them.
+
+Concrete warden implementation make use of a particular API family to implement the required asynchronous IO and timing APIs. At the moment there are the `felspar::io::poll_warden` and the `felspar::io::uring_warden`. The first makes use of the `poll()` system call and the latter the `io_uring` facilities. The library design is centred around the capabilities of io_uring rather than poll, with poll being treated as a compatibility fallback for use on platforms where io_uring is not available. **The intention is not to expose the entirety of the io_uring API space, just those IOPs that are most useful to a wide range of applications (e.g. a focus on network and file IO).**
+
+Different wardens will have slight differences in observable behaviour as a consequence of their differing APIs. For example, sleeps using poll will have best case jitter of just over 1 millisecond, wheres on io_uring this figure should be at least one order of magnitude lower.
+
+
+### Time outs
+
+All of the operations support time outs which can be passed as an extra final parameter:
+
+```cpp
+co_await felspar::io::read_exactly(ward, fd, buffer, 100ms);
+```
+
+The timeouts operate on a per-IOP basis on the warden in use, so compound APIs like `read_exactly` (that may issue several IOPs) can take longer to time out. When a time out expires an exception of type `felspar::io::timeout` (a sub-class of `std::system_error`) is thrown. The error code in the exception will be equal to `felspar::io::timeout::error`.
+

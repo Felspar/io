@@ -12,11 +12,13 @@ namespace felspar::io {
         using superclass = stdexcept::system_error;
 
       public:
+        static std::error_code const error;
+
         timeout(std::string msg, felspar::source_location loc)
-        : superclass{
-                ETIME, std::generic_category(), std::move(msg),
-                std::move(loc)} {}
+        : superclass{error, std::move(msg), loc} {}
     };
+    inline std::error_code const timeout::error = {
+            ETIME, std::system_category()};
 
 
 }

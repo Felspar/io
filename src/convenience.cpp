@@ -14,7 +14,7 @@ felspar::coro::stream<int> felspar::io::accept(
             co_yield s;
         } else if (s == -11) {
             throw felspar::stdexcept::system_error{
-                    -s, std::generic_category(), "accept", std::move(loc)};
+                    -s, std::system_category(), "accept", loc};
         } else {
             co_return;
         }
