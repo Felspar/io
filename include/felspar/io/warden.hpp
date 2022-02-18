@@ -149,9 +149,6 @@ namespace felspar::io {
     };
 
 
-    inline iop<void>::~iop() {
-        if (comp) { comp->ward()->cancel(comp); }
-    }
     template<typename R>
     inline iop<R>::~iop() {
         if (comp) { comp->ward()->cancel(comp); }
