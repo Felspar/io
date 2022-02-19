@@ -45,10 +45,12 @@ namespace felspar::posix {
     /// Set a file descriptor to non-blocking mode
     void set_non_blocking(
             int sock,
-            felspar::source_location = felspar::source_location::current());
+            felspar::source_location const & =
+                    felspar::source_location::current());
     inline void set_non_blocking(
             fd const &sock,
-            felspar::source_location loc = felspar::source_location::current()) {
+            felspar::source_location const &loc =
+                    felspar::source_location::current()) {
         return set_non_blocking(sock.native_handle(), loc);
     }
 
@@ -56,10 +58,12 @@ namespace felspar::posix {
     /// Set a socket port for re-use
     void set_reuse_port(
             int sock,
-            felspar::source_location = felspar::source_location::current());
+            felspar::source_location const & =
+                    felspar::source_location::current());
     inline void set_reuse_port(
             fd const &sock,
-            felspar::source_location loc = felspar::source_location::current()) {
+            felspar::source_location const &loc =
+                    felspar::source_location::current()) {
         return set_reuse_port(sock.native_handle(), loc);
     }
 
@@ -68,11 +72,13 @@ namespace felspar::posix {
     void bind_to_any_address(
             int sock,
             std::uint16_t port,
-            felspar::source_location = felspar::source_location::current());
+            felspar::source_location const & =
+                    felspar::source_location::current());
     inline void bind_to_any_address(
             fd const &sock,
             std::uint16_t const port,
-            felspar::source_location loc = felspar::source_location::current()) {
+            felspar::source_location const &loc =
+                    felspar::source_location::current()) {
         return bind_to_any_address(sock.native_handle(), port, loc);
     }
 

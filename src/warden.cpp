@@ -3,7 +3,10 @@
 
 
 felspar::posix::fd felspar::io::warden::create_socket(
-        int domain, int type, int protocol, felspar::source_location loc) {
+        int domain,
+        int type,
+        int protocol,
+        felspar::source_location const &loc) {
     posix::fd s{::socket(domain, type, protocol)};
     if (not s) {
         throw felspar::stdexcept::system_error{

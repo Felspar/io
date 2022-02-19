@@ -30,7 +30,7 @@ namespace felspar::io {
         }
         /// Throw the exception associated with the error
         [[noreturn]] void throw_exception(
-                felspar::source_location loc =
+                felspar::source_location const &loc =
                         felspar::source_location::current()) {
             if (error == timeout::error) {
                 throw timeout{message, loc};
@@ -40,7 +40,7 @@ namespace felspar::io {
         }
         /// Throw the exception if there was one
         void
-                value(felspar::source_location loc =
+                value(felspar::source_location const &loc =
                               felspar::source_location::current()) {
             if (error) { throw_exception(loc); }
         }
@@ -67,7 +67,7 @@ namespace felspar::io {
         }
 
         /// Consume the value, or throw the exception
-        R value(felspar::source_location loc =
+        R value(felspar::source_location const &loc =
                         felspar::source_location::current()) && {
             if (error) {
                 throw_exception(loc);
@@ -89,7 +89,7 @@ namespace felspar::io {
         felspar::source_location loc;
         outcome<R> result = {};
 
-        completion(felspar::source_location l) : loc{l} {}
+        completion(felspar::source_location const &l) : loc{l} {}
         virtual ~completion() = default;
 
         virtual warden *ward() = 0;

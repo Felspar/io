@@ -30,7 +30,7 @@ namespace felspar::io {
         completion(
                 uring_warden *w,
                 std::optional<std::chrono::nanoseconds> tout,
-                felspar::source_location loc)
+                felspar::source_location const &loc)
         : io::completion<R>{loc}, self{w}, timeout{tout} {}
 
         uring_warden *self = nullptr;
@@ -81,7 +81,7 @@ namespace felspar::io {
         completion(
                 uring_warden *w,
                 std::optional<std::chrono::nanoseconds> tout,
-                felspar::source_location loc)
+                felspar::source_location const &loc)
         : io::completion<void>{loc}, self{w}, timeout{tout} {}
 
         uring_warden *self;

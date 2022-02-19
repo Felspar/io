@@ -20,7 +20,8 @@ namespace felspar::io {
             S &&sock,
             std::span<std::byte const> s,
             std::optional<std::chrono::nanoseconds> timeout = {},
-            felspar::source_location loc = felspar::source_location::current()) {
+            felspar::source_location const &loc =
+                    felspar::source_location::current()) {
         auto out{s};
         while (out.size()) {
             auto const bytes =
@@ -37,7 +38,8 @@ namespace felspar::io {
             void const *buf,
             std::size_t count,
             std::optional<std::chrono::nanoseconds> timeout = {},
-            felspar::source_location loc = felspar::source_location::current()) {
+            felspar::source_location const &loc =
+                    felspar::source_location::current()) {
         return write_all(
                 w, std::forward<S>(fd),
                 std::span<std::byte const>{
@@ -50,7 +52,8 @@ namespace felspar::io {
             S &&fd,
             std::span<std::uint8_t const> s,
             std::optional<std::chrono::nanoseconds> timeout = {},
-            felspar::source_location loc = felspar::source_location::current()) {
+            felspar::source_location const &loc =
+                    felspar::source_location::current()) {
         return write_all(
                 w, std::forward<S>(fd),
                 std::span<std::byte const>{

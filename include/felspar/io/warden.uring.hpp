@@ -32,7 +32,7 @@ namespace felspar::io {
         using warden::sleep;
         iop<void>
                 sleep(std::chrono::nanoseconds,
-                      felspar::source_location =
+                      felspar::source_location const & =
                               felspar::source_location::current()) override;
 
         /// Read & write
@@ -41,14 +41,14 @@ namespace felspar::io {
                 int fd,
                 std::span<std::byte>,
                 std::optional<std::chrono::nanoseconds> = {},
-                felspar::source_location =
+                felspar::source_location const & =
                         felspar::source_location::current()) override;
         using warden::write_some;
         iop<std::size_t> write_some(
                 int fd,
                 std::span<std::byte const>,
                 std::optional<std::chrono::nanoseconds> timeout = {},
-                felspar::source_location =
+                felspar::source_location const & =
                         felspar::source_location::current()) override;
 
         /// Sockets
@@ -56,7 +56,7 @@ namespace felspar::io {
         iop<int>
                 accept(int fd,
                        std::optional<std::chrono::nanoseconds> timeout = {},
-                       felspar::source_location =
+                       felspar::source_location const & =
                                felspar::source_location::current()) override;
         using warden::connect;
         iop<void>
@@ -64,7 +64,7 @@ namespace felspar::io {
                         sockaddr const *,
                         socklen_t,
                         std::optional<std::chrono::nanoseconds> timeout = {},
-                        felspar::source_location =
+                        felspar::source_location const & =
                                 felspar::source_location::current()) override;
 
         /// File descriptor readiness
@@ -72,13 +72,13 @@ namespace felspar::io {
         iop<void> read_ready(
                 int fd,
                 std::optional<std::chrono::nanoseconds> timeout = {},
-                felspar::source_location =
+                felspar::source_location const & =
                         felspar::source_location::current()) override;
         using warden::write_ready;
         iop<void> write_ready(
                 int fd,
                 std::optional<std::chrono::nanoseconds> timeout = {},
-                felspar::source_location =
+                felspar::source_location const & =
                         felspar::source_location::current()) override;
     };
 

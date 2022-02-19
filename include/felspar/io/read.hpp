@@ -19,7 +19,8 @@ namespace felspar::io {
             S &&sock,
             std::span<std::byte> b,
             std::optional<std::chrono::nanoseconds> timeout = {},
-            felspar::source_location loc = felspar::source_location::current()) {
+            felspar::source_location const &loc =
+                    felspar::source_location::current()) {
         std::span<std::byte> in{b};
         while (in.size()) {
             auto const bytes = co_await ward.read_some(sock, in, timeout, loc);
@@ -35,7 +36,8 @@ namespace felspar::io {
             void *buf,
             std::size_t count,
             std::optional<std::chrono::nanoseconds> timeout = {},
-            felspar::source_location loc = felspar::source_location::current()) {
+            felspar::source_location const &loc =
+                    felspar::source_location::current()) {
         return read_exactly(
                 w, std::forward<S>(s),
                 std::span<std::byte>{reinterpret_cast<std::byte *>(buf), count},
@@ -47,7 +49,8 @@ namespace felspar::io {
             S &&s,
             std::span<std::uint8_t> b,
             std::optional<std::chrono::nanoseconds> timeout = {},
-            felspar::source_location loc = felspar::source_location::current()) {
+            felspar::source_location const &loc =
+                    felspar::source_location::current()) {
         return read_exactly(
                 w, std::forward<S>(s),
                 std::span<std::byte>{

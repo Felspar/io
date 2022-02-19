@@ -17,10 +17,11 @@ namespace felspar::io {
             warden &,
             int,
             felspar::source_location = felspar::source_location::current());
-    inline felspar::coro::stream<int> accept(
-            warden &w,
-            posix::fd const &sock,
-            felspar::source_location loc = felspar::source_location::current()) {
+    inline felspar::coro::stream<int>
+            accept(warden &w,
+                   posix::fd const &sock,
+                   felspar::source_location const &loc =
+                           felspar::source_location::current()) {
         return accept(w, sock.native_handle(), loc);
     }
 

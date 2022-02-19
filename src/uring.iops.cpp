@@ -9,7 +9,7 @@ struct felspar::io::uring_warden::sleep_completion : public completion<void> {
     sleep_completion(
             uring_warden *s,
             std::chrono::nanoseconds ns,
-            felspar::source_location loc)
+            felspar::source_location const &loc)
     : completion<void>{s, {}, loc} {
         kts = {{}, ns.count()};
     }
@@ -25,7 +25,7 @@ struct felspar::io::uring_warden::sleep_completion : public completion<void> {
     }
 };
 felspar::io::iop<void> felspar::io::uring_warden::sleep(
-        std::chrono::nanoseconds ns, felspar::source_location loc) {
+        std::chrono::nanoseconds ns, felspar::source_location const &loc) {
     return {new sleep_completion{this, ns, loc}};
 }
 
@@ -37,7 +37,7 @@ public completion<std::size_t> {
             int f,
             std::span<std::byte> b,
             std::optional<std::chrono::nanoseconds> t,
-            felspar::source_location loc)
+            felspar::source_location const &loc)
     : completion<std::size_t>{s, t, loc}, fd{f}, bytes{b} {}
     int fd;
     std::span<std::byte> bytes;
@@ -52,7 +52,7 @@ felspar::io::iop<std::size_t> felspar::io::uring_warden::read_some(
         int fd,
         std::span<std::byte> b,
         std::optional<std::chrono::nanoseconds> timeout,
-        felspar::source_location loc) {
+        felspar::source_location const &loc) {
     return {new read_some_completion{this, fd, b, timeout, loc}};
 }
 
@@ -64,7 +64,7 @@ public completion<std::size_t> {
             int f,
             std::span<std::byte const> b,
             std::optional<std::chrono::nanoseconds> t,
-            felspar::source_location loc)
+            felspar::source_location const &loc)
     : completion<std::size_t>{s, t, loc}, fd{f}, bytes{b} {}
     int fd;
     std::span<std::byte const> bytes;
@@ -79,7 +79,7 @@ felspar::io::iop<std::size_t> felspar::io::uring_warden::write_some(
         int fd,
         std::span<std::byte const> b,
         std::optional<std::chrono::nanoseconds> t,
-        felspar::source_location loc) {
+        felspar::source_location const &loc) {
     return {new write_some_completion{this, fd, b, t, loc}};
 }
 
@@ -89,7 +89,7 @@ struct felspar::io::uring_warden::accept_completion : public completion<int> {
             uring_warden *s,
             int f,
             std::optional<std::chrono::nanoseconds> t,
-            felspar::source_location loc)
+            felspar::source_location const &loc)
     : completion<int>{s, t, loc}, fd{f} {}
     int fd = {};
     sockaddr addr = {};
@@ -104,7 +104,7 @@ struct felspar::io::uring_warden::accept_completion : public completion<int> {
 felspar::io::iop<int> felspar::io::uring_warden::accept(
         int fd,
         std::optional<std::chrono::nanoseconds> timeout,
-        felspar::source_location loc) {
+        felspar::source_location const &loc) {
     return {new accept_completion{this, fd, timeout, loc}};
 }
 
@@ -116,7 +116,7 @@ struct felspar::io::uring_warden::connect_completion : public completion<void> {
             sockaddr const *a,
             socklen_t l,
             std::optional<std::chrono::nanoseconds> t,
-            felspar::source_location loc)
+            felspar::source_location const &loc)
     : completion<void>{s, t, loc}, fd{f}, addr{a}, addrlen{l} {}
     int fd = {};
     sockaddr const *addr = {};
@@ -133,7 +133,7 @@ felspar::io::iop<void> felspar::io::uring_warden::connect(
         sockaddr const *addr,
         socklen_t addrlen,
         std::optional<std::chrono::nanoseconds> timeout,
-        felspar::source_location loc) {
+        felspar::source_location const &loc) {
     return {new connect_completion{this, fd, addr, addrlen, timeout, loc}};
 }
 
@@ -144,7 +144,7 @@ struct felspar::io::uring_warden::poll_completion : public completion<void> {
             int f,
             short m,
             std::optional<std::chrono::nanoseconds> t,
-            felspar::source_location loc)
+            felspar::source_location const &loc)
     : completion<void>{s, t, loc}, fd{f}, mask{m} {}
     int fd = {};
     short mask = {};
@@ -158,12 +158,12 @@ struct felspar::io::uring_warden::poll_completion : public completion<void> {
 felspar::io::iop<void> felspar::io::uring_warden::read_ready(
         int fd,
         std::optional<std::chrono::nanoseconds> timeout,
-        felspar::source_location loc) {
+        felspar::source_location const &loc) {
     return {new poll_completion{this, fd, POLLIN, timeout, loc}};
 }
 felspar::io::iop<void> felspar::io::uring_warden::write_ready(
         int fd,
         std::optional<std::chrono::nanoseconds> timeout,
-        felspar::source_location loc) {
+        felspar::source_location const &loc) {
     return {new poll_completion{this, fd, POLLOUT, timeout, loc}};
 }
