@@ -4,17 +4,17 @@ time (
         # User specified targets
         ninja -C ./build.tmp/clang-debug $* &&
         # ASAN
-        ninja -C ./build.tmp/clang-debug-asan all check stress &&
-        ninja -C ./build.tmp/clang-release-asan all check stress &&
+        ninja -C ./build.tmp/clang-debug-asan all felspar-check felspar-stress &&
+        ninja -C ./build.tmp/clang-release-asan all felspar-check felspar-stress &&
         # ASAN - io_uring
-        ninja -C ./build.tmp/clang-debug--io_uring-asan all check stress &&
-        ninja -C ./build.tmp/clang-release--io_uring-asan all check stress &&
+        ninja -C ./build.tmp/clang-debug--io_uring-asan all felspar-check felspar-stress &&
+        ninja -C ./build.tmp/clang-release--io_uring-asan all felspar-check felspar-stress &&
         # Debug builds
-        ninja -C ./build.tmp/clang-debug all check stress &&
-        ninja -C ./build.tmp/gcc-debug all check stress &&
+        ninja -C ./build.tmp/clang-debug all felspar-check felspar-stress &&
+        ninja -C ./build.tmp/gcc-debug all felspar-check felspar-stress &&
         # Release builds
-        ninja -C ./build.tmp/clang-release all check stress &&
-        ninja -C ./build.tmp/gcc-release all check stress &&
+        ninja -C ./build.tmp/clang-release all felspar-check felspar-stress &&
+        ninja -C ./build.tmp/gcc-release all felspar-check felspar-stress &&
         true
     ) && (
         find ./include/ ./src/ ./test/ -name \*.\?pp -print | xargs clang-format -i
