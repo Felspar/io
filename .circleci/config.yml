@@ -23,6 +23,10 @@ executors:
     environment:
       CC: gcc
       CXX: g++
+  apple:
+    macos:
+      xcode: 13.2.1
+
 
 jobs:
   build:
@@ -46,6 +50,7 @@ jobs:
       - run:
           name: stress tests
           command: ninja -j1 -C .circleci stress
+
 
 workflows:
   all-tests:

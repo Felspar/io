@@ -8,5 +8,7 @@
 #include <felspar/io/posix.hpp>
 #include <felspar/io/read.hpp>
 #include <felspar/io/warden.poll.hpp>
+#ifdef FELSPAR_ENABLE_IO_URING
 #include <felspar/io/warden.uring.hpp>
+#endif
 #include <felspar/io/write.hpp>

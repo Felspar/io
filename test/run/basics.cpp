@@ -93,12 +93,14 @@ namespace {
         co.post(echo_server, ward, 5543);
         ward.run(echo_client, 5543);
     });
+#ifdef FELSPAR_ENABLE_IO_URING
     auto const tu = suite.test("echo/uring", []() {
         felspar::io::uring_warden ward{10};
         felspar::coro::starter<felspar::coro::task<void>> co;
         co.post(echo_server, ward, 5547);
         ward.run(echo_client, 5547);
     });
+#endif
 
 
 }

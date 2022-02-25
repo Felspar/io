@@ -9,8 +9,12 @@ add_library(felspar-io-headers-tests STATIC EXCLUDE_FROM_ALL
         read.cpp
         warden.cpp
         warden.poll.cpp
-        warden.uring.cpp
         write.cpp
     )
+if(${FELSPAR_ENABLE_IO_URING})
+    target_sources(felspar-io-headers-tests PRIVATE
+            warden.uring.cpp
+        )
+endif()
 target_link_libraries(felspar-io-headers-tests felspar-io)
 add_dependencies(check felspar-io-headers-tests)

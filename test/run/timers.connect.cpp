@@ -52,10 +52,12 @@ namespace {
         felspar::io::poll_warden ward;
         ward.run(timed_connect);
     });
+#ifdef FELSPAR_ENABLE_IO_URING
     auto const u = suite.test("uring", []() {
         felspar::io::uring_warden ward{5};
         ward.run(timed_connect);
     });
+#endif
 
 
 }

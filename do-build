@@ -6,6 +6,9 @@ time (
         # ASAN
         ninja -C ./build.tmp/clang-debug-asan all check stress &&
         ninja -C ./build.tmp/clang-release-asan all check stress &&
+        # ASAN - io_uring
+        ninja -C ./build.tmp/clang-debug--io_uring-asan all check stress &&
+        ninja -C ./build.tmp/clang-release--io_uring-asan all check stress &&
         # Debug builds
         ninja -C ./build.tmp/clang-debug all check stress &&
         ninja -C ./build.tmp/gcc-debug all check stress &&
