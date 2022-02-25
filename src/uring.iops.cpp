@@ -24,7 +24,7 @@ struct felspar::io::uring_warden::sleep_completion : public completion<void> {
         completion<void>::deliver(result == -ETIME ? 0 : result);
     }
 };
-felspar::io::iop<void> felspar::io::uring_warden::sleep(
+felspar::io::iop<void> felspar::io::uring_warden::do_sleep(
         std::chrono::nanoseconds ns, felspar::source_location const &loc) {
     return {new sleep_completion{this, ns, loc}};
 }
@@ -48,7 +48,7 @@ public completion<std::size_t> {
         return setup_timeout(sqe);
     }
 };
-felspar::io::iop<std::size_t> felspar::io::uring_warden::read_some(
+felspar::io::iop<std::size_t> felspar::io::uring_warden::do_read_some(
         int fd,
         std::span<std::byte> b,
         std::optional<std::chrono::nanoseconds> timeout,
@@ -75,7 +75,7 @@ public completion<std::size_t> {
         return setup_timeout(sqe);
     }
 };
-felspar::io::iop<std::size_t> felspar::io::uring_warden::write_some(
+felspar::io::iop<std::size_t> felspar::io::uring_warden::do_write_some(
         int fd,
         std::span<std::byte const> b,
         std::optional<std::chrono::nanoseconds> t,
@@ -101,7 +101,7 @@ struct felspar::io::uring_warden::accept_completion : public completion<int> {
         return setup_timeout(sqe);
     }
 };
-felspar::io::iop<int> felspar::io::uring_warden::accept(
+felspar::io::iop<int> felspar::io::uring_warden::do_accept(
         int fd,
         std::optional<std::chrono::nanoseconds> timeout,
         felspar::source_location const &loc) {
@@ -128,7 +128,7 @@ struct felspar::io::uring_warden::connect_completion : public completion<void> {
         return setup_timeout(sqe);
     }
 };
-felspar::io::iop<void> felspar::io::uring_warden::connect(
+felspar::io::iop<void> felspar::io::uring_warden::do_connect(
         int fd,
         sockaddr const *addr,
         socklen_t addrlen,
@@ -155,13 +155,13 @@ struct felspar::io::uring_warden::poll_completion : public completion<void> {
         return setup_timeout(sqe);
     }
 };
-felspar::io::iop<void> felspar::io::uring_warden::read_ready(
+felspar::io::iop<void> felspar::io::uring_warden::do_read_ready(
         int fd,
         std::optional<std::chrono::nanoseconds> timeout,
         felspar::source_location const &loc) {
     return {new poll_completion{this, fd, POLLIN, timeout, loc}};
 }
-felspar::io::iop<void> felspar::io::uring_warden::write_ready(
+felspar::io::iop<void> felspar::io::uring_warden::do_write_ready(
         int fd,
         std::optional<std::chrono::nanoseconds> timeout,
         felspar::source_location const &loc) {

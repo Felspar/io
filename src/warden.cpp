@@ -2,7 +2,7 @@
 #include <felspar/io/warden.hpp>
 
 
-felspar::posix::fd felspar::io::warden::create_socket(
+felspar::posix::fd felspar::io::warden::do_create_socket(
         int domain,
         int type,
         int protocol,

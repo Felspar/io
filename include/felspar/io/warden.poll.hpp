@@ -30,66 +30,49 @@ namespace felspar::io {
         struct read_ready_completion;
         struct write_ready_completion;
 
-      public:
-        /// Time
-        using warden::sleep;
-        iop<void>
-                sleep(std::chrono::nanoseconds,
-                      felspar::source_location const & =
-                              felspar::source_location::current()) override;
+      protected:
+        iop<void> do_sleep(
+                std::chrono::nanoseconds,
+                felspar::source_location const &) override;
 
-        /// Read & Write
-        using warden::read_some;
-        iop<std::size_t> read_some(
+        /// Read & write
+        iop<std::size_t> do_read_some(
                 int fd,
                 std::span<std::byte>,
-                std::optional<std::chrono::nanoseconds> = {},
-                felspar::source_location const & =
-                        felspar::source_location::current()) override;
-        using warden::write_some;
-        iop<std::size_t> write_some(
+                std::optional<std::chrono::nanoseconds>,
+                felspar::source_location const &) override;
+        iop<std::size_t> do_write_some(
                 int fd,
                 std::span<std::byte const>,
-                std::optional<std::chrono::nanoseconds> timeout = {},
-                felspar::source_location const & =
-                        felspar::source_location::current()) override;
+                std::optional<std::chrono::nanoseconds> timeout,
+                felspar::source_location const &) override;
 
         /// Sockets
-        posix::fd create_socket(
+        posix::fd do_create_socket(
                 int domain,
                 int type,
                 int protocol,
-                felspar::source_location const & =
-                        felspar::source_location::current()) override;
-
-        using warden::accept;
-        iop<int>
-                accept(int fd,
-                       std::optional<std::chrono::nanoseconds> timeout = {},
-                       felspar::source_location const & =
-                               felspar::source_location::current()) override;
-        using warden::connect;
-        iop<void>
-                connect(int fd,
-                        sockaddr const *,
-                        socklen_t,
-                        std::optional<std::chrono::nanoseconds> timeout = {},
-                        felspar::source_location const & =
-                                felspar::source_location::current()) override;
+                felspar::source_location const &) override;
+        iop<int> do_accept(
+                int fd,
+                std::optional<std::chrono::nanoseconds> timeout,
+                felspar::source_location const &) override;
+        iop<void> do_connect(
+                int fd,
+                sockaddr const *,
+                socklen_t,
+                std::optional<std::chrono::nanoseconds> timeout,
+                felspar::source_location const &) override;
 
         /// File descriptor readiness
-        using warden::read_ready;
-        iop<void> read_ready(
+        iop<void> do_read_ready(
                 int fd,
-                std::optional<std::chrono::nanoseconds> timeout = {},
-                felspar::source_location const & =
-                        felspar::source_location::current()) override;
-        using warden::write_ready;
-        iop<void> write_ready(
+                std::optional<std::chrono::nanoseconds> timeout,
+                felspar::source_location const &) override;
+        iop<void> do_write_ready(
                 int fd,
-                std::optional<std::chrono::nanoseconds> timeout = {},
-                felspar::source_location const & =
-                        felspar::source_location::current()) override;
+                std::optional<std::chrono::nanoseconds> timeout,
+                felspar::source_location const &) override;
     };
 
 
