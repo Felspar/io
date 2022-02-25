@@ -24,10 +24,12 @@ namespace {
         felspar::io::poll_warden ward;
         check(ward.run(short_sleep)) == true;
     });
+#ifdef FELSPAR_ENABLE_IO_URING
     auto const ssu = suite.test("timers/uring", [](auto check) {
         felspar::io::uring_warden ward{5};
         check(ward.run(short_sleep)) == true;
     });
+#endif
 
 
     felspar::coro::task<void>
@@ -89,12 +91,14 @@ namespace {
         co.post(accept_writer, ward, 5534);
         ward.run(write_forever, 5534);
     });
+#ifdef FELSPAR_ENABLE_IO_URING
     auto const wu = suite.test("write/io_uring", []() {
         felspar::io::uring_warden ward;
         felspar::coro::starter<felspar::coro::task<void>> co;
         co.post(accept_writer, ward, 5536);
         ward.run(write_forever, 5536);
     });
+#endif
 
 
     felspar::coro::task<void>
@@ -122,10 +126,12 @@ namespace {
         felspar::io::poll_warden ward;
         ward.run(short_accept, 5538);
     });
+#ifdef FELSPAR_ENABLE_IO_URING
     auto const au = suite.test("accept/io_uring", []() {
         felspar::io::uring_warden ward;
         ward.run(short_accept, 5540);
     });
+#endif
 
 
 }

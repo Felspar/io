@@ -3,11 +3,17 @@ add_library(felspar-io
         poll.iops.cpp
         poll.warden.cpp
         posix.cpp
-        uring.iops.cpp
-        uring.warden.cpp
         warden.cpp
     )
 target_include_directories(felspar-io PUBLIC ../include)
-target_link_libraries(felspar-io PUBLIC felspar-coro uring)
+target_link_libraries(felspar-io PUBLIC felspar-coro)
+if(${FELSPAR_ENABLE_IO_URING})
+    target_compile_definitions(felspar-io PUBLIC FELSPAR_ENABLE_IO_URING=1)
+    target_sources(felspar-io PRIVATE
+            uring.iops.cpp
+            uring.warden.cpp
+        )
+    target_link_libraries(felspar-io PUBLIC uring)
+endif()
 install(TARGETS felspar-io LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 install(DIRECTORY ../include/felspar DESTINATION include)

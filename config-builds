@@ -32,3 +32,13 @@ CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-debug-asan \
 CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-release-asan \
     -DCMAKE_INSTALL_PREFIX=dist/clang-release-asan \
     -DCMAKE_BUILD_TYPE=Release
+
+
+CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-debug--io_uring-asan \
+    -DFELSPAR_ENABLE_IO_URING=NO \
+    -DCMAKE_INSTALL_PREFIX=dist/clang-debug--io_uring-asan
+
+CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-release--io_uring-asan \
+    -DFELSPAR_ENABLE_IO_URING=NO \
+    -DCMAKE_INSTALL_PREFIX=dist/clang-release--io_uring-asan \
+    -DCMAKE_BUILD_TYPE=Release
