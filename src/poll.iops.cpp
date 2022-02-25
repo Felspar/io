@@ -3,9 +3,6 @@
 #include <felspar/exceptions.hpp>
 #include <felspar/io/connect.hpp>
 
-#include <sys/socket.h>
-#include <unistd.h>
-
 
 struct felspar::io::poll_warden::sleep_completion : public completion<void> {
     sleep_completion(
