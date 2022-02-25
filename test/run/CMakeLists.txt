@@ -1,6 +1,7 @@
 if(TARGET felspar-check)
     add_test_run(felspar-check felspar-io TESTS
             basics.cpp
+            cancel.cpp
             timers.cpp
         )
 endif()

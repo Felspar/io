@@ -6,23 +6,42 @@
 
 #include <liburing.h>
 
+#include <vector>
+
 
 namespace felspar::io {
 
 
+    struct uring_warden::delivery {
+        /// True so long as the IOP instance still exists
+        bool iop_exists = true;
+        /// True if the completion is now in the outstanding completions list
+        bool is_outstanding = false;
+        /// The number of IOPs that have been submitted to the queue and not
+        /// returned
+        std::size_t iop_count = 1;
+
+        virtual ~delivery() = default;
+        virtual void deliver(int result) = 0;
+    };
+
+
     struct uring_warden::impl {
+        ~impl() {
+            for (auto *d : outstanding) { delete d; }
+        }
+
         ::io_uring uring;
 
         /// Fetch another SQE from the uring
         ::io_uring_sqe *next_sqe();
 
         void execute(::io_uring_cqe *);
+
+        std::vector<delivery *> outstanding;
     };
 
 
-    struct uring_warden::delivery {
-        virtual void deliver(int result) = 0;
-    };
     template<typename R>
     struct uring_warden::completion :
     public delivery,
@@ -52,7 +71,7 @@ namespace felspar::io {
                 kts.tv_nsec = timeout->count();
                 ::io_uring_prep_link_timeout(tsqe, &kts, 0);
                 ::io_uring_sqe_set_data(tsqe, this);
-                io::completion<R>::iop_count = 2;
+                iop_count = 2;
             }
             return felspar::coro::noop_coroutine();
         }
@@ -62,7 +81,6 @@ namespace felspar::io {
                 if (timeout and result == -ECANCELED) {
                     /// This is the cancelled IOP so we ignore it as we've timed
                     /// out
-                    self->cancel(this);
                     return;
                 } else {
                     io::completion<R>::result = {
@@ -72,6 +90,17 @@ namespace felspar::io {
                 io::completion<R>::result = result;
             }
             io::completion<R>::handle.resume();
+        }
+        bool delete_due_to_iop_destructed() override {
+            iop_exists = false;
+            if (iop_count == 0) {
+                return true;
+            } else {
+                /// Cancel IOP
+                is_outstanding = true;
+                self->ring->outstanding.push_back(this);
+                return false;
+            }
         }
     };
     template<>
@@ -103,7 +132,7 @@ namespace felspar::io {
                 kts.tv_nsec = timeout->count();
                 ::io_uring_prep_link_timeout(tsqe, &kts, 0);
                 ::io_uring_sqe_set_data(tsqe, this);
-                io::completion<void>::iop_count = 2;
+                iop_count = 2;
             }
             return felspar::coro::noop_coroutine();
         }
@@ -115,14 +144,23 @@ namespace felspar::io {
             } else if (timeout and result == -ECANCELED) {
                 /// This is the cancelled IOP so we ignore it as we've timed
                 /// out
-                self->cancel(this);
                 return;
             } else if (result < 0) {
                 io::completion<void>::result = {
                         {-result, std::system_category()}, "uring IOP"};
-                ;
             }
             io::completion<void>::handle.resume();
+        }
+        bool delete_due_to_iop_destructed() override {
+            iop_exists = false;
+            if (iop_count == 0) {
+                return true;
+            } else {
+                /// Cancel IOP
+                is_outstanding = true;
+                self->ring->outstanding.push_back(this);
+                return false;
+            }
         }
     };
 

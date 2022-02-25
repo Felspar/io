@@ -17,13 +17,6 @@ namespace felspar::io {
         template<typename R>
         friend struct felspar::io::iop;
 
-      protected:
-        virtual void run_until(felspar::coro::coroutine_handle<>) = 0;
-        template<typename R>
-        void cancel(completion<R> *c) {
-            if (--c->iop_count == 0) { delete c; }
-        }
-
       public:
         virtual ~warden() = default;
 
@@ -165,6 +158,7 @@ namespace felspar::io {
         }
 
       protected:
+        virtual void run_until(felspar::coro::coroutine_handle<>) = 0;
         virtual iop<void> do_sleep(
                 std::chrono::nanoseconds, felspar::source_location const &) = 0;
         virtual iop<std::size_t> do_read_some(
@@ -205,7 +199,7 @@ namespace felspar::io {
 
     template<typename R>
     inline iop<R>::~iop() {
-        if (comp) { comp->ward()->cancel(comp); }
+        if (comp and comp->delete_due_to_iop_destructed()) { delete comp; }
     }
 
 

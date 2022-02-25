@@ -59,4 +59,6 @@ void felspar::io::uring_warden::impl::execute(::io_uring_cqe *cqe) {
     int result = cqe->res;
     ::io_uring_cqe_seen(&uring, cqe);
     d->deliver(result);
+    if (d->is_outstanding) { std::erase(outstanding, d); }
+    if (--d->iop_count == 0 and not d->iop_exists) { delete d; }
 }
