@@ -58,5 +58,5 @@ workflows:
       - build:
           matrix:
             parameters:
-              compiler: [gcc, clang, clang-asan, apple]
+              compiler: [gcc, clang, clang-asan]
               variant: [Debug, Release]
