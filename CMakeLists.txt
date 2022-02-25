@@ -10,6 +10,8 @@ else()
         "Enable io_uring through liburing")
 endif()
 
+include(cmake/detect_accept4.cmake)
+
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${PROJECT_SOURCE_DIR})
     add_custom_target(check)
