@@ -10,12 +10,6 @@ struct felspar::io::poll_warden::sleep_completion : public completion<void> {
             std::chrono::nanoseconds ns,
             felspar::source_location const &loc)
     : completion<void>{s, ns, loc} {}
-    felspar::coro::coroutine_handle<>
-            await_suspend(felspar::coro::coroutine_handle<> h) override {
-        io::completion<void>::handle = h;
-        insert_timeout();
-        return felspar::coro::noop_coroutine();
-    }
     felspar::coro::coroutine_handle<> iop_timedout() override {
         return io::completion<void>::handle;
     }
