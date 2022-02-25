@@ -16,7 +16,9 @@ namespace {
         auto const start = std::chrono::steady_clock::now();
         co_await ward.sleep(20ms);
         auto const slept = std::chrono::steady_clock::now() - start;
-        co_return slept >= 20ms and slept <= 30ms;
+        /// We have to take sleep jitter into a/c which could be 1ms in the
+        /// wrong direction
+        co_return slept >= 19ms and slept <= 30ms;
     }
     auto const ssp = suite.test("timers/poll", [](auto check) {
         felspar::io::poll_warden ward;
