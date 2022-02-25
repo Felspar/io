@@ -29,6 +29,7 @@ void felspar::io::poll_warden::run_until(felspar::coro::coroutine_handle<> coro)
 
     while (not coro.done()) {
         auto const timeout = clear_timeouts();
+        if (coro.done()) { return; }
 
         iops.clear();
         for (auto const &req : requests) {
@@ -38,7 +39,17 @@ void felspar::io::poll_warden::run_until(felspar::coro::coroutine_handle<> coro)
             iops.push_back({req.first, flags, {}});
         }
 
-        int const pr = ::poll(iops.data(), iops.size(), timeout);
+        int const pr = [&]() {
+            if (iops.size()) {
+                return ::poll(iops.data(), iops.size(), timeout);
+            } else {
+                ::timespec req{{}, timeout * 1'000'000}, rem{};
+                while (::nanosleep(&req, &rem) == -1 and errno == EINTR) {
+                    req = rem;
+                }
+                return 0;
+            }
+        }();
         if (pr == -1) {
             throw felspar::stdexcept::system_error{
                     errno, std::system_category(), "poll"};

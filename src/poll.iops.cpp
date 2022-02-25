@@ -4,7 +4,6 @@
 #include <felspar/io/connect.hpp>
 
 #include <sys/socket.h>
-#include <sys/timerfd.h>
 #include <unistd.h>
 
 
@@ -13,30 +12,18 @@ struct felspar::io::poll_warden::sleep_completion : public completion<void> {
             poll_warden *s,
             std::chrono::nanoseconds ns,
             felspar::source_location const &loc)
-    : completion<void>{s, {}, loc} {
-        spec.it_value.tv_nsec = ns.count();
-    }
-    posix::fd timer;
-    ::itimerspec spec = {};
+    : completion<void>{s, ns, loc} {}
     felspar::coro::coroutine_handle<>
             await_suspend(felspar::coro::coroutine_handle<> h) override {
-        handle = h;
-        timer = posix::fd{::timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK)};
-        if (not timer) {
-            result = {{errno, std::system_category()}, "timerfd_create"};
-            return handle;
-        } else if (
-                ::timerfd_settime(timer.native_handle(), 0, &spec, nullptr)
-                == -1) {
-            result = {{errno, std::system_category()}, "timerfd_settime"};
-            return handle;
-        } else {
-            self->requests[timer.native_handle()].reads.push_back(this);
-            return felspar::coro::noop_coroutine();
-        }
+        io::completion<void>::handle = h;
+        insert_timeout();
+        return felspar::coro::noop_coroutine();
+    }
+    felspar::coro::coroutine_handle<> iop_timedout() override {
+        return io::completion<void>::handle;
     }
     felspar::coro::coroutine_handle<> try_or_resume() override {
-        return handle;
+        return felspar::coro::noop_coroutine();
     }
 };
 felspar::io::iop<void> felspar::io::poll_warden::sleep(
