@@ -84,7 +84,6 @@ namespace felspar::io {
     struct completion {
         using result_type = R;
 
-        std::size_t iop_count = 1;
         felspar::coro::coroutine_handle<> handle = {};
         felspar::source_location loc;
         outcome<R> result = {};
@@ -95,6 +94,9 @@ namespace felspar::io {
         virtual warden *ward() = 0;
         virtual felspar::coro::coroutine_handle<>
                 await_suspend(felspar::coro::coroutine_handle<>) = 0;
+
+        /// Return true if the completion should be destroyed when the iop is
+        virtual bool delete_due_to_iop_destructed() = 0;
     };
 
 

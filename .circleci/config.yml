@@ -46,10 +46,10 @@ jobs:
           command: ninja -j1 -C .circleci
       - run:
           name: check tests
-          command: ninja -j1 -C .circleci check
+          command: ninja -j1 -C .circleci felspar-check
       - run:
           name: stress tests
-          command: ninja -j1 -C .circleci stress
+          command: ninja -j1 -C .circleci felspar-stress
 
 
 workflows:

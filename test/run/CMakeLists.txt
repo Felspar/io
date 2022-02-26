@@ -1,11 +1,12 @@
-if(TARGET check)
-    add_test_run(check felspar-io TESTS
+if(TARGET felspar-check)
+    add_test_run(felspar-check felspar-io TESTS
             basics.cpp
+            cancel.cpp
             timers.cpp
         )
 endif()
-if(TARGET stress)
-    add_test_run(stress felspar-io TESTS
+if(TARGET felspar-stress)
+    add_test_run(felspar-stress felspar-io TESTS
             timers.connect.cpp
         )
 endif()

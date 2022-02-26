@@ -34,6 +34,16 @@ namespace felspar::io {
                 self->timeouts.insert({deadline, this});
             }
         }
+        void cancel_timeout() {
+            if (timeout) {
+                auto pos = std::find_if(
+                        self->timeouts.begin(), self->timeouts.end(),
+                        [this](auto const &s) { return s.second == this; });
+                if (pos != self->timeouts.end()) { self->timeouts.erase(pos); }
+            }
+        }
+        virtual void cancel_iop() = 0;
+
         felspar::coro::coroutine_handle<>
                 await_suspend(felspar::coro::coroutine_handle<> h) override {
             io::completion<R>::handle = h;
@@ -41,17 +51,19 @@ namespace felspar::io {
             return try_or_resume();
         }
         felspar::coro::coroutine_handle<> iop_timedout() override {
+            cancel_iop();
             io::completion<R>::result = {timeout::error, "IOP timed out"};
             return io::completion<R>::handle;
         }
         felspar::coro::coroutine_handle<> cancel_timeout_then_resume() {
-            if (timeout) {
-                auto pos = std::find_if(
-                        self->timeouts.begin(), self->timeouts.end(),
-                        [this](auto const &s) { return s.second == this; });
-                if (pos != self->timeouts.end()) { self->timeouts.erase(pos); }
-            }
+            cancel_timeout();
             return io::completion<R>::handle;
+        }
+
+        bool delete_due_to_iop_destructed() override {
+            cancel_timeout();
+            cancel_iop();
+            return true;
         }
     };
 

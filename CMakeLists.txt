@@ -14,14 +14,15 @@ include(cmake/detect_accept4.cmake)
 
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${PROJECT_SOURCE_DIR})
-    add_custom_target(check)
-    add_custom_target(stress)
+    add_custom_target(felspar-check)
+    set_property(TARGET felspar-check PROPERTY EXCLUDE_FROM_ALL TRUE)
+    add_custom_target(felspar-stress)
+    set_property(TARGET felspar-stress PROPERTY EXCLUDE_FROM_ALL TRUE)
     include(requirements.cmake)
 endif()
 
 add_subdirectory(src)
 
-if(TARGET check)
-    set_property(TARGET check PROPERTY EXCLUDE_FROM_ALL TRUE)
+if(TARGET felspar-check)
     add_subdirectory(test)
 endif()
