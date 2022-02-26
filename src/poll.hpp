@@ -42,6 +42,7 @@ namespace felspar::io {
                 if (pos != self->timeouts.end()) { self->timeouts.erase(pos); }
             }
         }
+        virtual void cancel_iop() = 0;
 
         felspar::coro::coroutine_handle<>
                 await_suspend(felspar::coro::coroutine_handle<> h) override {
@@ -50,6 +51,7 @@ namespace felspar::io {
             return try_or_resume();
         }
         felspar::coro::coroutine_handle<> iop_timedout() override {
+            cancel_iop();
             io::completion<R>::result = {timeout::error, "IOP timed out"};
             return io::completion<R>::handle;
         }
@@ -60,6 +62,7 @@ namespace felspar::io {
 
         bool delete_due_to_iop_destructed() override {
             cancel_timeout();
+            cancel_iop();
             return true;
         }
     };

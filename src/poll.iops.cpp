@@ -10,6 +10,7 @@ struct felspar::io::poll_warden::sleep_completion : public completion<void> {
             std::chrono::nanoseconds ns,
             felspar::source_location const &loc)
     : completion<void>{s, ns, loc} {}
+    void cancel_iop() override {}
     felspar::coro::coroutine_handle<> iop_timedout() override {
         return io::completion<void>::handle;
     }
@@ -34,10 +35,7 @@ public completion<std::size_t> {
     : completion<std::size_t>{s, timeout, loc}, fd{f}, buf{b} {}
     int fd;
     std::span<std::byte> buf;
-    felspar::coro::coroutine_handle<> iop_timedout() override {
-        std::erase(self->requests[fd].reads, this);
-        return completion<std::size_t>::iop_timedout();
-    }
+    void cancel_iop() override { std::erase(self->requests[fd].reads, this); }
     felspar::coro::coroutine_handle<> try_or_resume() override {
         if (auto bytes = ::read(fd, buf.data(), buf.size()); bytes >= 0) {
             result = bytes;
@@ -71,10 +69,7 @@ public completion<std::size_t> {
     : completion<std::size_t>{s, t, loc}, fd{f}, buf{b} {}
     int fd;
     std::span<std::byte const> buf;
-    felspar::coro::coroutine_handle<> iop_timedout() override {
-        std::erase(self->requests[fd].writes, this);
-        return completion<std::size_t>::iop_timedout();
-    }
+    void cancel_iop() override { std::erase(self->requests[fd].writes, this); }
     felspar::coro::coroutine_handle<> try_or_resume() override {
         if (auto bytes = ::write(fd, buf.data(), buf.size()); bytes >= 0) {
             result = bytes;
@@ -105,10 +100,7 @@ struct felspar::io::poll_warden::accept_completion : public completion<int> {
             felspar::source_location const &loc)
     : completion<int>{s, t, loc}, fd{f} {}
     int fd;
-    felspar::coro::coroutine_handle<> iop_timedout() override {
-        std::erase(self->requests[fd].reads, this);
-        return completion<int>::iop_timedout();
-    }
+    void cancel_iop() override { std::erase(self->requests[fd].reads, this); }
     felspar::coro::coroutine_handle<> try_or_resume() override {
 #ifdef FELSPAR_HAS_ACCEPT4
         auto const r = ::accept4(fd, nullptr, nullptr, SOCK_NONBLOCK);
@@ -152,6 +144,7 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
     int fd;
     sockaddr const *addr;
     socklen_t addrlen;
+    void cancel_iop() override { std::erase(self->requests[fd].writes, this); }
     felspar::coro::coroutine_handle<>
             await_suspend(felspar::coro::coroutine_handle<> h) override {
         handle = h;
@@ -201,10 +194,7 @@ public completion<void> {
             felspar::source_location const &loc)
     : completion<void>{s, t, loc}, fd{f} {}
     int fd;
-    felspar::coro::coroutine_handle<> iop_timedout() override {
-        std::erase(self->requests[fd].reads, this);
-        return completion<void>::iop_timedout();
-    }
+    void cancel_iop() override { std::erase(self->requests[fd].reads, this); }
     felspar::coro::coroutine_handle<>
             await_suspend(felspar::coro::coroutine_handle<> h) override {
         handle = h;
@@ -233,10 +223,7 @@ public completion<void> {
             felspar::source_location const &loc)
     : completion<void>{s, t, loc}, fd{f} {}
     int fd;
-    felspar::coro::coroutine_handle<> iop_timedout() override {
-        std::erase(self->requests[fd].writes, this);
-        return completion<void>::iop_timedout();
-    }
+    void cancel_iop() override { std::erase(self->requests[fd].writes, this); }
     felspar::coro::coroutine_handle<> await_suspend(
             felspar::coro::coroutine_handle<> h) noexcept override {
         handle = h;
