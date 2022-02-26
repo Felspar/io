@@ -96,7 +96,7 @@ namespace felspar::io {
                 await_suspend(felspar::coro::coroutine_handle<>) = 0;
 
         /// Return true if the completion should be destroyed when the iop is
-        virtual bool delete_due_to_iop_destructed() { return true; }
+        virtual bool delete_due_to_iop_destructed() = 0;
     };
 
 

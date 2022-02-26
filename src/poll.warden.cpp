@@ -16,8 +16,9 @@ void felspar::io::poll_warden::run_until(felspar::coro::coroutine_handle<> coro)
             auto const tdiff =
                     timeouts.begin()->first - std::chrono::steady_clock::now();
             if (tdiff < std::chrono::milliseconds{1}) {
-                timeouts.begin()->second->iop_timedout().resume();
+                retrier *const retry = timeouts.begin()->second;
                 timeouts.erase(timeouts.begin());
+                retry->iop_timedout().resume();
             } else {
                 return std::chrono::duration_cast<std::chrono::milliseconds>(
                                tdiff)
