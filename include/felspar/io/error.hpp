@@ -9,7 +9,7 @@ namespace felspar::io {
 
     /// Wrapper around an IOP to directly expose errors instead of throwing
     template<typename R>
-    class ec {
+    class [[nodiscard]] ec {
         iop<R> wrapped;
 
       public:

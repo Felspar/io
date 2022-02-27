@@ -20,7 +20,7 @@ namespace felspar::io {
     template<typename R>
     struct outcome;
     template<>
-    struct outcome<void> {
+    struct [[nodiscard]] outcome<void> {
         std::error_code error = {};
         char const *message = "";
 
@@ -46,7 +46,7 @@ namespace felspar::io {
         }
     };
     template<typename R>
-    struct outcome : private outcome<void> {
+    struct [[nodiscard]] outcome : private outcome<void> {
         using outcome<void>::error;
         using outcome<void>::message;
         using outcome<void>::throw_exception;
@@ -81,7 +81,7 @@ namespace felspar::io {
     /// A completion is always created in response to an IOP request and is used
     /// to track and manage the IOP as it executes
     template<typename R>
-    struct completion {
+    struct [[nodiscard]] completion {
         using result_type = R;
 
         felspar::coro::coroutine_handle<> handle = {};
@@ -102,7 +102,7 @@ namespace felspar::io {
 
     /// The awaitable type associated with all IOPs.
     template<typename R>
-    class iop {
+    class [[nodiscard]] iop {
         template<typename E>
         friend class ec;
 
