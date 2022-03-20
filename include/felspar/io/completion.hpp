@@ -75,6 +75,14 @@ namespace felspar::io {
                 return std::move(result.value());
             }
         }
+        R value(felspar::source_location const &loc =
+                        felspar::source_location::current()) & {
+            if (error) {
+                throw_exception(loc);
+            } else {
+                return result.value();
+            }
+        }
     };
 
 
