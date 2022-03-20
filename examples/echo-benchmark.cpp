@@ -80,7 +80,7 @@ namespace {
         auto control_pipe = ward.create_pipe();
         std::thread server{
                 [](felspar::posix::fd control) {
-                    felspar::io::poll_warden ward;
+                    felspar::io::uring_warden ward{1000};
                     ward.run(server_manager, std::move(control));
                 },
                 std::move(control_pipe.read)};
@@ -89,7 +89,8 @@ namespace {
         std::cout << "Test done, signalling server to stop "
                   << control_pipe.write.native_handle() << std::endl;
         std::array<std::byte, 1> signal{std::byte{'x'}};
-        co_await ward.write_some(control_pipe.write, signal);
+        while (not co_await ward.write_some(control_pipe.write, signal))
+            ;
         std::cout << "Waiting for server thread to end" << std::endl;
         server.join();
         std::cout << "Server count started " << server_count_started
@@ -102,7 +103,7 @@ namespace {
 
 
 int main() {
-    felspar::io::poll_warden ward;
+    felspar::io::uring_warden ward{10};
     felspar::coro::starter<felspar::coro::task<void>> clients;
     return ward.run(co_main);
 }
