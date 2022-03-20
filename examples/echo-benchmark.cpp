@@ -38,13 +38,30 @@ namespace {
     }
 
 
-    felspar::coro::task<void> client() { co_return; }
+    felspar::coro::task<void>
+            client(felspar::io::warden &ward, std::uint16_t port) {
+        auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
+
+        sockaddr_in in;
+        in.sin_family = AF_INET;
+        in.sin_port = htons(port);
+        in.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+
+        co_await ward.connect(
+                fd, reinterpret_cast<sockaddr const *>(&in), sizeof(in));
+
+        std::array<std::uint8_t, 6> out{1, 2, 3, 4, 5, 6}, buffer{};
+        co_await felspar::io::write_all(ward, fd, out, 20ms);
+
+        auto bytes = co_await felspar::io::read_exactly(ward, fd, buffer, 20ms);
+    }
 
 
     felspar::coro::task<int> co_main(felspar::io::warden &ward) {
         felspar::coro::starter<felspar::coro::task<void>> server;
         server.post(echo_server, std::ref(ward), 2566);
         co_await ward.sleep(2s);
+        co_await client(ward, 2566);
         co_return 0;
     }
 
