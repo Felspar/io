@@ -77,12 +77,7 @@ void felspar::io::poll_warden::run_until(felspar::coro::coroutine_handle<> coro)
 }
 
 
-felspar::posix::fd felspar::io::poll_warden::do_create_socket(
-        int domain,
-        int type,
-        int protocol,
-        felspar::source_location const &loc) {
-    auto fd = warden::do_create_socket(domain, type, protocol, loc);
-    felspar::posix::set_non_blocking(fd);
-    return fd;
+void felspar::io::poll_warden::do_prepare_socket(
+        int sock, felspar::source_location const &loc) {
+    felspar::posix::set_non_blocking(sock);
 }

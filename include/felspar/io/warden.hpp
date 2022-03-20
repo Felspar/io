@@ -86,10 +86,12 @@ namespace felspar::io {
                 int domain,
                 int type,
                 int protocol,
-                felspar::source_location const &loc =
-                        felspar::source_location::current()) {
-            return do_create_socket(domain, type, protocol, loc);
-        }
+                felspar::source_location const & =
+                        felspar::source_location::current());
+        /// Create a pipe that has also had its end points wrapped by this warden.
+        posix::pipe create_pipe(
+                felspar::source_location const & =
+                        felspar::source_location::current());
 
         iop<int>
                 accept(int fd,
@@ -171,11 +173,8 @@ namespace felspar::io {
                 std::span<std::byte const>,
                 std::optional<std::chrono::nanoseconds> timeout,
                 felspar::source_location const &) = 0;
-        virtual posix::fd do_create_socket(
-                int domain,
-                int type,
-                int protocol,
-                felspar::source_location const &);
+        virtual void
+                do_prepare_socket(int sock, felspar::source_location const &) {}
         virtual iop<int> do_accept(
                 int fd,
                 std::optional<std::chrono::nanoseconds> timeout,

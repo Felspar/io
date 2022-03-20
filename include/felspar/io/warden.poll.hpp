@@ -48,11 +48,8 @@ namespace felspar::io {
                 felspar::source_location const &) override;
 
         /// Sockets
-        posix::fd do_create_socket(
-                int domain,
-                int type,
-                int protocol,
-                felspar::source_location const &) override;
+        void do_prepare_socket(
+                int sock, felspar::source_location const &) override;
         iop<int> do_accept(
                 int fd,
                 std::optional<std::chrono::nanoseconds> timeout,
