@@ -57,12 +57,15 @@ namespace felspar::io {
 
         /// Assign a value to the outcome
         outcome &operator=(R r) {
+            error = {};
+            message = "";
             result = std::move(r);
             return *this;
         }
         outcome &operator=(outcome<void> r) {
             error = r.error;
             message = r.message;
+            result = {};
             return *this;
         }
 
