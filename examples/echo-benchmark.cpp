@@ -43,7 +43,7 @@ namespace {
         for (auto acceptor = felspar::io::accept(ward, fd);
              auto cnx = co_await acceptor.next();) {
             co.post(echo_connection, ward, felspar::posix::fd{*cnx});
-            co.gc();
+            co.garbage_collect_completed();
         }
     }
     felspar::coro::task<void> server_manager(
