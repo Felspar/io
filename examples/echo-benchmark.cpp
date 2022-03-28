@@ -41,7 +41,7 @@ namespace {
                     errno, std::system_category(), "Calling listen"};
         }
 
-        felspar::coro::starter<felspar::coro::task<void>> co;
+        felspar::coro::starter<> co;
         for (auto acceptor = felspar::io::accept(ward, fd);
              auto cnx = co_await cancellation.signal_or(acceptor.next());) {
             co.post(echo_connection, ward, felspar::posix::fd{*cnx});
@@ -51,11 +51,10 @@ namespace {
     }
     felspar::coro::task<void> server_manager(
             felspar::io::warden &ward, felspar::posix::fd control) {
-        felspar::coro::starter<felspar::coro::task<void>> server;
+        felspar::coro::starter<> server;
         felspar::coro::cancellable cancellation;
         server.post(echo_server, std::ref(ward), std::ref(cancellation));
-        std::cout << "Echo server running, waiting for end signal "
-                  << control.native_handle() << std::endl;
+        std::cout << "Echo server running, waiting for end signal" << std::endl;
         std::array<std::byte, 8> buffer;
         co_await ward.read_some(control, buffer);
         std::cout << "Server has seen end signal, terminating" << std::endl;
@@ -91,19 +90,24 @@ namespace {
                         ward.run(server_manager, std::move(control));
                     } catch (std::exception const &e) {
                         std::cerr << "Exception caught in server thread: "
-                                  << e.what() << '\n';
+                                  << e.what() << std::endl;
                         std::exit(2);
                     }
                 },
                 std::move(control_pipe.read)};
+
+        co_await ward.sleep(100ms);
+        std::cout << "Starting clients" << std::endl;
+        felspar::coro::starter<> clients;
+        while (clients.size() < 20) { clients.post(client, std::ref(ward)); }
+
         co_await ward.sleep(2s);
-        co_await client(ward);
-        std::cout << "Test done, signalling server to stop "
-                  << control_pipe.write.native_handle() << std::endl;
+        std::cout << "Test done, signalling server to stop " << std::endl;
         std::array<std::byte, 1> signal{std::byte{'x'}};
         while (not co_await ward.write_some(control_pipe.write, signal))
             ;
         std::cout << "Waiting for server thread to end" << std::endl;
+        co_await clients.wait_for_all();
         server.join();
         std::cout << "Server count started " << server_count_started
                   << " completed " << server_count_completed << '\n';
@@ -116,7 +120,7 @@ namespace {
 
 int main() {
     try {
-        felspar::io::uring_warden ward{10};
+        felspar::io::uring_warden ward{1000};
         felspar::coro::starter<felspar::coro::task<void>> clients;
         return ward.run(co_main);
     } catch (std::exception const &e) {
