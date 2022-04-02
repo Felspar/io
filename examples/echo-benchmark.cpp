@@ -83,7 +83,7 @@ namespace {
 
     felspar::coro::task<int> co_main(felspar::io::warden &ward) {
         auto control_pipe = ward.create_pipe();
-        std::thread server{
+        std::thread{
                 [](felspar::posix::fd control) {
                     try {
                         felspar::io::uring_warden ward{1000};
@@ -91,10 +91,10 @@ namespace {
                     } catch (std::exception const &e) {
                         std::cerr << "Exception caught in server thread: "
                                   << e.what() << std::endl;
-                        std::exit(2);
                     }
                 },
-                std::move(control_pipe.read)};
+                std::move(control_pipe.read)}
+                .detach();
 
         co_await ward.sleep(100ms);
         std::cout << "Starting clients" << std::endl;
@@ -106,9 +106,8 @@ namespace {
         std::array<std::byte, 1> signal{std::byte{'x'}};
         while (not co_await ward.write_some(control_pipe.write, signal))
             ;
-        std::cout << "Waiting for server thread to end" << std::endl;
+        std::cout << "Waiting for clients to complete" << std::endl;
         co_await clients.wait_for_all();
-        server.join();
         std::cout << "Server count started " << server_count_started
                   << " completed " << server_count_completed << '\n';
         co_return 0;
