@@ -22,6 +22,7 @@ namespace felspar::io {
 
         void run_until(felspar::coro::coroutine_handle<>) override;
 
+        struct close_completion;
         struct sleep_completion;
         struct read_some_completion;
         struct write_some_completion;
@@ -31,6 +32,10 @@ namespace felspar::io {
         struct write_ready_completion;
 
       protected:
+        /// File descriptors
+        iop<void> do_close(int fd, felspar::source_location const &) override;
+
+        /// Time management
         iop<void> do_sleep(
                 std::chrono::nanoseconds,
                 felspar::source_location const &) override;

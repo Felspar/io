@@ -29,6 +29,22 @@ namespace felspar::io {
         }
 
         /**
+         * ### File descriptors
+         */
+        iop<void>
+                close(int fd,
+                      felspar::source_location const &loc =
+                              felspar::source_location::current()) {
+            return do_close(fd, loc);
+        }
+        iop<void>
+                close(posix::fd s,
+                      felspar::source_location const &loc =
+                              felspar::source_location::current()) {
+            return close(s.release(), loc);
+        }
+
+        /**
          * ### Time management
          */
         iop<void>
@@ -162,6 +178,7 @@ namespace felspar::io {
 
       protected:
         virtual void run_until(felspar::coro::coroutine_handle<>) = 0;
+        virtual iop<void> do_close(int fd, felspar::source_location const &) = 0;
         virtual iop<void> do_sleep(
                 std::chrono::nanoseconds, felspar::source_location const &) = 0;
         virtual iop<std::size_t> do_read_some(

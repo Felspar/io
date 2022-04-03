@@ -26,6 +26,7 @@ namespace {
             auto written = co_await felspar::io::write_all(
                     ward, sock, writing.first(bytes), 20ms);
         }
+        co_await ward.close(std::move(sock));
         ++server_count_completed;
     }
     felspar::coro::task<void> echo_server(
@@ -78,6 +79,7 @@ namespace {
         co_await felspar::io::write_all(ward, fd, out, 20ms);
 
         auto bytes = co_await felspar::io::read_exactly(ward, fd, buffer, 20ms);
+        co_await ward.close(std::move(fd));
     }
 
 

@@ -4,6 +4,22 @@
 #include <felspar/io/connect.hpp>
 
 
+struct felspar::io::poll_warden::close_completion : public completion<void> {
+    close_completion(poll_warden *s, int fd, felspar::source_location const &loc)
+    : completion<void>{s, {}, loc} {}
+    int fd;
+    void cancel_iop() override {}
+    felspar::coro::coroutine_handle<> try_or_resume() override {
+        ::close(fd);
+        return cancel_timeout_then_resume();
+    }
+};
+felspar::io::iop<void> felspar::io::poll_warden::do_close(
+        int fd, felspar::source_location const &loc) {
+    return {new close_completion{this, fd, loc}};
+}
+
+
 struct felspar::io::poll_warden::sleep_completion : public completion<void> {
     sleep_completion(
             poll_warden *s,
