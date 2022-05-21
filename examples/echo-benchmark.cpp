@@ -105,7 +105,7 @@ namespace {
 
         co_await ward.sleep(2s);
         std::cout << "Test done, signalling server to stop " << std::endl;
-        std::array<std::byte, 1> signal{std::byte{'x'}};
+        constexpr std::array<std::byte, 1> signal{std::byte{'x'}};
         while (not co_await ward.write_some(control_pipe.write, signal))
             ;
         std::cout << "Waiting for clients to complete" << std::endl;
