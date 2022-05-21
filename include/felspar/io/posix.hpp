@@ -48,6 +48,14 @@ namespace felspar::posix {
     };
 
 
+    /// Set the number of open file descriptors this process can use to the
+    /// maximum allowed range. This is only set at a lower level due to the poor
+    /// design of the `select` system call, so if we promise never to use
+    /// `select` we can have a much higher number. Returns the old limit and the
+    /// new limit
+    std::pair<std::size_t, std::size_t> promise_to_never_use_select();
+
+
     /// Set a file descriptor to non-blocking mode
     void set_non_blocking(
             int sock,

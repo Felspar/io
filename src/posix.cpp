@@ -2,7 +2,30 @@
 
 #include <fcntl.h>
 #include <netinet/in.h>
+#include <sys/resource.h>
 #include <sys/socket.h>
+
+
+std::pair<std::size_t, std::size_t>
+        felspar::posix::promise_to_never_use_select() {
+    ::rlimit limits;
+    if (::getrlimit(RLIMIT_NOFILE, &limits) != 0) {
+        throw felspar::stdexcept::system_error{
+                errno, std::system_category(), "getrlimit RLIMIT_NOFILE error"};
+    }
+    if (limits.rlim_cur < limits.rlim_max) {
+        std::size_t const curr = limits.rlim_cur;
+        limits.rlim_cur = limits.rlim_max;
+        if (::setrlimit(RLIMIT_NOFILE, &limits) != 0) {
+            throw felspar::stdexcept::system_error{
+                    errno, std::system_category(),
+                    "setrlimit RLIMIT_NOFILE error"};
+        }
+        return {curr, limits.rlim_max};
+    } else {
+        return {limits.rlim_cur, limits.rlim_max};
+    }
+}
 
 
 void felspar::posix::set_non_blocking(

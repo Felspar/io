@@ -121,6 +121,9 @@ namespace {
 
 int main() {
     try {
+        auto const file_handles = felspar::posix::promise_to_never_use_select();
+        std::cout << "Raised file handle limit from " << file_handles.first
+                  << " to " << file_handles.second << '\n';
         felspar::io::uring_warden ward{1000};
         felspar::coro::starter<felspar::coro::task<void>> clients;
         return ward.run(co_main);
