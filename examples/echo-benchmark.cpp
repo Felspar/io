@@ -65,21 +65,23 @@ namespace {
 
 
     felspar::coro::task<void> client(felspar::io::warden &ward) {
-        auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
-
         sockaddr_in in;
         in.sin_family = AF_INET;
         in.sin_port = htons(g_port);
         in.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-        co_await ward.connect(
-                fd, reinterpret_cast<sockaddr const *>(&in), sizeof(in));
+        for (std::size_t count{}; count < 1000; ++count) {
+            auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
+            co_await ward.connect(
+                    fd, reinterpret_cast<sockaddr const *>(&in), sizeof(in));
 
-        std::array<std::uint8_t, 6> out{1, 2, 3, 4, 5, 6}, buffer{};
-        co_await felspar::io::write_all(ward, fd, out, 20ms);
+            std::array<std::uint8_t, 6> out{1, 2, 3, 4, 5, 6}, buffer{};
+            co_await felspar::io::write_all(ward, fd, out, 20ms);
 
-        auto bytes = co_await felspar::io::read_exactly(ward, fd, buffer, 20ms);
-        co_await ward.close(std::move(fd));
+            auto bytes =
+                    co_await felspar::io::read_exactly(ward, fd, buffer, 20ms);
+            co_await ward.close(std::move(fd));
+        }
     }
 
 
