@@ -64,24 +64,33 @@ namespace {
     }
 
 
-    felspar::coro::task<void> client(felspar::io::warden &ward) {
+    struct client_stats {
+        std::size_t bytes_written{}, bytes_read{};
+    };
+    felspar::coro::task<client_stats> client(felspar::io::warden &ward) {
+        client_stats stats{};
+
         sockaddr_in in;
         in.sin_family = AF_INET;
         in.sin_port = htons(g_port);
         in.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+        constexpr std::array<std::uint8_t, 6> out{1, 2, 3, 4, 5, 6};
 
         for (std::size_t count{}; count < 1000; ++count) {
             auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
             co_await ward.connect(
                     fd, reinterpret_cast<sockaddr const *>(&in), sizeof(in));
 
-            std::array<std::uint8_t, 6> out{1, 2, 3, 4, 5, 6}, buffer{};
-            co_await felspar::io::write_all(ward, fd, out, 20ms);
+            stats.bytes_written +=
+                    co_await felspar::io::write_all(ward, fd, out, 20ms);
 
-            auto bytes =
+            std::array<std::uint8_t, 6> buffer{};
+            stats.bytes_read +=
                     co_await felspar::io::read_exactly(ward, fd, buffer, 20ms);
+
             co_await ward.close(std::move(fd));
         }
+        co_return stats;
     }
 
 
@@ -102,7 +111,7 @@ namespace {
 
         co_await ward.sleep(100ms);
         std::cout << "Starting clients" << std::endl;
-        felspar::coro::starter<> clients;
+        felspar::coro::starter<felspar::coro::task<client_stats>> clients;
         while (clients.size() < 20) { clients.post(client, std::ref(ward)); }
 
         co_await ward.sleep(2s);
