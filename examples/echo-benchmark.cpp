@@ -65,9 +65,16 @@ namespace {
 
 
     struct client_stats {
-        std::size_t bytes_written{}, bytes_read{};
+        std::size_t count{}, bytes_written{}, bytes_read{};
+        client_stats &operator+=(client_stats const &o) {
+            count += o.count;
+            bytes_written += o.bytes_written;
+            bytes_read += o.bytes_read;
+            return *this;
+        }
     };
-    felspar::coro::task<client_stats> client(felspar::io::warden &ward) {
+    felspar::coro::task<client_stats>
+            client(felspar::io::warden &ward, std::size_t const iterations) {
         client_stats stats{};
 
         sockaddr_in in;
@@ -76,7 +83,7 @@ namespace {
         in.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
         constexpr std::array<std::uint8_t, 6> out{1, 2, 3, 4, 5, 6};
 
-        for (std::size_t count{}; count < 1000; ++count) {
+        for (; stats.count < iterations; ++stats.count) {
             auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
             co_await ward.connect(
                     fd, reinterpret_cast<sockaddr const *>(&in), sizeof(in));
@@ -112,7 +119,9 @@ namespace {
         co_await ward.sleep(100ms);
         std::cout << "Starting clients" << std::endl;
         felspar::coro::starter<felspar::coro::task<client_stats>> clients;
-        while (clients.size() < 20) { clients.post(client, std::ref(ward)); }
+        while (clients.size() < 20) {
+            clients.post(client, std::ref(ward), 1000);
+        }
 
         co_await ward.sleep(2s);
         std::cout << "Test done, signalling server to stop " << std::endl;
@@ -120,9 +129,14 @@ namespace {
         while (not co_await ward.write_some(control_pipe.write, signal))
             ;
         std::cout << "Waiting for clients to complete" << std::endl;
-        co_await clients.wait_for_all();
+        client_stats total{};
+        while (clients.size()) { total += co_await clients.next(); }
         std::cout << "Server count started " << server_count_started
                   << " completed " << server_count_completed << '\n';
+
+        std::cout << "Client bytes written: " << total.bytes_written
+                  << " and bytes read: " << total.bytes_read << "\n";
+
         co_return 0;
     }
 
