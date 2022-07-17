@@ -28,6 +28,14 @@ std::pair<std::size_t, std::size_t>
 }
 
 
+void felspar::posix::listen(
+        int fd, int backlog, felspar::source_location const &loc) {
+    if (::listen(fd, backlog) == -1) {
+        throw felspar::stdexcept::system_error{
+                errno, std::system_category(), "listen error", loc};
+    }
+}
+
 void felspar::posix::set_non_blocking(
         int sock, felspar::source_location const &loc) {
     if (int err =

@@ -56,6 +56,21 @@ namespace felspar::posix {
     std::pair<std::size_t, std::size_t> promise_to_never_use_select();
 
 
+    /// Set the listen queue length for the socket
+    void
+            listen(int fd,
+                   int backlog,
+                   felspar::source_location const & =
+                           felspar::source_location::current());
+    inline void
+            listen(posix::fd const &fd,
+                   int backlog,
+                   felspar::source_location const &loc =
+                           felspar::source_location::current()) {
+        listen(fd.native_handle(), backlog, loc);
+    }
+
+
     /// Set a file descriptor to non-blocking mode
     void set_non_blocking(
             int sock,

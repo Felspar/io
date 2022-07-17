@@ -29,10 +29,7 @@ namespace {
         felspar::posix::bind_to_any_address(fd, port);
 
         int constexpr backlog = 64;
-        if (::listen(fd.native_handle(), backlog) == -1) {
-            throw felspar::stdexcept::system_error{
-                    errno, std::system_category(), "Calling listen"};
-        }
+        felspar::posix::listen(fd, backlog);
 
         felspar::coro::starter<felspar::coro::task<void>> co;
         for (auto acceptor = felspar::io::accept(ward, fd);
