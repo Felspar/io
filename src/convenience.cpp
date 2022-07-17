@@ -12,7 +12,7 @@ felspar::coro::stream<int> felspar::io::accept(
         int s = co_await ward.accept(fd, {}, loc);
         if (s >= 0) {
             co_yield s;
-        } else if (s == -11) {
+        } else if (s != -EBADF) {
             throw felspar::stdexcept::system_error{
                     -s, std::system_category(), "accept", loc};
         } else {
