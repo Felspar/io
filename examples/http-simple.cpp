@@ -22,7 +22,7 @@ namespace {
     }
 
 
-    /**Calling POSIX
+    /**
      * ## Main
      */
     felspar::coro::task<int> co_main(felspar::io::warden &ward) {
