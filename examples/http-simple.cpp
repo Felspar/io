@@ -1,4 +1,3 @@
-#include <felspar/coro/start.hpp>
 #include <felspar/io.hpp>
 #include <felspar/memory/hexdump.hpp>
 
@@ -42,7 +41,7 @@ namespace {
      */
     felspar::io::warden::task<void> accept_loop(
             felspar::io::warden &ward, const felspar::posix::fd &socket) {
-        felspar::coro::starter<felspar::io::warden::task<void>> co;
+        felspar::io::warden::starter<void> co;
         for (auto connections = felspar::io::accept(ward, socket);
              auto cnx = co_await connections.next();) {
             co.post(http_request, std::ref(ward), felspar::posix::fd{*cnx});

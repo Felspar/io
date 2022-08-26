@@ -1,5 +1,6 @@
 #pragma once
 
+#include <felspar/coro/start.hpp>
 #include <felspar/coro/stream.hpp>
 #include <felspar/io/completion.hpp>
 #include <felspar/io/posix.hpp>
@@ -26,6 +27,8 @@ namespace felspar::io {
         using task = coro::task<R, warden>;
         template<typename R>
         using stream = coro::stream<R, warden>;
+        template<typename R>
+        using starter = coro::starter<task<R>>;
 
         template<typename Ret, typename... PArgs, typename... MArgs>
         Ret run(task<Ret> (*f)(warden &, PArgs...), MArgs &&...margs) {

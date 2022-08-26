@@ -1,5 +1,4 @@
 #include <felspar/io.hpp>
-#include <felspar/coro/start.hpp>
 #include <felspar/test.hpp>
 
 
@@ -31,7 +30,7 @@ namespace {
         int constexpr backlog = 64;
         felspar::posix::listen(fd, backlog);
 
-        felspar::coro::starter<felspar::io::warden::task<void>> co;
+        felspar::io::warden::starter<void> co;
         for (auto acceptor = felspar::io::accept(ward, fd);
              auto cnx = co_await acceptor.next();) {
             co.post(echo_connection, ward, felspar::posix::fd{*cnx});
@@ -86,14 +85,14 @@ namespace {
 
     auto const tp = suite.test("echo/poll", []() {
         felspar::io::poll_warden ward;
-        felspar::coro::starter<felspar::io::warden::task<void>> co;
+        felspar::io::warden::starter<void> co;
         co.post(echo_server, ward, 5543);
         ward.run(echo_client, 5543);
     });
 #ifdef FELSPAR_ENABLE_IO_URING
     auto const tu = suite.test("echo/uring", []() {
         felspar::io::uring_warden ward{10};
-        felspar::coro::starter<felspar::io::warden::task<void>> co;
+        felspar::io::warden::starter<void> co;
         co.post(echo_server, ward, 5547);
         ward.run(echo_client, 5547);
     });

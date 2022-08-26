@@ -29,7 +29,7 @@ To echo data received on a socket the following code works:
 ```cpp
 #include <felspar/io.hpp>
 
-felspar::coro::task<void> echo_connection(
+felspar::io::warden::task<void> echo_connection(
         felspar::io::warden &ward, felspar::posix::fd sock) {
     std::array<std::byte, 256> buffer;
     while (auto bytes = co_await ward.read_some(sock, buffer, 20s)) {
@@ -43,9 +43,7 @@ felspar::coro::task<void> echo_connection(
 A coroutine for running an accept loop for an echo server would look like this:
 
 ```cpp
-#include <felspar/coro/start.hpp>
-
-felspar::coro::task<void>
+felspar::io::warden::task<void>
         echo_server(felspar::io::warden &ward, std::uint16_t port) {
     auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
     felspar::posix::bind_to_any_address(fd, port);
@@ -56,7 +54,7 @@ felspar::coro::task<void>
                 errno, std::system_category(), "Calling listen"};
     }
 
-    felspar::coro::starter<felspar::coro::task<void>> co;
+    felspar::io::warden::starter<void> co;
     for (auto acceptor = felspar::io::accept(ward, fd);
             auto cnx = co_await acceptor.next();) {
         co.post(echo_connection, ward, felspar::posix::fd{*cnx});
@@ -75,7 +73,7 @@ if (auto result = co_await ward.read_some(fd, buffer, 200ms); result) {
 }
 ```
 
-This only works for IOPs (directly APIs on the warden). Compound convenience APIs will always throw exceptions. *felspar-io* uses *felspar-exception* in order to track source code locations for errors thrown -- this means the call site of the IO API will be in the exception `what()` string.
+This only works for IOPs (direct APIs on the warden). Compound convenience APIs will always throw exceptions. *felspar-io* uses *felspar-exception* in order to track source code locations for errors thrown -- this means the call site of the IO API will be in the exception `what()` string.
 
 
 ### Wardens

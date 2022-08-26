@@ -1,6 +1,5 @@
 #include <felspar/io.hpp>
 #include <felspar/coro/cancellable.hpp>
-#include <felspar/coro/start.hpp>
 
 #include <atomic>
 #include <iostream>
@@ -42,7 +41,7 @@ namespace {
                     errno, std::system_category(), "Calling listen"};
         }
 
-        felspar::coro::starter<felspar::io::warden::task<void>> co;
+        felspar::io::warden::starter<void> co;
         for (auto acceptor = felspar::io::accept(ward, fd);
              auto cnx = co_await cancellation.signal_or(acceptor.next());) {
             co.post(echo_connection, ward, felspar::posix::fd{*cnx});
@@ -52,7 +51,7 @@ namespace {
     }
     felspar::io::warden::task<void> server_manager(
             felspar::io::warden &ward, felspar::posix::fd control) {
-        felspar::coro::starter<felspar::io::warden::task<void>> server;
+        felspar::io::warden::starter<void> server;
         felspar::coro::cancellable cancellation;
         server.post(echo_server, std::ref(ward), std::ref(cancellation));
         std::cout << "Echo server running, waiting for end signal" << std::endl;
@@ -118,7 +117,7 @@ namespace {
 
         co_await ward.sleep(100ms);
         std::cout << "Starting clients" << std::endl;
-        felspar::coro::starter<felspar::io::warden::task<client_stats>> clients;
+        felspar::io::warden::starter<client_stats> clients;
         while (clients.size() < 20) {
             clients.post(client, std::ref(ward), 1000);
         }
@@ -150,7 +149,7 @@ int main() {
         std::cout << "Raised file handle limit from " << file_handles.first
                   << " to " << file_handles.second << '\n';
         felspar::io::uring_warden ward{1000};
-        felspar::coro::starter<felspar::coro::task<void>> clients;
+        felspar::io::warden::starter<void> clients;
         return ward.run(co_main);
     } catch (std::exception const &e) {
         std::cerr << "Exception caught: " << e.what() << '\n';

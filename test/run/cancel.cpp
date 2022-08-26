@@ -1,4 +1,3 @@
-#include <felspar/coro/start.hpp>
 #include <felspar/io.hpp>
 #include <felspar/test.hpp>
 
@@ -17,7 +16,7 @@ namespace {
     }
     felspar::io::warden::task<void> starter(felspar::io::warden &ward) {
         {
-            felspar::coro::starter<felspar::io::warden::task<void>> start;
+            felspar::io::warden::starter<void> start;
             start.post(sleeper, std::ref(ward));
         }
         co_await ward.sleep(10ms);

@@ -1,5 +1,4 @@
 #include <felspar/io.hpp>
-#include <felspar/coro/start.hpp>
 #include <felspar/test.hpp>
 
 
@@ -87,14 +86,14 @@ namespace {
     }
     auto const wp = suite.test("write/poll", []() {
         felspar::io::poll_warden ward;
-        felspar::coro::starter<felspar::io::warden::task<void>> co;
+        felspar::io::warden::starter<void> co;
         co.post(accept_writer, ward, 5534);
         ward.run(write_forever, 5534);
     });
 #ifdef FELSPAR_ENABLE_IO_URING
     auto const wu = suite.test("write/io_uring", []() {
         felspar::io::uring_warden ward;
-        felspar::coro::starter<felspar::io::warden::task<void>> co;
+        felspar::io::warden::starter<void> co;
         co.post(accept_writer, ward, 5536);
         ward.run(write_forever, 5536);
     });
