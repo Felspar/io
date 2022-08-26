@@ -12,7 +12,7 @@ namespace {
      *
      * Processes HTTP requests on the connection.
      */
-    felspar::coro::task<void>
+    felspar::io::warden::task<void>
             http_request(felspar::io::warden &ward, felspar::posix::fd fd) {
         felspar::io::read_buffer<std::array<char, 2 << 10>> buffer;
         auto const request{
@@ -40,9 +40,9 @@ namespace {
      *
      * There will be one of these per thread.
      */
-    felspar::coro::task<void> accept_loop(
+    felspar::io::warden::task<void> accept_loop(
             felspar::io::warden &ward, const felspar::posix::fd &socket) {
-        felspar::coro::starter<felspar::coro::task<void>> co;
+        felspar::coro::starter<felspar::io::warden::task<void>> co;
         for (auto connections = felspar::io::accept(ward, socket);
              auto cnx = co_await connections.next();) {
             co.post(http_request, std::ref(ward), felspar::posix::fd{*cnx});
@@ -54,7 +54,7 @@ namespace {
     /**
      * ## Main
      */
-    felspar::coro::task<int> co_main(felspar::io::warden &ward) {
+    felspar::io::warden::task<int> co_main(felspar::io::warden &ward) {
         constexpr std::uint16_t port{4040};
         constexpr int backlog = 64;
 

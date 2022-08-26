@@ -12,7 +12,7 @@ namespace {
     auto const suite = felspar::testsuite("timers");
 
 
-    felspar::coro::task<bool> short_sleep(felspar::io::warden &ward) {
+    felspar::io::warden::task<bool> short_sleep(felspar::io::warden &ward) {
         auto const start = std::chrono::steady_clock::now();
         co_await ward.sleep(20ms);
         auto const slept = std::chrono::steady_clock::now() - start;
@@ -32,7 +32,7 @@ namespace {
 #endif
 
 
-    felspar::coro::task<void>
+    felspar::io::warden::task<void>
             accept_writer(felspar::io::warden &ward, std::uint16_t port) {
         auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
         felspar::posix::set_reuse_port(fd);
@@ -48,7 +48,7 @@ namespace {
         auto cnx = co_await acceptor.next();
         co_await ward.sleep(30ms);
     }
-    felspar::coro::task<void>
+    felspar::io::warden::task<void>
             write_forever(felspar::io::warden &ward, std::uint16_t port) {
         felspar::test::injected check;
 
@@ -87,21 +87,21 @@ namespace {
     }
     auto const wp = suite.test("write/poll", []() {
         felspar::io::poll_warden ward;
-        felspar::coro::starter<felspar::coro::task<void>> co;
+        felspar::coro::starter<felspar::io::warden::task<void>> co;
         co.post(accept_writer, ward, 5534);
         ward.run(write_forever, 5534);
     });
 #ifdef FELSPAR_ENABLE_IO_URING
     auto const wu = suite.test("write/io_uring", []() {
         felspar::io::uring_warden ward;
-        felspar::coro::starter<felspar::coro::task<void>> co;
+        felspar::coro::starter<felspar::io::warden::task<void>> co;
         co.post(accept_writer, ward, 5536);
         ward.run(write_forever, 5536);
     });
 #endif
 
 
-    felspar::coro::task<void>
+    felspar::io::warden::task<void>
             short_accept(felspar::io::warden &ward, std::uint16_t port) {
         felspar::test::injected check;
 

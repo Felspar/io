@@ -12,7 +12,7 @@ namespace {
     auto const suite = felspar::testsuite("basics");
 
 
-    felspar::coro::task<void> echo_connection(
+    felspar::io::warden::task<void> echo_connection(
             felspar::io::warden &ward, felspar::posix::fd sock) {
         std::array<std::byte, 256> buffer;
         while (auto bytes = co_await ward.read_some(sock, buffer, 20ms)) {
@@ -22,7 +22,7 @@ namespace {
         }
     }
 
-    felspar::coro::task<void>
+    felspar::io::warden::task<void>
             echo_server(felspar::io::warden &ward, std::uint16_t port) {
         auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
         felspar::posix::set_reuse_port(fd);
@@ -31,7 +31,7 @@ namespace {
         int constexpr backlog = 64;
         felspar::posix::listen(fd, backlog);
 
-        felspar::coro::starter<felspar::coro::task<void>> co;
+        felspar::coro::starter<felspar::io::warden::task<void>> co;
         for (auto acceptor = felspar::io::accept(ward, fd);
              auto cnx = co_await acceptor.next();) {
             co.post(echo_connection, ward, felspar::posix::fd{*cnx});
@@ -39,7 +39,7 @@ namespace {
         }
     }
 
-    felspar::coro::task<void>
+    felspar::io::warden::task<void>
             echo_client(felspar::io::warden &ward, std::uint16_t port) {
         felspar::test::injected check;
 
@@ -86,14 +86,14 @@ namespace {
 
     auto const tp = suite.test("echo/poll", []() {
         felspar::io::poll_warden ward;
-        felspar::coro::starter<felspar::coro::task<void>> co;
+        felspar::coro::starter<felspar::io::warden::task<void>> co;
         co.post(echo_server, ward, 5543);
         ward.run(echo_client, 5543);
     });
 #ifdef FELSPAR_ENABLE_IO_URING
     auto const tu = suite.test("echo/uring", []() {
         felspar::io::uring_warden ward{10};
-        felspar::coro::starter<felspar::coro::task<void>> co;
+        felspar::coro::starter<felspar::io::warden::task<void>> co;
         co.post(echo_server, ward, 5547);
         ward.run(echo_client, 5547);
     });

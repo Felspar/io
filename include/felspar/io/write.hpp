@@ -15,7 +15,7 @@ namespace felspar::io {
 
     /// Write all of the buffer to a file descriptor
     template<typename S>
-    inline felspar::coro::task<std::size_t> write_all(
+    inline warden::task<std::size_t> write_all(
             warden &ward,
             S &&sock,
             std::span<std::byte const> s,
@@ -32,7 +32,7 @@ namespace felspar::io {
         co_return s.size();
     }
     template<typename S>
-    inline felspar::coro::task<std::size_t> write_all(
+    inline warden::task<std::size_t> write_all(
             warden &w,
             S &&fd,
             void const *buf,
@@ -47,7 +47,7 @@ namespace felspar::io {
                 std::move(timeout), loc);
     }
     template<typename S>
-    inline felspar::coro::task<std::size_t> write_all(
+    inline warden::task<std::size_t> write_all(
             warden &w,
             S &&fd,
             std::span<std::uint8_t const> s,
@@ -61,7 +61,7 @@ namespace felspar::io {
                 std::move(timeout), loc);
     }
     template<typename S>
-    inline felspar::coro::task<std::size_t> write_all(
+    inline warden::task<std::size_t> write_all(
             warden &w,
             S &&fd,
             std::string_view s,

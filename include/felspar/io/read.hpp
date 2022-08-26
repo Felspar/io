@@ -1,7 +1,6 @@
 #pragma once
 
 
-#include <felspar/coro/task.hpp>
 #include <felspar/io/warden.hpp>
 
 #include <span>
@@ -29,7 +28,7 @@ namespace felspar::io {
         read_buffer() {}
 
         template<typename S>
-        felspar::coro::task<void> read_some(
+        warden::task<void> read_some(
                 warden &ward,
                 S &&sock,
                 std::optional<std::chrono::nanoseconds> timeout = {},
@@ -69,7 +68,7 @@ namespace felspar::io {
 
     /// Issue a read request for a specific amount of data
     template<typename S>
-    inline felspar::coro::task<std::size_t> read_exactly(
+    inline warden::task<std::size_t> read_exactly(
             warden &ward,
             S &&sock,
             std::span<std::byte> b,
@@ -85,7 +84,7 @@ namespace felspar::io {
         co_return b.size();
     }
     template<typename S>
-    inline felspar::coro::task<std::size_t> read_exactly(
+    inline warden::task<std::size_t> read_exactly(
             warden &w,
             S &&s,
             void *buf,
@@ -99,7 +98,7 @@ namespace felspar::io {
                 std::move(timeout), loc);
     }
     template<typename S>
-    inline felspar::coro::task<std::size_t> read_exactly(
+    inline warden::task<std::size_t> read_exactly(
             warden &w,
             S &&s,
             std::span<std::uint8_t> b,
@@ -116,7 +115,7 @@ namespace felspar::io {
 
     /// Read a line (up to the next LF) and strip any final CR
     template<typename S, typename R>
-    inline felspar::coro::task<typename R::span_type> read_until_lf_strip_cr(
+    inline warden::task<typename R::span_type> read_until_lf_strip_cr(
             warden &ward,
             S &&sock,
             R &read_buffer,

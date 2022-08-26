@@ -12,12 +12,12 @@ namespace {
     auto const suite = felspar::testsuite("cancellation");
 
 
-    felspar::coro::task<void> sleeper(felspar::io::warden &ward) {
+    felspar::io::warden::task<void> sleeper(felspar::io::warden &ward) {
         co_await ward.sleep(30ms);
     }
-    felspar::coro::task<void> starter(felspar::io::warden &ward) {
+    felspar::io::warden::task<void> starter(felspar::io::warden &ward) {
         {
-            felspar::coro::starter<felspar::coro::task<void>> start;
+            felspar::coro::starter<felspar::io::warden::task<void>> start;
             start.post(sleeper, std::ref(ward));
         }
         co_await ward.sleep(10ms);

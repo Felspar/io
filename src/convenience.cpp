@@ -6,7 +6,7 @@
 #include <felspar/exceptions.hpp>
 
 
-felspar::coro::stream<int> felspar::io::accept(
+felspar::io::warden::stream<int> felspar::io::accept(
         warden &ward, int fd, felspar::source_location loc) {
     while (true) {
         int s = co_await ward.accept(fd, {}, loc);

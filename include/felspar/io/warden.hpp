@@ -1,7 +1,9 @@
 #pragma once
 
+#include <felspar/coro/stream.hpp>
 #include <felspar/io/completion.hpp>
 #include <felspar/io/posix.hpp>
+#include <felspar/memory/pmr.hpp>
 #include <felspar/test/source.hpp>
 
 #include <chrono>
@@ -13,17 +15,21 @@
 namespace felspar::io {
 
 
-    class warden {
+    class warden : public felspar::pmr::memory_resource {
         template<typename R>
         friend struct felspar::io::iop;
 
       public:
         virtual ~warden() = default;
 
+        template<typename R>
+        using task = coro::task<R, warden>;
+        template<typename R>
+        using stream = coro::stream<R, warden>;
+
         template<typename Ret, typename... PArgs, typename... MArgs>
-        Ret run(coro::task<Ret> (*f)(warden &, PArgs...), MArgs &&...margs) {
-            auto task = f(*this, std::forward<MArgs>(margs)...);
-            auto handle = task.release();
+        Ret run(task<Ret> (*f)(warden &, PArgs...), MArgs &&...margs) {
+            auto handle = f(*this, std::forward<MArgs>(margs)...).release();
             run_until(handle.get());
             return handle.promise().consume_value();
         }
@@ -174,6 +180,23 @@ namespace felspar::io {
                 felspar::source_location const &loc =
                         felspar::source_location::current()) {
             return write_ready(sock.native_handle(), timeout, loc);
+        }
+
+        /**
+         * PMR based memory allocation.
+         */
+        void *do_allocate(std::size_t bytes, std::size_t alignment) override {
+            return ::operator new(
+                    bytes, static_cast<std::align_val_t>(alignment));
+        }
+        void do_deallocate(
+                void *p, std::size_t bytes, std::size_t alignment) override {
+            ::operator delete(
+                    p, bytes, static_cast<std::align_val_t>(alignment));
+        }
+
+        bool do_is_equal(memory_resource const &other) const noexcept override {
+            return this == &other;
         }
 
       protected:

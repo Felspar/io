@@ -17,7 +17,7 @@ namespace {
     std::atomic<std::uint64_t> server_count_started{}, server_count_completed{};
 
 
-    felspar::coro::task<void> echo_connection(
+    felspar::io::warden::task<void> echo_connection(
             felspar::io::warden &ward, felspar::posix::fd sock) {
         ++server_count_started;
         std::array<std::byte, 256> buffer;
@@ -29,7 +29,7 @@ namespace {
         co_await ward.close(std::move(sock));
         ++server_count_completed;
     }
-    felspar::coro::task<void> echo_server(
+    felspar::io::warden::task<void> echo_server(
             felspar::io::warden &ward,
             felspar::coro::cancellable &cancellation) {
         auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
@@ -42,7 +42,7 @@ namespace {
                     errno, std::system_category(), "Calling listen"};
         }
 
-        felspar::coro::starter<> co;
+        felspar::coro::starter<felspar::io::warden::task<void>> co;
         for (auto acceptor = felspar::io::accept(ward, fd);
              auto cnx = co_await cancellation.signal_or(acceptor.next());) {
             co.post(echo_connection, ward, felspar::posix::fd{*cnx});
@@ -50,9 +50,9 @@ namespace {
         }
         co_await co.wait_for_all();
     }
-    felspar::coro::task<void> server_manager(
+    felspar::io::warden::task<void> server_manager(
             felspar::io::warden &ward, felspar::posix::fd control) {
-        felspar::coro::starter<> server;
+        felspar::coro::starter<felspar::io::warden::task<void>> server;
         felspar::coro::cancellable cancellation;
         server.post(echo_server, std::ref(ward), std::ref(cancellation));
         std::cout << "Echo server running, waiting for end signal" << std::endl;
@@ -73,7 +73,7 @@ namespace {
             return *this;
         }
     };
-    felspar::coro::task<client_stats>
+    felspar::io::warden::task<client_stats>
             client(felspar::io::warden &ward, std::size_t const iterations) {
         client_stats stats{};
 
@@ -101,7 +101,7 @@ namespace {
     }
 
 
-    felspar::coro::task<int> co_main(felspar::io::warden &ward) {
+    felspar::io::warden::task<int> co_main(felspar::io::warden &ward) {
         auto control_pipe = ward.create_pipe();
         std::thread{
                 [](felspar::posix::fd control) {
@@ -118,7 +118,7 @@ namespace {
 
         co_await ward.sleep(100ms);
         std::cout << "Starting clients" << std::endl;
-        felspar::coro::starter<felspar::coro::task<client_stats>> clients;
+        felspar::coro::starter<felspar::io::warden::task<client_stats>> clients;
         while (clients.size() < 20) {
             clients.post(client, std::ref(ward), 1000);
         }
