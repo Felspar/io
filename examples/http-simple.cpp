@@ -48,7 +48,7 @@ namespace {
         felspar::coro::starter<felspar::coro::task<void>> co;
         for (auto connections = felspar::io::accept(ward, socket);
              auto cnx = co_await connections.next();) {
-            co_await http_request(ward, felspar::posix::fd{*cnx});
+            co.post(http_request, std::ref(ward), felspar::posix::fd{*cnx});
             co.garbage_collect_completed();
         }
     }
