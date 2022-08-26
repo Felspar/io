@@ -14,17 +14,15 @@ namespace {
      */
     felspar::coro::task<void>
             http_request(felspar::io::warden &ward, felspar::posix::fd fd) {
-        std::cout << "Got HTTP request\n";
         felspar::io::read_buffer<std::array<char, 2 << 10>> buffer;
         auto const request{
                 co_await felspar::io::read_until_lf_strip_cr(ward, fd, buffer)};
-        std::cout << "Request: " << felspar::memory::hexdump(request);
         for (auto header = co_await felspar::io::read_until_lf_strip_cr(
                      ward, fd, buffer);
              header.size();
              header = co_await felspar::io::read_until_lf_strip_cr(
                      ward, fd, buffer)) {
-            std::cout << felspar::memory::hexdump(header);
+            /// The headers should really be processed
         }
         /// TODO Send response
         co_await write_all(
@@ -34,7 +32,6 @@ namespace {
                                  "\r\n"
                                  "OK\n"});
         co_await ward.close(std::move(fd));
-        std::cout << "And we're done\n";
         co_return;
     }
 
