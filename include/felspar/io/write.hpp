@@ -60,6 +60,20 @@ namespace felspar::io {
                         reinterpret_cast<std::byte const *>(s.data()), s.size()},
                 std::move(timeout), loc);
     }
+    template<typename S>
+    inline felspar::coro::task<std::size_t> write_all(
+            warden &w,
+            S &&fd,
+            std::string_view s,
+            std::optional<std::chrono::nanoseconds> timeout = {},
+            felspar::source_location const &loc =
+                    felspar::source_location::current()) {
+        return write_all(
+                w, std::forward<S>(fd),
+                std::span<std::byte const>{
+                        reinterpret_cast<std::byte const *>(s.data()), s.size()},
+                std::move(timeout), loc);
+    }
 
 
 }
