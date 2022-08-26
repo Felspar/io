@@ -27,6 +27,12 @@ namespace {
             std::cout << felspar::memory::hexdump(header);
         }
         /// TODO Send response
+        co_await write_all(
+                ward, fd,
+                std::string_view{"HTTP/1.0 200 OK\r\n"
+                                 "Content-Length: 3\r\n"
+                                 "\r\n"
+                                 "OK\n"});
         co_await ward.close(std::move(fd));
         std::cout << "And we're done\n";
         co_return;
