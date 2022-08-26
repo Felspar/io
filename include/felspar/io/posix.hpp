@@ -35,6 +35,10 @@ namespace felspar::posix {
         int release() noexcept { return std::exchange(f, -1); }
 
         /// Close the FD
+        /**
+         * This performs a blocking `close`. You should use the warden's
+         * asynchronous blocking `close` if you can.
+         */
         void close() noexcept {
             int c = std::exchange(f, -1);
             if (c >= 0) { ::close(c); }
