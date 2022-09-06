@@ -120,10 +120,11 @@ struct felspar::io::poll_warden::accept_completion : public completion<int> {
     felspar::coro::coroutine_handle<> try_or_resume() override {
 #ifdef FELSPAR_HAS_ACCEPT4
         auto const r = ::accept4(fd, nullptr, nullptr, SOCK_NONBLOCK);
-        if (r >= 0) {
 #else
         auto const r = ::accept(fd, nullptr, nullptr);
+#endif
         if (r >= 0) {
+#ifndef FELSPAR_HAS_ACCEPT4
             posix::set_non_blocking(r, loc);
 #endif
             result = r;
