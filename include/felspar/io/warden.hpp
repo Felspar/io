@@ -7,7 +7,12 @@
 #include <chrono>
 #include <span>
 
+#if __has_include(<netinet/in.h>)
 #include <netinet/in.h>
+#elif __has_include(<winsock2.h>)
+#include <winsock2.h>
+using socklen_t = int;
+#endif
 
 
 namespace felspar::io {
