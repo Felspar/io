@@ -8,12 +8,24 @@
 
 void felspar::posix::set_non_blocking(
         int sock, felspar::source_location const &loc) {
-    if (int err =
+#if defined(FELSPAR_POSIX_SOCKETS)
+    if (int const err =
                 ::fcntl(sock, F_SETFL, ::fcntl(sock, F_GETFL, 0) | O_NONBLOCK);
         err != 0) {
         throw felspar::stdexcept::system_error{
                 errno, std::system_category(), "fcntl F_SETFL error", loc};
     }
+#elif defined(FELSPAR_WINSOCK2)
+    u_long mode = 1;
+    if (int const err = ::ioctlsocket(sock, FIONBIO, &mode);
+        err == SOCKET_ERROR) {
+        throw felspar::stdexcept::system_error{
+                WSAGetLastError(), std::system_category(),
+                "ioctlsocket FIONBIO error", loc};
+    }
+#else
+#error "No implementation for this platform"
+#endif
 }
 
 
