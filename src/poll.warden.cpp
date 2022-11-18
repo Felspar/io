@@ -3,7 +3,9 @@
 #include <felspar/exceptions.hpp>
 #include <felspar/io/posix.hpp>
 
+#if __has_include(<poll.h>)
 #include <poll.h>
+#endif
 
 
 void felspar::io::poll_warden::run_until(felspar::coro::coroutine_handle<> coro) {

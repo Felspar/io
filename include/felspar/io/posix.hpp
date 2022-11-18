@@ -5,6 +5,21 @@
 
 #include <unistd.h>
 
+#if __has_include(<netinet/in.h>)
+
+/// Standard POSIX system
+#define FELSPAR_POSIX_SOCKETS
+#include <netinet/in.h>
+
+#elif __has_include(<winsock2.h>)
+
+/// Windows POSIX like system
+#define FELSPAR_WINSOCK2
+#include <winsock2.h>
+using socklen_t = int;
+
+#endif
+
 
 namespace felspar::posix {
 

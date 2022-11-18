@@ -1,8 +1,9 @@
 #include <felspar/io/posix.hpp>
 
+#ifdef FELSPAR_POSIX_SOCKETS
 #include <fcntl.h>
-#include <netinet/in.h>
 #include <sys/socket.h>
+#endif
 
 
 void felspar::posix::set_non_blocking(
