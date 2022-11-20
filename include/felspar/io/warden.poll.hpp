@@ -17,7 +17,7 @@ namespace felspar::io {
         struct request {
             std::vector<retrier *> reads, writes;
         };
-        std::map<int, request> requests;
+        std::map<socket_descriptor, request> requests;
         std::multimap<std::chrono::steady_clock::time_point, retrier *> timeouts;
 
         void run_until(felspar::coro::coroutine_handle<>) override;
