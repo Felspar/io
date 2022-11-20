@@ -32,7 +32,15 @@ void felspar::posix::set_non_blocking(
 void felspar::posix::set_reuse_port(
         io::socket_descriptor const sock, felspar::source_location const &loc) {
     int optval = 1;
-    if (::setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval))
+#if defined(FELSPAR_WINSOCK2)
+    /// For Windows it looks like SO_REUSEADDR is the closest we can get
+    constexpr auto reuse_flag = SO_REUSEADDR;
+    char const *popt = reinterpret_cast<char const *>(&optval);
+#else
+    constexpr auto reuse_flag = SO_REUSEPORT;
+    int *popt = &optval;
+#endif
+    if (::setsockopt(sock, SOL_SOCKET, reuse_flag, popt, sizeof(optval))
         == -1) {
         throw felspar::stdexcept::system_error{
                 errno, std::system_category(), "setsockopt SO_REUSEPORT failed",

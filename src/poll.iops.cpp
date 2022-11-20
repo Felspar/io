@@ -163,8 +163,13 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
     }
     felspar::coro::coroutine_handle<> try_or_resume() override {
         int errvalue{};
+#if defined(FELSPAR_WINSOCK2)
+        char *perr = reinterpret_cast<char *>(&errvalue);
+#else
+        int *perr = &errvalue;
+#endif
         ::socklen_t length{};
-        if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &errvalue, &length) == 0) {
+        if (getsockopt(fd, SOL_SOCKET, SO_ERROR, perr, &length) == 0) {
             if (errvalue == 0) {
                 return cancel_timeout_then_resume();
             } else {
