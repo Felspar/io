@@ -28,12 +28,12 @@ struct felspar::io::poll_warden::read_some_completion :
 public completion<std::size_t> {
     read_some_completion(
             poll_warden *s,
-            int f,
+            socket_descriptor f,
             std::span<std::byte> b,
             std::optional<std::chrono::nanoseconds> timeout,
             felspar::source_location const &loc)
     : completion<std::size_t>{s, timeout, loc}, fd{f}, buf{b} {}
-    int fd;
+    socket_descriptor fd;
     std::span<std::byte> buf;
     void cancel_iop() override { std::erase(self->requests[fd].reads, this); }
     felspar::coro::coroutine_handle<> try_or_resume() override {
@@ -50,7 +50,7 @@ public completion<std::size_t> {
     }
 };
 felspar::io::iop<std::size_t> felspar::io::poll_warden::do_read_some(
-        int fd,
+        socket_descriptor fd,
         std::span<std::byte> buf,
         std::optional<std::chrono::nanoseconds> timeout,
         felspar::source_location const &loc) {
@@ -62,12 +62,12 @@ struct felspar::io::poll_warden::write_some_completion :
 public completion<std::size_t> {
     write_some_completion(
             poll_warden *s,
-            int f,
+            socket_descriptor f,
             std::span<std::byte const> b,
             std::optional<std::chrono::nanoseconds> t,
             felspar::source_location const &loc)
     : completion<std::size_t>{s, t, loc}, fd{f}, buf{b} {}
-    int fd;
+    socket_descriptor fd;
     std::span<std::byte const> buf;
     void cancel_iop() override { std::erase(self->requests[fd].writes, this); }
     felspar::coro::coroutine_handle<> try_or_resume() override {
@@ -84,7 +84,7 @@ public completion<std::size_t> {
     }
 };
 felspar::io::iop<std::size_t> felspar::io::poll_warden::do_write_some(
-        int fd,
+        socket_descriptor fd,
         std::span<std::byte const> buf,
         std::optional<std::chrono::nanoseconds> t,
         felspar::source_location const &loc) {
@@ -92,14 +92,15 @@ felspar::io::iop<std::size_t> felspar::io::poll_warden::do_write_some(
 }
 
 
-struct felspar::io::poll_warden::accept_completion : public completion<int> {
+struct felspar::io::poll_warden::accept_completion :
+public completion<socket_descriptor> {
     accept_completion(
             poll_warden *s,
-            int f,
+            socket_descriptor f,
             std::optional<std::chrono::nanoseconds> t,
             felspar::source_location const &loc)
-    : completion<int>{s, t, loc}, fd{f} {}
-    int fd;
+    : completion<socket_descriptor>{s, t, loc}, fd{f} {}
+    socket_descriptor fd;
     void cancel_iop() override { std::erase(self->requests[fd].reads, this); }
     felspar::coro::coroutine_handle<> try_or_resume() override {
 #ifdef FELSPAR_HAS_ACCEPT4
@@ -124,10 +125,11 @@ struct felspar::io::poll_warden::accept_completion : public completion<int> {
         }
     }
 };
-felspar::io::iop<int> felspar::io::poll_warden::do_accept(
-        int fd,
-        std::optional<std::chrono::nanoseconds> timeout,
-        felspar::source_location const &loc) {
+felspar::io::iop<felspar::io::socket_descriptor>
+        felspar::io::poll_warden::do_accept(
+                socket_descriptor fd,
+                std::optional<std::chrono::nanoseconds> timeout,
+                felspar::source_location const &loc) {
     return {new accept_completion{this, fd, timeout, loc}};
 }
 
@@ -135,13 +137,13 @@ felspar::io::iop<int> felspar::io::poll_warden::do_accept(
 struct felspar::io::poll_warden::connect_completion : public completion<void> {
     connect_completion(
             poll_warden *s,
-            int f,
+            socket_descriptor f,
             sockaddr const *a,
             socklen_t l,
             std::optional<std::chrono::nanoseconds> t,
             felspar::source_location const &loc)
     : completion<void>{s, t, loc}, fd{f}, addr{a}, addrlen{l} {}
-    int fd;
+    socket_descriptor fd;
     sockaddr const *addr;
     socklen_t addrlen;
     void cancel_iop() override { std::erase(self->requests[fd].writes, this); }
@@ -176,7 +178,7 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
     }
 };
 felspar::io::iop<void> felspar::io::poll_warden::do_connect(
-        int fd,
+        socket_descriptor fd,
         sockaddr const *addr,
         socklen_t addrlen,
         std::optional<std::chrono::nanoseconds> timeout,
@@ -189,11 +191,11 @@ struct felspar::io::poll_warden::read_ready_completion :
 public completion<void> {
     read_ready_completion(
             poll_warden *s,
-            int f,
+            socket_descriptor f,
             std::optional<std::chrono::nanoseconds> t,
             felspar::source_location const &loc)
     : completion<void>{s, t, loc}, fd{f} {}
-    int fd;
+    socket_descriptor fd;
     void cancel_iop() override { std::erase(self->requests[fd].reads, this); }
     felspar::coro::coroutine_handle<>
             await_suspend(felspar::coro::coroutine_handle<> h) override {
@@ -207,7 +209,7 @@ public completion<void> {
     }
 };
 felspar::io::iop<void> felspar::io::poll_warden::do_read_ready(
-        int fd,
+        socket_descriptor fd,
         std::optional<std::chrono::nanoseconds> timeout,
         felspar::source_location const &loc) {
     return {new read_ready_completion{this, fd, timeout, loc}};
@@ -218,11 +220,11 @@ struct felspar::io::poll_warden::write_ready_completion :
 public completion<void> {
     write_ready_completion(
             poll_warden *s,
-            int f,
+            socket_descriptor f,
             std::optional<std::chrono::nanoseconds> t,
             felspar::source_location const &loc)
     : completion<void>{s, t, loc}, fd{f} {}
-    int fd;
+    socket_descriptor fd;
     void cancel_iop() override { std::erase(self->requests[fd].writes, this); }
     felspar::coro::coroutine_handle<> await_suspend(
             felspar::coro::coroutine_handle<> h) noexcept override {
@@ -236,7 +238,7 @@ public completion<void> {
     }
 };
 felspar::io::iop<void> felspar::io::poll_warden::do_write_ready(
-        int fd,
+        socket_descriptor fd,
         std::optional<std::chrono::nanoseconds> timeout,
         felspar::source_location const &loc) {
     return {new write_ready_completion{this, fd, timeout, loc}};

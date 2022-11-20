@@ -6,10 +6,10 @@
 #include <felspar/exceptions.hpp>
 
 
-felspar::coro::stream<int> felspar::io::accept(
-        warden &ward, int fd, felspar::source_location loc) {
+felspar::coro::stream<felspar::io::socket_descriptor> felspar::io::accept(
+        warden &ward, socket_descriptor fd, felspar::source_location loc) {
     while (true) {
-        int s = co_await ward.accept(fd, {}, loc);
+        auto s = co_await ward.accept(fd, {}, loc);
         if (s >= 0) {
             co_yield s;
         } else if (s == -11) {

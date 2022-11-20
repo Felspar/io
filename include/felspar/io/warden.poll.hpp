@@ -37,12 +37,12 @@ namespace felspar::io {
 
         /// Read & write
         iop<std::size_t> do_read_some(
-                int fd,
+                socket_descriptor fd,
                 std::span<std::byte>,
                 std::optional<std::chrono::nanoseconds>,
                 felspar::source_location const &) override;
         iop<std::size_t> do_write_some(
-                int fd,
+                socket_descriptor fd,
                 std::span<std::byte const>,
                 std::optional<std::chrono::nanoseconds> timeout,
                 felspar::source_location const &) override;
@@ -53,12 +53,12 @@ namespace felspar::io {
                 int type,
                 int protocol,
                 felspar::source_location const &) override;
-        iop<int> do_accept(
-                int fd,
+        iop<socket_descriptor> do_accept(
+                socket_descriptor fd,
                 std::optional<std::chrono::nanoseconds> timeout,
                 felspar::source_location const &) override;
         iop<void> do_connect(
-                int fd,
+                socket_descriptor fd,
                 sockaddr const *,
                 socklen_t,
                 std::optional<std::chrono::nanoseconds> timeout,
@@ -66,11 +66,11 @@ namespace felspar::io {
 
         /// File descriptor readiness
         iop<void> do_read_ready(
-                int fd,
+                socket_descriptor fd,
                 std::optional<std::chrono::nanoseconds> timeout,
                 felspar::source_location const &) override;
         iop<void> do_write_ready(
-                int fd,
+                socket_descriptor fd,
                 std::optional<std::chrono::nanoseconds> timeout,
                 felspar::source_location const &) override;
     };
