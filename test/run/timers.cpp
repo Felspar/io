@@ -101,10 +101,11 @@ namespace {
 #endif
 
 
-    felspar::coro::task<void>
-            short_accept(felspar::io::warden &ward, std::uint16_t port) {
-        felspar::test::injected check;
-
+    felspar::coro::task<void> short_accept(
+            felspar::io::warden &ward,
+            std::uint16_t port,
+            felspar::test::injected check,
+            std::ostream &log) {
         auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
         set_reuse_port(fd);
         bind_to_any_address(fd, port);
@@ -120,16 +121,19 @@ namespace {
             check(false) == true;
         } catch (felspar::io::timeout const &) {
             check(true) == true;
+        } catch (std::exception const &e) {
+            log << e.what() << '\n';
+            check(false) == true;
         } catch (...) { check(false) == true; }
     }
-    auto const ap = suite.test("accept/poll", []() {
+    auto const ap = suite.test("accept/poll", [](auto check, auto &log) {
         felspar::io::poll_warden ward;
-        ward.run(short_accept, 5538);
+        ward.run(short_accept, 5538, check, std::ref(log));
     });
 #ifdef FELSPAR_ENABLE_IO_URING
-    auto const au = suite.test("accept/io_uring", []() {
+    auto const au = suite.test("accept/io_uring", [](auto check, auto &log) {
         felspar::io::uring_warden ward;
-        ward.run(short_accept, 5540);
+        ward.run(short_accept, 5540, check, std::ref(log));
     });
 #endif
 
