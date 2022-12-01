@@ -10,9 +10,9 @@
 
 felspar::io::poll_warden::poll_warden() {
 #if defined(FELSPAR_WINSOCK2)
-    WORD vreq = MAKEWORKD(2, 0);
+    WORD vreq = MAKEWORD(2, 0);
     WSADATA sadat;
-    WSAStartUp(vrew, &sadat);
+    WSAStartup(vreq, &sadat);
 #endif
 }
 
