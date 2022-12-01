@@ -30,6 +30,10 @@ namespace felspar::io {
         struct read_ready_completion;
         struct write_ready_completion;
 
+      public:
+        poll_warden();
+        ~poll_warden();
+
       protected:
         iop<void> do_sleep(
                 std::chrono::nanoseconds,

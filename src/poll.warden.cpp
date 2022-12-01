@@ -8,6 +8,22 @@
 #endif
 
 
+felspar::io::poll_warden::poll_warden() {
+#if defined(FELSPAR_WINSOCK2)
+    WORD vreq = MAKEWORKD(2, 0);
+    WSADATA sadat;
+    WSAStartUp(vrew, &sadat);
+#endif
+}
+
+
+felspar::io::poll_warden::~poll_warden() {
+#if defined(FELSPAR_WINSOCK2)
+    WSACleanup();
+#endif
+}
+
+
 void felspar::io::poll_warden::run_until(felspar::coro::coroutine_handle<> coro) {
     coro.resume();
 #if defined(FELSPAR_WINSOCK2)
