@@ -28,8 +28,9 @@ void felspar::io::poll_warden::run_until(felspar::coro::coroutine_handle<> coro)
         return -1;
     };
 
-    while (not coro.done()) {
+    while (true) {
         auto const timeout = clear_timeouts();
+        if (coro.done()) { return; }
 
         iops.clear();
         for (auto const &req : requests) {
