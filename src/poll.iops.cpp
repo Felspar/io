@@ -154,6 +154,19 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
     felspar::coro::coroutine_handle<>
             await_suspend(felspar::coro::coroutine_handle<> h) override {
         handle = h;
+#ifdef FELSPAR_WINSOCK2
+        if (auto err = ::connect(fd, addr, addrlen); err != SOCKET_ERROR) {
+            result = {{SOCKET_ERROR, std::system_category()}, "connect error"};
+            return handle;
+        } else if (auto const wsae = WSAGetLastError(); wsae == WSAEWOULDBLOCK) {
+            self->requests[fd].writes.push_back(this);
+            insert_timeout();
+            return felspar::coro::noop_coroutine();
+        } else {
+            result = {{wsae, std::system_category()}, "connect error"};
+            return handle;
+        }
+#else
         if (auto err = ::connect(fd, addr, addrlen); err == 0) {
             return handle;
         } else if (errno == EINPROGRESS) {
@@ -164,6 +177,7 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
             result = {{errno, std::system_category()}, "connect"};
             return handle;
         }
+#endif
     }
     felspar::coro::coroutine_handle<> try_or_resume() override {
         int errvalue{};
