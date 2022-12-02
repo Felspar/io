@@ -108,7 +108,11 @@ public completion<socket_descriptor> {
         if (r >= 0) {
 #else
         auto const r = ::accept(fd, nullptr, nullptr);
+#ifdef FELSPAR_WINSOCK2
+        if (r != INVALID_SOCKET) {
+#else
         if (r >= 0) {
+#endif
             posix::set_non_blocking(r, loc);
 #endif
             result = r;

@@ -26,7 +26,7 @@ namespace felspar::io {
     constexpr socket_descriptor invalid_handle = -1;
 #elif defined(FELSPAR_WINSOCK2)
     using socket_descriptor = SOCKET;
-    constexpr socket_descriptor invalid_handle = {};
+    constexpr socket_descriptor invalid_handle = INVALID_SOCKET;
 #endif
 
 
