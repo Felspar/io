@@ -50,8 +50,9 @@ void felspar::io::poll_warden::run_until(felspar::coro::coroutine_handle<> coro)
         return -1;
     };
 
-    while (not coro.done()) {
+    while (true) {
         auto const timeout = clear_timeouts();
+        if (coro.done()) { return; }
 
         iops.clear();
         for (auto const &req : requests) {
@@ -87,13 +88,13 @@ void felspar::io::poll_warden::run_until(felspar::coro::coroutine_handle<> coro)
         } else if (pr > 0) {
             continuations.clear();
             for (auto events : iops) {
-                if (events.revents & POLLIN) {
+                if (events.revents & (POLLIN | POLLERR | POLLNVAL)) {
                     auto &reads = requests[events.fd].reads;
                     continuations.insert(
                             continuations.end(), reads.begin(), reads.end());
                     reads.clear();
                 }
-                if (events.revents & POLLOUT) {
+                if (events.revents & (POLLOUT | POLLERR | POLLNVAL)) {
                     auto &writes = requests[events.fd].writes;
                     continuations.insert(
                             continuations.end(), writes.begin(), writes.end());
