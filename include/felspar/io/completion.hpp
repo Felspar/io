@@ -126,7 +126,7 @@ namespace felspar::io {
                 await_suspend(felspar::coro::coroutine_handle<> h) {
             return comp->await_suspend(h);
         }
-        R await_resume() { return std::move(comp->result).value(); }
+        R await_resume() { return std::move(comp->result).value(comp->loc); }
 
       private:
         completion_type *comp;
