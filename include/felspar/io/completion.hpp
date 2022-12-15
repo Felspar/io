@@ -71,8 +71,10 @@ namespace felspar::io {
                         felspar::source_location::current()) && {
             if (error) {
                 throw_exception(loc);
+            } else if (result.has_value()) {
+                return std::move(*result);
             } else {
-                return std::move(result.value());
+                throw felspar::stdexcept::logic_error{"Optional in outcome was empty", loc};
             }
         }
     };
