@@ -113,16 +113,24 @@ public completion<socket_descriptor> {
     socket_descriptor fd;
     void cancel_iop() override { std::erase(self->requests[fd].reads, this); }
     felspar::coro::coroutine_handle<> try_or_resume() override {
+#ifdef FELSPAR_WINSOCK2
+        auto const r = ::accept(fd, nullptr, nullptr);
+        if (r != INVALID_SOCKET) {
+            result = r;
+            return cancel_timeout_then_resume();
+        } else {
+            result = {{WSAGetLastError(), std::system_category()}, "accept"};
+            return cancel_timeout_then_resume();
+        }
+#else
 #ifdef FELSPAR_HAS_ACCEPT4
         auto const r = ::accept4(fd, nullptr, nullptr, SOCK_NONBLOCK);
         if (r >= 0) {
+            result = {{errno, std::system_category()}, "accept"};
+            return cancel_timeout_then_resume();
 #else
         auto const r = ::accept(fd, nullptr, nullptr);
-#ifdef FELSPAR_WINSOCK2
-        if (r != INVALID_SOCKET) {
-#else
         if (r >= 0) {
-#endif
             posix::set_non_blocking(r, loc);
 #endif
             result = r;
@@ -137,6 +145,7 @@ public completion<socket_descriptor> {
             result = {{errno, std::system_category()}, "accept"};
             return cancel_timeout_then_resume();
         }
+#endif
     }
 };
 felspar::io::iop<felspar::io::socket_descriptor>
