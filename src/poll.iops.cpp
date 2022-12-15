@@ -156,7 +156,6 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
         handle = h;
 #ifdef FELSPAR_WINSOCK2
         if (auto err = ::connect(fd, addr, addrlen); err != SOCKET_ERROR) {
-            result = {{SOCKET_ERROR, std::system_category()}, "connect error"};
             return handle;
         } else if (auto const wsae = WSAGetLastError(); wsae == WSAEWOULDBLOCK) {
             self->requests[fd].writes.push_back(this);
