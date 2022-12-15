@@ -185,16 +185,24 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
 #else
         int *perr = &errvalue;
 #endif
-        ::socklen_t length{};
+        ::socklen_t length{sizeof(perr)};
         if (getsockopt(fd, SOL_SOCKET, SO_ERROR, perr, &length) == 0) {
             if (errvalue == 0) {
                 return cancel_timeout_then_resume();
             } else {
+#if defined(FELSPAR_WINSOCK2)
+                result = {{WSAGetLastError(), std::system_category()}, "connect"};
+#else
                 result = {{errno, std::system_category()}, "connect"};
+#endif
                 return cancel_timeout_then_resume();
             }
         } else {
+#if defined(FELSPAR_WINSOCK2)
+            result = {{WSAGetLastError(), std::system_category()}, "connect/getsockopt"};
+#else
             result = {{errno, std::system_category()}, "connect/getsockopt"};
+#endif
             return cancel_timeout_then_resume();
         }
     }
