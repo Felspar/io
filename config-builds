@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 cd $(dirname $0)
 
+function linux() { which lsb_release; }
+
+
 CMAKE="cmake -G Ninja ."
 
 
-$CMAKE -B build.tmp/gcc-debug \
+linux && $CMAKE -B build.tmp/gcc-debug \
     -DCMAKE_INSTALL_PREFIX=dist/gcc-debug
 
-$CMAKE -B build.tmp/gcc-release \
+linux && $CMAKE -B build.tmp/gcc-release \
     -DCMAKE_INSTALL_PREFIX=dist/gcc-release \
     -DCMAKE_BUILD_TYPE=Release
 
@@ -34,11 +37,11 @@ CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-release-asan \
     -DCMAKE_BUILD_TYPE=Release
 
 
-CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-debug--io_uring-asan \
+linux && CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-debug--io_uring-asan \
     -DFELSPAR_ENABLE_IO_URING=NO \
     -DCMAKE_INSTALL_PREFIX=dist/clang-debug--io_uring-asan
 
-CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-release--io_uring-asan \
+linux && CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-release--io_uring-asan \
     -DFELSPAR_ENABLE_IO_URING=NO \
     -DCMAKE_INSTALL_PREFIX=dist/clang-release--io_uring-asan \
     -DCMAKE_BUILD_TYPE=Release
