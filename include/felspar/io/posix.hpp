@@ -65,7 +65,7 @@ namespace felspar::posix {
 
     /// Set the listen queue length for the socket
     void
-            listen(int fd,
+            listen(io::socket_descriptor fd,
                    int backlog,
                    felspar::source_location const & =
                            felspar::source_location::current());

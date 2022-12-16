@@ -35,10 +35,12 @@ std::pair<std::size_t, std::size_t>
 
 
 void felspar::posix::listen(
-        int fd, int backlog, felspar::source_location const &loc) {
+        io::socket_descriptor fd,
+        int backlog,
+        felspar::source_location const &loc) {
     if (::listen(fd, backlog) == -1) {
         throw felspar::stdexcept::system_error{
-                errno, std::system_category(), "listen error", loc};
+                io::get_error(), std::system_category(), "listen error", loc};
     }
 }
 
@@ -49,14 +51,15 @@ void felspar::posix::set_non_blocking(
                 ::fcntl(sock, F_SETFL, ::fcntl(sock, F_GETFL, 0) | O_NONBLOCK);
         err != 0) {
         throw felspar::stdexcept::system_error{
-                errno, std::system_category(), "fcntl F_SETFL error", loc};
+                io::get_error(), std::system_category(), "fcntl F_SETFL error",
+                loc};
     }
 #elif defined(FELSPAR_WINSOCK2)
     u_long mode = 1;
     if (int const err = ::ioctlsocket(sock, FIONBIO, &mode);
         err == SOCKET_ERROR) {
         throw felspar::stdexcept::system_error{
-                WSAGetLastError(), std::system_category(),
+                io::get_error(), std::system_category(),
                 "ioctlsocket FIONBIO error", loc};
     }
 #else
@@ -79,8 +82,8 @@ void felspar::posix::set_reuse_port(
     if (::setsockopt(sock, SOL_SOCKET, reuse_flag, popt, sizeof(optval))
         == -1) {
         throw felspar::stdexcept::system_error{
-                errno, std::system_category(), "setsockopt SO_REUSEPORT failed",
-                loc};
+                io::get_error(), std::system_category(),
+                "setsockopt SO_REUSEPORT failed", loc};
     }
 }
 
@@ -96,6 +99,7 @@ void felspar::posix::bind_to_any_address(
     if (::bind(sock, reinterpret_cast<sockaddr const *>(&in), sizeof(in))
         != 0) {
         throw felspar::stdexcept::system_error{
-                errno, std::system_category(), "Binding server socket", loc};
+                io::get_error(), std::system_category(),
+                "Binding server socket", loc};
     }
 }

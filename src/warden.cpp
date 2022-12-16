@@ -1,6 +1,5 @@
 #include <felspar/exceptions.hpp>
 #include <felspar/io/warden.hpp>
-#include "poll.hpp"
 
 
 felspar::posix::fd felspar::io::warden::create_socket(

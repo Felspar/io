@@ -37,12 +37,7 @@ namespace {
         auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
         felspar::posix::set_reuse_port(fd);
         felspar::posix::bind_to_any_address(fd, port);
-
-        int constexpr backlog = 64;
-        if (::listen(fd.native_handle(), backlog) == -1) {
-            throw felspar::stdexcept::system_error{
-                    errno, std::system_category(), "Calling listen"};
-        }
+        felspar::posix::listen(fd, 64);
 
         auto acceptor = felspar::io::accept(ward, fd);
         auto cnx = co_await acceptor.next();
@@ -109,12 +104,7 @@ namespace {
         auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
         set_reuse_port(fd);
         bind_to_any_address(fd, port);
-
-        int constexpr backlog = 64;
-        if (::listen(fd.native_handle(), backlog) == -1) {
-            throw felspar::stdexcept::system_error{
-                    errno, std::system_category(), "Calling listen"};
-        }
+        listen(fd, 64);
 
         try {
             co_await ward.accept(fd, 10ms);
