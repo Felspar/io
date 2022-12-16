@@ -31,7 +31,9 @@ namespace felspar::io {
 
       protected:
         /// File descriptors
-        iop<void> do_close(int fd, felspar::source_location const &) override;
+        iop<void> do_close(
+                socket_descriptor fd,
+                felspar::source_location const &) override;
 
         /// Time management
         iop<void> do_sleep(
