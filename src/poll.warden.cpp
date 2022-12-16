@@ -78,13 +78,8 @@ void felspar::io::poll_warden::run_until(felspar::coro::coroutine_handle<> coro)
             }
         }();
         if (pr < 0) {
-#if defined(FELSPAR_WINSOCK2)
             throw felspar::stdexcept::system_error{
-                    WSAGetLastError(), std::system_category(), "WSAPoll"};
-#else
-            throw felspar::stdexcept::system_error{
-                    errno, std::system_category(), "poll"};
-#endif
+                    get_error(), std::system_category(), "poll"};
         } else if (pr > 0) {
             continuations.clear();
             for (auto events : iops) {

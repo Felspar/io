@@ -4,31 +4,6 @@
 #include <felspar/io/connect.hpp>
 
 
-namespace {
-    auto get_error() {
-#ifdef FELSPAR_WINSOCK2
-        return WSAGetLastError();
-#else
-        return errno;
-#endif
-    }
-    bool would_block(auto const err) {
-#ifdef FELSPAR_WINSOCK2
-        return err == WSAEWOULDBLOCK;
-#else
-        return err == EAGAIN or err == EWOULDBLOCK;
-#endif
-    }
-    bool bad_fd(auto const err) {
-#ifdef FELSPAR_WINSOCK2
-        return false;
-#else
-        return err == EBADF;
-#endif
-    }
-}
-
-
 struct felspar::io::poll_warden::sleep_completion : public completion<void> {
     sleep_completion(
             poll_warden *s,
