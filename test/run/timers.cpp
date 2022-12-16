@@ -94,7 +94,7 @@ namespace {
 #ifdef FELSPAR_ENABLE_IO_URING
     auto const wu = suite.test("write/io_uring", []() {
         felspar::io::uring_warden ward;
-        felspar::coro::starter<felspar::coro::task<void>> co;
+        felspar::coro::eager<> co;
         co.post(accept_writer, ward, 5536);
         ward.run(write_forever, 5536);
     });
