@@ -74,7 +74,8 @@ namespace felspar::io {
             } else if (result.has_value()) {
                 return std::move(*result);
             } else {
-                throw felspar::stdexcept::logic_error{"Optional in outcome was empty", loc};
+                throw felspar::stdexcept::logic_error{
+                        "Optional in outcome was empty", loc};
             }
         }
     };
