@@ -40,7 +40,7 @@ namespace felspar::posix {
         /// Close the FD
         /**
          * This performs a blocking `close`. You should use the warden's
-         * asynchronous blocking `close` if you can.
+         * asynchronous `close` if you can.
          */
         void close() noexcept {
             io::socket_descriptor c = std::exchange(f, io::invalid_handle);
