@@ -1,5 +1,6 @@
 #include <felspar/exceptions.hpp>
 #include <felspar/io/warden.hpp>
+#include "poll.hpp"
 
 
 felspar::posix::fd felspar::io::warden::create_socket(
@@ -10,7 +11,7 @@ felspar::posix::fd felspar::io::warden::create_socket(
     posix::fd s{::socket(domain, type, protocol)};
     if (not s) {
         throw felspar::stdexcept::system_error{
-                errno, std::system_category(), "Error creating socket", loc};
+                get_error(), std::system_category(), "Error creating socket", loc};
     } else {
         do_prepare_socket(s.native_handle(), loc);
         return s;
