@@ -169,8 +169,7 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
 #ifdef FELSPAR_WINSOCK2
         if (auto err = ::connect(fd, addr, addrlen); err != SOCKET_ERROR) {
             return handle;
-        } else if (auto const wsae = WSAGetLastError();
-                   wsae == WSAEWOULDBLOCK) {
+        } else if (auto const wsae = WSAGetLastError(); would_block(wsae)) {
             self->requests[fd].writes.push_back(this);
             insert_timeout();
             return felspar::coro::noop_coroutine();
