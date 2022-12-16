@@ -10,11 +10,11 @@ namespace felspar::io {
 
 
     /// Produce file descriptors for incoming connections to the provided socket
-    warden::stream<int> accept(
+    warden::stream<socket_descriptor> accept(
             warden &,
-            int,
+            socket_descriptor,
             felspar::source_location = felspar::source_location::current());
-    inline warden::stream<int>
+    inline warden::stream<socket_descriptor>
             accept(warden &w,
                    posix::fd const &sock,
                    felspar::source_location const &loc =

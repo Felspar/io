@@ -74,8 +74,11 @@ namespace felspar::io {
                         felspar::source_location::current()) && {
             if (error) {
                 throw_exception(loc);
+            } else if (result.has_value()) {
+                return std::move(*result);
             } else {
-                return std::move(result.value());
+                throw felspar::stdexcept::logic_error{
+                        "Optional in outcome was empty", loc};
             }
         }
         R value(felspar::source_location const &loc =
@@ -137,7 +140,7 @@ namespace felspar::io {
                 await_suspend(felspar::coro::coroutine_handle<> h) {
             return comp->await_suspend(h);
         }
-        R await_resume() { return std::move(comp->result).value(); }
+        R await_resume() { return std::move(comp->result).value(comp->loc); }
 
       private:
         completion_type *comp;

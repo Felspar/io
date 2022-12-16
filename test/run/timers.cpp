@@ -1,4 +1,5 @@
 #include <felspar/io.hpp>
+#include <felspar/coro/eager.hpp>
 #include <felspar/test.hpp>
 
 
@@ -17,7 +18,7 @@ namespace {
         auto const slept = std::chrono::steady_clock::now() - start;
         /// We have to take sleep jitter into a/c which could be 1ms in the
         /// wrong direction
-        co_return slept >= 19ms and slept <= 30ms;
+        co_return slept >= 19ms and slept <= 50ms;
     }
     auto const ssp = suite.test("timers/poll", [](auto check) {
         felspar::io::poll_warden ward;
@@ -86,24 +87,25 @@ namespace {
     }
     auto const wp = suite.test("write/poll", []() {
         felspar::io::poll_warden ward;
-        felspar::io::warden::starter<void> co;
+        felspar::io::warden::eager<> co;
         co.post(accept_writer, ward, 5534);
         ward.run(write_forever, 5534);
     });
 #ifdef FELSPAR_ENABLE_IO_URING
     auto const wu = suite.test("write/io_uring", []() {
         felspar::io::uring_warden ward;
-        felspar::io::warden::starter<void> co;
+        felspar::io::warden::eager<> co;
         co.post(accept_writer, ward, 5536);
         ward.run(write_forever, 5536);
     });
 #endif
 
 
-    felspar::io::warden::task<void>
-            short_accept(felspar::io::warden &ward, std::uint16_t port) {
-        felspar::test::injected check;
-
+    felspar::io::warden::task<void> short_accept(
+            felspar::io::warden &ward,
+            std::uint16_t port,
+            felspar::test::injected check,
+            std::ostream &log) {
         auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
         set_reuse_port(fd);
         bind_to_any_address(fd, port);
@@ -119,16 +121,19 @@ namespace {
             check(false) == true;
         } catch (felspar::io::timeout const &) {
             check(true) == true;
+        } catch (std::exception const &e) {
+            log << e.what() << '\n';
+            check(false) == true;
         } catch (...) { check(false) == true; }
     }
-    auto const ap = suite.test("accept/poll", []() {
+    auto const ap = suite.test("accept/poll", [](auto check, auto &log) {
         felspar::io::poll_warden ward;
-        ward.run(short_accept, 5538);
+        ward.run(short_accept, 5538, check, std::ref(log));
     });
 #ifdef FELSPAR_ENABLE_IO_URING
-    auto const au = suite.test("accept/io_uring", []() {
+    auto const au = suite.test("accept/io_uring", [](auto check, auto &log) {
         felspar::io::uring_warden ward;
-        ward.run(short_accept, 5540);
+        ward.run(short_accept, 5540, check, std::ref(log));
     });
 #endif
 
