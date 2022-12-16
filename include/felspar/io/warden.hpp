@@ -55,7 +55,7 @@ namespace felspar::io {
          * ### File descriptors
          */
         iop<void>
-                close(int fd,
+                close(socket_descriptor fd,
                       felspar::source_location const &loc =
                               felspar::source_location::current()) {
             return do_close(fd, loc);
