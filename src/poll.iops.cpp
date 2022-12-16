@@ -134,8 +134,11 @@ public completion<socket_descriptor> {
         if (r != INVALID_SOCKET) {
             result = r;
             return cancel_timeout_then_resume();
+        } else if (auto const error = WSAGetLastError(); error == WSAEWOULDBLOCK) {
+            self->requests[fd].reads.push_back(this);
+            return felspar::coro::noop_coroutine();
         } else {
-            result = {{WSAGetLastError(), std::system_category()}, "accept"};
+            result = {{error, std::system_category()}, "accept"};
             return cancel_timeout_then_resume();
         }
 #else
