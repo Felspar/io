@@ -5,9 +5,9 @@
 
 
 struct felspar::io::poll_warden::close_completion : public completion<void> {
-    close_completion(poll_warden *s, int f, felspar::source_location const &loc)
+    close_completion(poll_warden *s, socket_descriptor f, felspar::source_location const &loc)
     : completion<void>{s, {}, loc}, fd{f} {}
-    int fd;
+    socket_descriptor fd;
     void cancel_iop() override {}
     felspar::coro::coroutine_handle<> try_or_resume() override {
         ::close(fd);
@@ -15,7 +15,7 @@ struct felspar::io::poll_warden::close_completion : public completion<void> {
     }
 };
 felspar::io::iop<void> felspar::io::poll_warden::do_close(
-        int fd, felspar::source_location const &loc) {
+        socket_descriptor fd, felspar::source_location const &loc) {
     return {new close_completion{this, fd, loc}};
 }
 

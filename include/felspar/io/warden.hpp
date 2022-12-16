@@ -221,7 +221,8 @@ namespace felspar::io {
 
       protected:
         virtual void run_until(felspar::coro::coroutine_handle<>) = 0;
-        virtual iop<void> do_close(int fd, felspar::source_location const &) = 0;
+        virtual iop<void> do_close(
+                socket_descriptor fd, felspar::source_location const &) = 0;
         virtual iop<void> do_sleep(
                 std::chrono::nanoseconds, felspar::source_location const &) = 0;
         virtual iop<std::size_t> do_read_some(
@@ -234,8 +235,8 @@ namespace felspar::io {
                 std::span<std::byte const>,
                 std::optional<std::chrono::nanoseconds> timeout,
                 felspar::source_location const &) = 0;
-        virtual void
-                do_prepare_socket(int sock, felspar::source_location const &) {}
+        virtual void do_prepare_socket(
+                socket_descriptor sock, felspar::source_location const &) {}
         virtual iop<socket_descriptor> do_accept(
                 socket_descriptor fd,
                 std::optional<std::chrono::nanoseconds> timeout,
