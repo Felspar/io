@@ -3,12 +3,34 @@
 #include <felspar/exceptions.hpp>
 #include <felspar/io/posix.hpp>
 
+#if __has_include(<poll.h>)
 #include <poll.h>
+#endif
+
+
+felspar::io::poll_warden::poll_warden() {
+#if defined(FELSPAR_WINSOCK2)
+    WORD vreq = MAKEWORD(2, 0);
+    WSADATA sadat;
+    WSAStartup(vreq, &sadat);
+#endif
+}
+
+
+felspar::io::poll_warden::~poll_warden() {
+#if defined(FELSPAR_WINSOCK2)
+    WSACleanup();
+#endif
+}
 
 
 void felspar::io::poll_warden::run_until(felspar::coro::coroutine_handle<> coro) {
     coro.resume();
+#if defined(FELSPAR_WINSOCK2)
+    std::vector<::WSAPOLLFD> iops;
+#else
     std::vector<::pollfd> iops;
+#endif
     std::vector<retrier *> continuations;
 
     auto const clear_timeouts = [&]() -> int {
@@ -42,7 +64,11 @@ void felspar::io::poll_warden::run_until(felspar::coro::coroutine_handle<> coro)
 
         int const pr = [&]() {
             if (iops.size()) {
+#if defined(FELSPAR_WINSOCK2)
+                return ::WSAPoll(iops.data(), iops.size(), timeout);
+#else
                 return ::poll(iops.data(), iops.size(), timeout);
+#endif
             } else {
                 ::timespec req{{}, timeout * 1'000'000}, rem{};
                 while (::nanosleep(&req, &rem) == -1 and errno == EINTR) {
@@ -51,9 +77,9 @@ void felspar::io::poll_warden::run_until(felspar::coro::coroutine_handle<> coro)
                 return 0;
             }
         }();
-        if (pr == -1) {
+        if (pr < 0) {
             throw felspar::stdexcept::system_error{
-                    errno, std::system_category(), "poll"};
+                    get_error(), std::system_category(), "poll"};
         } else if (pr > 0) {
             continuations.clear();
             for (auto events : iops) {
