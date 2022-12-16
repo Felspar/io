@@ -11,7 +11,8 @@ felspar::posix::fd felspar::io::warden::create_socket(
     posix::fd s{::socket(domain, type, protocol)};
     if (not s) {
         throw felspar::stdexcept::system_error{
-                get_error(), std::system_category(), "Error creating socket", loc};
+                get_error(), std::system_category(), "Error creating socket",
+                loc};
     } else {
         do_prepare_socket(s.native_handle(), loc);
         return s;
@@ -22,7 +23,8 @@ felspar::posix::fd felspar::io::warden::create_socket(
 felspar::posix::pipe
         felspar::io::warden::create_pipe(felspar::source_location const &loc) {
 #ifdef FELSPAR_WINSOCK2
-    throw felspar::stdexcept::runtime_error{"Windows pipe creation is not implemented"};
+    throw felspar::stdexcept::runtime_error{
+            "Windows pipe creation is not implemented"};
 #else
     std::array<int, 2> ends;
     if (::pipe(ends.data()) == -1) {

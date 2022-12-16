@@ -5,7 +5,10 @@
 
 
 struct felspar::io::poll_warden::close_completion : public completion<void> {
-    close_completion(poll_warden *s, socket_descriptor f, felspar::source_location const &loc)
+    close_completion(
+            poll_warden *s,
+            socket_descriptor f,
+            felspar::source_location const &loc)
     : completion<void>{s, {}, loc}, fd{f} {}
     socket_descriptor fd;
     void cancel_iop() override {}
