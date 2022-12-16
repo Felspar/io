@@ -16,7 +16,11 @@
 namespace felspar::io {
 
 
+    class allocator;
+
+
     class warden : public felspar::pmr::memory_resource {
+        friend class allocator;
         template<typename R>
         friend struct felspar::io::iop;
 
@@ -27,7 +31,10 @@ namespace felspar::io {
         using task = coro::task<R, warden>;
         template<typename R>
         using stream = coro::stream<R, warden>;
-        template<typename R>
+
+        template<typename R = void>
+        using eager = coro::eager<task<R>>;
+        template<typename R = void>
         using starter = coro::starter<task<R>>;
 
         template<typename Ret, typename... PArgs, typename... MArgs>
@@ -197,6 +204,8 @@ namespace felspar::io {
         /**
          * PMR based memory allocation.
          */
+
+      private:
         void *do_allocate(std::size_t bytes, std::size_t alignment) override {
             return ::operator new(
                     bytes, static_cast<std::align_val_t>(alignment));
@@ -210,6 +219,7 @@ namespace felspar::io {
         bool do_is_equal(memory_resource const &other) const noexcept override {
             return this == &other;
         }
+
 
       protected:
         virtual void run_until(felspar::coro::coroutine_handle<>) = 0;
