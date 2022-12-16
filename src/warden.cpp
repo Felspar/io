@@ -21,6 +21,9 @@ felspar::posix::fd felspar::io::warden::create_socket(
 
 felspar::posix::pipe
         felspar::io::warden::create_pipe(felspar::source_location const &loc) {
+#ifdef FELSPAR_WINSOCK2
+    throw felspar::stdexcept::runtime_error{"Windows pipe creation is not implemented"};
+#else
     std::array<int, 2> ends;
     if (::pipe(ends.data()) == -1) {
         throw felspar::stdexcept::system_error{
@@ -31,4 +34,5 @@ felspar::posix::pipe
         do_prepare_socket(p.write.native_handle(), loc);
         return p;
     }
+#endif
 }
