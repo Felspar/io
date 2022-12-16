@@ -198,7 +198,7 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
 #else
         int *perr = &errvalue;
 #endif
-        ::socklen_t length{sizeof(perr)};
+        ::socklen_t length{sizeof(errvalue)};
         if (getsockopt(fd, SOL_SOCKET, SO_ERROR, perr, &length) == 0) {
             if (errvalue == 0) {
                 return cancel_timeout_then_resume();
