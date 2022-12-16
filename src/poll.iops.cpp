@@ -4,6 +4,31 @@
 #include <felspar/io/connect.hpp>
 
 
+namespace {
+    auto get_error() {
+#ifdef FELSPAR_WINSOCK2
+        return WSAGetLastError();
+#else
+        return errno;
+#endif
+    }
+    bool would_block(auto const err) {
+#ifdef FELSPAR_WINSOCK2
+        return err == WSAEWOULDBLOCK;
+#else
+        return err == EAGAIN or err == EWOULDBLOCK;
+#endif
+    }
+    bool bad_fd(auto const err) {
+#ifdef FELSPAR_WINSOCK2
+        return false;
+#else
+        return err == EBADF;
+#endif
+    }
+}
+
+
 struct felspar::io::poll_warden::sleep_completion : public completion<void> {
     sleep_completion(
             poll_warden *s,
@@ -38,28 +63,21 @@ public completion<std::size_t> {
     void cancel_iop() override { std::erase(self->requests[fd].reads, this); }
     felspar::coro::coroutine_handle<> try_or_resume() override {
 #ifdef FELSPAR_WINSOCK2
-        if (auto const bytes = recv(fd, reinterpret_cast<char *>(buf.data()), buf.size(), {}); bytes != SOCKET_ERROR) {
-            result = bytes;
-            return cancel_timeout_then_resume();
-        } else if (auto const error = WSAGetLastError(); error == WSAEWOULDBLOCK) {
-            self->requests[fd].reads.push_back(this);
-            return felspar::coro::noop_coroutine();
-        } else {
-            result = {{error, std::system_category()}, "recv"};
-            return cancel_timeout_then_resume();
-        }
+        if (auto const bytes = recv(
+                    fd, reinterpret_cast<char *>(buf.data()), buf.size(), {});
+            bytes != SOCKET_ERROR) {
 #else
-        if (auto bytes = ::read(fd, buf.data(), buf.size()); bytes >= 0) {
+        if (auto const bytes = ::read(fd, buf.data(), buf.size()); bytes >= 0) {
+#endif
             result = bytes;
             return cancel_timeout_then_resume();
-        } else if (errno == EAGAIN or errno == EWOULDBLOCK) {
+        } else if (auto const error = get_error(); would_block(error)) {
             self->requests[fd].reads.push_back(this);
             return felspar::coro::noop_coroutine();
         } else {
-            result = {{errno, std::system_category()}, "read"};
+            result = {{error, std::system_category()}, "read"};
             return cancel_timeout_then_resume();
         }
-#endif
     }
 };
 felspar::io::iop<std::size_t> felspar::io::poll_warden::do_read_some(
@@ -85,28 +103,23 @@ public completion<std::size_t> {
     void cancel_iop() override { std::erase(self->requests[fd].writes, this); }
     felspar::coro::coroutine_handle<> try_or_resume() override {
 #ifdef FELSPAR_WINSOCK2
-        if (auto const bytes = ::send(fd, reinterpret_cast<char const *>(buf.data()), buf.size(), {}); bytes != SOCKET_ERROR) {
-            result = bytes;
-            return cancel_timeout_then_resume();
-        } else if (auto const error = WSAGetLastError(); error == WSAEWOULDBLOCK) {
-            self->requests[fd].writes.push_back(this);
-            return felspar::coro::noop_coroutine();
-        } else {
-            result = {{error, std::system_category()}, "send"};
-            return cancel_timeout_then_resume();
-        }
+        if (auto const bytes =
+                    ::send(fd, reinterpret_cast<char const *>(buf.data()),
+                           buf.size(), {});
+            bytes != SOCKET_ERROR) {
 #else
-        if (auto bytes = ::write(fd, buf.data(), buf.size()); bytes >= 0) {
+        if (auto const bytes = ::write(fd, buf.data(), buf.size());
+            bytes >= 0) {
+#endif
             result = bytes;
             return cancel_timeout_then_resume();
-        } else if (errno == EAGAIN or errno == EWOULDBLOCK) {
+        } else if (auto const error = get_error(); would_block(error)) {
             self->requests[fd].writes.push_back(this);
             return felspar::coro::noop_coroutine();
         } else {
-            result = {{errno, std::system_category()}, "write"};
+            result = {{error, std::system_category()}, "write"};
             return cancel_timeout_then_resume();
         }
-#endif
     }
 };
 felspar::io::iop<std::size_t> felspar::io::poll_warden::do_write_some(
@@ -130,41 +143,27 @@ public completion<socket_descriptor> {
     void cancel_iop() override { std::erase(self->requests[fd].reads, this); }
     felspar::coro::coroutine_handle<> try_or_resume() override {
 #ifdef FELSPAR_WINSOCK2
-        auto const r = ::accept(fd, nullptr, nullptr);
-        if (r != INVALID_SOCKET) {
-            result = r;
-            return cancel_timeout_then_resume();
-        } else if (auto const error = WSAGetLastError(); error == WSAEWOULDBLOCK) {
-            self->requests[fd].reads.push_back(this);
-            return felspar::coro::noop_coroutine();
-        } else {
-            result = {{error, std::system_category()}, "accept"};
-            return cancel_timeout_then_resume();
-        }
+        if (auto const r = ::accept(fd, nullptr, nullptr);
+            r != INVALID_SOCKET) {
+#elif defined(FELSPAR_HAS_ACCEPT4)
+        if (auto const r = ::accept4(fd, nullptr, nullptr, SOCK_NONBLOCK);
+            r >= 0) {
 #else
-#ifdef FELSPAR_HAS_ACCEPT4
-        auto const r = ::accept4(fd, nullptr, nullptr, SOCK_NONBLOCK);
-        if (r >= 0) {
-            result = {{errno, std::system_category()}, "accept"};
-            return cancel_timeout_then_resume();
-#else
-        auto const r = ::accept(fd, nullptr, nullptr);
-        if (r >= 0) {
+        if (auto const r = ::accept(fd, nullptr, nullptr); r >= 0) {
             posix::set_non_blocking(r, loc);
 #endif
             result = r;
             return cancel_timeout_then_resume();
-        } else if (errno == EWOULDBLOCK or errno == EAGAIN) {
+        } else if (auto const error = get_error(); would_block(error)) {
             self->requests[fd].reads.push_back(this);
             return felspar::coro::noop_coroutine();
-        } else if (errno == EBADF) {
+        } else if (bad_fd(error)) {
             result = r;
             return cancel_timeout_then_resume();
         } else {
-            result = {{errno, std::system_category()}, "accept"};
+            result = {{error, std::system_category()}, "accept"};
             return cancel_timeout_then_resume();
         }
-#endif
     }
 };
 felspar::io::iop<felspar::io::socket_descriptor>
@@ -195,7 +194,8 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
 #ifdef FELSPAR_WINSOCK2
         if (auto err = ::connect(fd, addr, addrlen); err != SOCKET_ERROR) {
             return handle;
-        } else if (auto const wsae = WSAGetLastError(); wsae == WSAEWOULDBLOCK) {
+        } else if (auto const wsae = WSAGetLastError();
+                   wsae == WSAEWOULDBLOCK) {
             self->requests[fd].writes.push_back(this);
             insert_timeout();
             return felspar::coro::noop_coroutine();
@@ -228,19 +228,13 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
             if (errvalue == 0) {
                 return cancel_timeout_then_resume();
             } else {
-#if defined(FELSPAR_WINSOCK2)
-                result = {{WSAGetLastError(), std::system_category()}, "connect"};
-#else
-                result = {{errno, std::system_category()}, "connect"};
-#endif
+                result = {{get_error(), std::system_category()}, "connect"};
                 return cancel_timeout_then_resume();
             }
         } else {
-#if defined(FELSPAR_WINSOCK2)
-            result = {{WSAGetLastError(), std::system_category()}, "connect/getsockopt"};
-#else
-            result = {{errno, std::system_category()}, "connect/getsockopt"};
-#endif
+            result = {
+                    {get_error(), std::system_category()},
+                    "connect/getsockopt"};
             return cancel_timeout_then_resume();
         }
     }
