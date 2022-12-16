@@ -37,6 +37,18 @@ public completion<std::size_t> {
     std::span<std::byte> buf;
     void cancel_iop() override { std::erase(self->requests[fd].reads, this); }
     felspar::coro::coroutine_handle<> try_or_resume() override {
+#ifdef FELSPAR_WINSOCK2
+        if (auto const bytes = recv(fd, reinterpret_cast<char *>(buf.data()), buf.size(), {}); bytes != SOCKET_ERROR) {
+            result = bytes;
+            return cancel_timeout_then_resume();
+        } else if (auto const error = WSAGetLastError(); error == WSAEWOULDBLOCK) {
+            self->requests[fd].reads.push_back(this);
+            return felspar::coro::noop_coroutine();
+        } else {
+            result = {{error, std::system_category()}, "recv"};
+            return cancel_timeout_then_resume();
+        }
+#else
         if (auto bytes = ::read(fd, buf.data(), buf.size()); bytes >= 0) {
             result = bytes;
             return cancel_timeout_then_resume();
@@ -47,6 +59,7 @@ public completion<std::size_t> {
             result = {{errno, std::system_category()}, "read"};
             return cancel_timeout_then_resume();
         }
+#endif
     }
 };
 felspar::io::iop<std::size_t> felspar::io::poll_warden::do_read_some(
