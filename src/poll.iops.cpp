@@ -88,8 +88,11 @@ public completion<std::size_t> {
         if (auto const bytes = ::send(fd, reinterpret_cast<char const *>(buf.data()), buf.size(), {}); bytes != SOCKET_ERROR) {
             result = bytes;
             return cancel_timeout_then_resume();
+        } else if (auto const error = WSAGetLastError(); error == WSAEWOULDBLOCK) {
+            self->requests[fd].writes.push_back(this);
+            return felspar::coro::noop_coroutine();
         } else {
-            result = {{WSAGetLastError(), std::system_category()}, "write"};
+            result = {{error, std::system_category()}, "send"};
             return cancel_timeout_then_resume();
         }
 #else
