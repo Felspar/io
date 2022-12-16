@@ -17,6 +17,7 @@ executors:
       CXX: clang++
       CXXFLAGS: "-stdlib=libc++ -fsanitize=address"
       LD_FLAGS: "-stdlib=libc++ -fsanitize=address"
+      ASAN_OPTIONS: "alloc_dealloc_mismatch=0"
   gcc:
     docker:
     - image: kayess/cpp

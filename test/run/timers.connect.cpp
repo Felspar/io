@@ -29,13 +29,13 @@ namespace {
         freeaddrinfo(addresses);
 
         try {
-            address.sin_port = ::htons(80);
+            address.sin_port = htons(80);
             auto fd1 = ward.create_socket(AF_INET, SOCK_STREAM, 0);
             co_await ward.connect(
                     fd1, reinterpret_cast<sockaddr const *>(&address),
                     sizeof(address), 5s);
 
-            address.sin_port = ::htons(808);
+            address.sin_port = htons(808);
             auto fd2 = ward.create_socket(AF_INET, SOCK_STREAM, 0);
             co_await ward.connect(
                     fd2, reinterpret_cast<sockaddr const *>(&address),

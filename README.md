@@ -58,7 +58,7 @@ felspar::io::warden::task<void>
     for (auto acceptor = felspar::io::accept(ward, fd);
             auto cnx = co_await acceptor.next();) {
         co.post(echo_connection, ward, felspar::posix::fd{*cnx});
-        co.gc(); // garbage collect completed coroutines ignoring errors
+        co.garbage_collect_completed(); // ignores errors
     }
 }
 ```
