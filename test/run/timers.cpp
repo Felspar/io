@@ -1,5 +1,5 @@
 #include <felspar/io.hpp>
-#include <felspar/coro/start.hpp>
+#include <felspar/coro/eager.hpp>
 #include <felspar/test.hpp>
 
 
@@ -87,7 +87,7 @@ namespace {
     }
     auto const wp = suite.test("write/poll", []() {
         felspar::io::poll_warden ward;
-        felspar::coro::starter<felspar::coro::task<void>> co;
+        felspar::coro::eager<> co;
         co.post(accept_writer, ward, 5534);
         ward.run(write_forever, 5534);
     });
