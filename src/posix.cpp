@@ -10,6 +10,7 @@
 
 std::pair<std::size_t, std::size_t>
         felspar::posix::promise_to_never_use_select() {
+#ifdef FELSPAR_POSIX_SOCKETS
     ::rlimit limits;
     if (::getrlimit(RLIMIT_NOFILE, &limits) != 0) {
         throw felspar::stdexcept::system_error{
@@ -27,6 +28,9 @@ std::pair<std::size_t, std::size_t>
     } else {
         return {limits.rlim_cur, limits.rlim_max};
     }
+#else
+    return {{}, {}};
+#endif
 }
 
 
