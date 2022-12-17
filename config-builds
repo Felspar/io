@@ -15,10 +15,10 @@ linux && $CMAKE -B build.tmp/gcc-release \
     -DCMAKE_BUILD_TYPE=Release
 
 
-CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-debug \
+linux && CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-debug \
     -DCMAKE_INSTALL_PREFIX=dist/clang-debug
 
-CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-release \
+linux && CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-release \
     -DCMAKE_INSTALL_PREFIX=dist/clang-release \
     -DCMAKE_BUILD_TYPE=Release
 
