@@ -2,7 +2,10 @@
 
 time (
         # User specified targets
-        ninja -C ./build.tmp/clang-debug $* &&
+        ninja -C ./build.tmp/clang-debug-libc++ $* &&
+        # libc++ builds
+        ninja -C ./build.tmp/clang-debug-libc++ all felspar-check felspar-stress &&
+        ninja -C ./build.tmp/clang-release-libc++ all felspar-check felspar-stress &&
         # ASAN
         ninja -C ./build.tmp/clang-debug-asan all felspar-check felspar-stress &&
         ninja -C ./build.tmp/clang-release-asan all felspar-check felspar-stress &&
