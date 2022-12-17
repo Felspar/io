@@ -2,6 +2,7 @@
 
 
 #include <felspar/io/accept.hpp>
+#include <felspar/io/allocator.hpp>
 #include <felspar/io/connect.hpp>
 #include <felspar/io/error.hpp>
 #include <felspar/io/exceptions.hpp>

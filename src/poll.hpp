@@ -68,13 +68,6 @@ namespace felspar::io {
     };
 
     /// These are used to smooth over some Windows/POSIX differences
-    inline auto get_error() {
-#ifdef FELSPAR_WINSOCK2
-        return WSAGetLastError();
-#else
-        return errno;
-#endif
-    }
     inline bool would_block(auto const err) {
 #ifdef FELSPAR_WINSOCK2
         return err == WSAEWOULDBLOCK;

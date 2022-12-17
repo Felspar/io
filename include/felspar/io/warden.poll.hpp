@@ -22,6 +22,7 @@ namespace felspar::io {
 
         void run_until(felspar::coro::coroutine_handle<>) override;
 
+        struct close_completion;
         struct sleep_completion;
         struct read_some_completion;
         struct write_some_completion;
@@ -35,6 +36,12 @@ namespace felspar::io {
         ~poll_warden();
 
       protected:
+        /// File descriptors
+        iop<void> do_close(
+                socket_descriptor fd,
+                felspar::source_location const &) override;
+
+        /// Time management
         iop<void> do_sleep(
                 std::chrono::nanoseconds,
                 felspar::source_location const &) override;
@@ -52,10 +59,8 @@ namespace felspar::io {
                 felspar::source_location const &) override;
 
         /// Sockets
-        posix::fd do_create_socket(
-                int domain,
-                int type,
-                int protocol,
+        void do_prepare_socket(
+                socket_descriptor sock,
                 felspar::source_location const &) override;
         iop<socket_descriptor> do_accept(
                 socket_descriptor fd,

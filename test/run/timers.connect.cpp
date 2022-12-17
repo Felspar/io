@@ -15,7 +15,7 @@ namespace {
     auto const suite = felspar::testsuite("connect");
 
 
-    felspar::coro::task<void> timed_connect(felspar::io::warden &ward) {
+    felspar::io::warden::task<void> timed_connect(felspar::io::warden &ward) {
         felspar::test::injected check;
 
         struct addrinfo hints = {};

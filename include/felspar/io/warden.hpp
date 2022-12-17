@@ -1,7 +1,10 @@
 #pragma once
 
+#include <felspar/coro/start.hpp>
+#include <felspar/coro/stream.hpp>
 #include <felspar/io/completion.hpp>
 #include <felspar/io/posix.hpp>
+#include <felspar/memory/pmr.hpp>
 #include <felspar/test/source.hpp>
 
 #include <chrono>
@@ -11,17 +14,30 @@
 namespace felspar::io {
 
 
-    class warden {
+    class allocator;
+
+
+    class warden : public felspar::pmr::memory_resource {
+        friend class allocator;
         template<typename R>
         friend struct felspar::io::iop;
 
       public:
         virtual ~warden() = default;
 
+        template<typename R>
+        using task = coro::task<R, warden>;
+        template<typename R>
+        using stream = coro::stream<R, warden>;
+
+        template<typename R = void>
+        using eager = coro::eager<task<R>>;
+        template<typename R = void>
+        using starter = coro::starter<task<R>>;
+
         template<typename Ret, typename... PArgs, typename... MArgs>
-        Ret run(coro::task<Ret> (*f)(warden &, PArgs...), MArgs &&...margs) {
-            auto task = f(*this, std::forward<MArgs>(margs)...);
-            auto handle = task.release();
+        Ret run(task<Ret> (*f)(warden &, PArgs...), MArgs &&...margs) {
+            auto handle = f(*this, std::forward<MArgs>(margs)...).release();
             run_until(handle.get());
             return handle.promise().consume_value();
         }
@@ -33,6 +49,22 @@ namespace felspar::io {
             auto handle = task.release();
             run_until(handle.get());
             return handle.promise().consume_value();
+        }
+
+        /**
+         * ### File descriptors
+         */
+        iop<void>
+                close(socket_descriptor fd,
+                      felspar::source_location const &loc =
+                              felspar::source_location::current()) {
+            return do_close(fd, loc);
+        }
+        iop<void>
+                close(posix::fd s,
+                      felspar::source_location const &loc =
+                              felspar::source_location::current()) {
+            return close(s.release(), loc);
         }
 
         /**
@@ -93,10 +125,13 @@ namespace felspar::io {
                 int domain,
                 int type,
                 int protocol,
-                felspar::source_location const &loc =
-                        felspar::source_location::current()) {
-            return do_create_socket(domain, type, protocol, loc);
-        }
+                felspar::source_location const & =
+                        felspar::source_location::current());
+        /// Create a pipe that has also had its end points wrapped by this warden.
+        posix::pipe create_pipe(
+                felspar::source_location const & =
+                        felspar::source_location::current());
+
 
         iop<socket_descriptor>
                 accept(socket_descriptor fd,
@@ -164,8 +199,30 @@ namespace felspar::io {
             return write_ready(sock.native_handle(), timeout, loc);
         }
 
+        /**
+         * PMR based memory allocation.
+         */
+
+      private:
+        void *do_allocate(std::size_t bytes, std::size_t alignment) override {
+            return ::operator new(
+                    bytes, static_cast<std::align_val_t>(alignment));
+        }
+        void do_deallocate(
+                void *p, std::size_t bytes, std::size_t alignment) override {
+            ::operator delete(
+                    p, bytes, static_cast<std::align_val_t>(alignment));
+        }
+
+        bool do_is_equal(memory_resource const &other) const noexcept override {
+            return this == &other;
+        }
+
+
       protected:
         virtual void run_until(felspar::coro::coroutine_handle<>) = 0;
+        virtual iop<void> do_close(
+                socket_descriptor fd, felspar::source_location const &) = 0;
         virtual iop<void> do_sleep(
                 std::chrono::nanoseconds, felspar::source_location const &) = 0;
         virtual iop<std::size_t> do_read_some(
@@ -178,11 +235,8 @@ namespace felspar::io {
                 std::span<std::byte const>,
                 std::optional<std::chrono::nanoseconds> timeout,
                 felspar::source_location const &) = 0;
-        virtual posix::fd do_create_socket(
-                int domain,
-                int type,
-                int protocol,
-                felspar::source_location const &);
+        virtual void do_prepare_socket(
+                socket_descriptor sock, felspar::source_location const &) {}
         virtual iop<socket_descriptor> do_accept(
                 socket_descriptor fd,
                 std::optional<std::chrono::nanoseconds> timeout,

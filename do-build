@@ -17,5 +17,5 @@ time (
         ninja -C ./build.tmp/gcc-release all felspar-check felspar-stress &&
         true
     ) && (
-        find ./include/ ./src/ ./test/ -name \*.\?pp -print | xargs clang-format -i
+        find ./examples/ ./include/ ./src/ ./test/ -name \*.\?pp -print | xargs clang-format -i
     )

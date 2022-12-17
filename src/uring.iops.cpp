@@ -5,6 +5,24 @@
 #include <iostream>
 
 
+struct felspar::io::uring_warden::close_completion : public completion<void> {
+    close_completion(
+            uring_warden *s, int fd, felspar::source_location const &loc)
+    : completion<void>{s, {}, loc}, fd{fd} {}
+    int fd;
+    felspar::coro::coroutine_handle<>
+            await_suspend(felspar::coro::coroutine_handle<> h) override {
+        auto sqe = setup_submission(h);
+        ::io_uring_prep_close(sqe, fd);
+        return setup_timeout(sqe);
+    }
+};
+felspar::io::iop<void> felspar::io::uring_warden::do_close(
+        int fd, felspar::source_location const &loc) {
+    return {new close_completion{this, fd, loc}};
+}
+
+
 struct felspar::io::uring_warden::sleep_completion : public completion<void> {
     sleep_completion(
             uring_warden *s,

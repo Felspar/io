@@ -12,13 +12,13 @@ namespace {
     auto const suite = felspar::testsuite("timers");
 
 
-    felspar::coro::task<bool> short_sleep(felspar::io::warden &ward) {
+    felspar::io::warden::task<bool> short_sleep(felspar::io::warden &ward) {
         auto const start = std::chrono::steady_clock::now();
         co_await ward.sleep(20ms);
         auto const slept = std::chrono::steady_clock::now() - start;
         /// We have to take sleep jitter into a/c which could be 1ms in the
         /// wrong direction
-        co_return slept >= 19ms and slept <= 50ms;
+        co_return slept >= 19ms and slept <= 80ms;
     }
     auto const ssp = suite.test("timers/poll", [](auto check) {
         felspar::io::poll_warden ward;
@@ -32,23 +32,18 @@ namespace {
 #endif
 
 
-    felspar::coro::task<void>
+    felspar::io::warden::task<void>
             accept_writer(felspar::io::warden &ward, std::uint16_t port) {
         auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
         felspar::posix::set_reuse_port(fd);
         felspar::posix::bind_to_any_address(fd, port);
-
-        int constexpr backlog = 64;
-        if (::listen(fd.native_handle(), backlog) == -1) {
-            throw felspar::stdexcept::system_error{
-                    errno, std::system_category(), "Calling listen"};
-        }
+        felspar::posix::listen(fd, 64);
 
         auto acceptor = felspar::io::accept(ward, fd);
         auto cnx = co_await acceptor.next();
         co_await ward.sleep(30ms);
     }
-    felspar::coro::task<void>
+    felspar::io::warden::task<void>
             write_forever(felspar::io::warden &ward, std::uint16_t port) {
         felspar::test::injected check;
 
@@ -87,21 +82,21 @@ namespace {
     }
     auto const wp = suite.test("write/poll", []() {
         felspar::io::poll_warden ward;
-        felspar::coro::eager<> co;
+        felspar::io::warden::eager<> co;
         co.post(accept_writer, ward, 5534);
         ward.run(write_forever, 5534);
     });
 #ifdef FELSPAR_ENABLE_IO_URING
     auto const wu = suite.test("write/io_uring", []() {
         felspar::io::uring_warden ward;
-        felspar::coro::eager<> co;
+        felspar::io::warden::eager<> co;
         co.post(accept_writer, ward, 5536);
         ward.run(write_forever, 5536);
     });
 #endif
 
 
-    felspar::coro::task<void> short_accept(
+    felspar::io::warden::task<void> short_accept(
             felspar::io::warden &ward,
             std::uint16_t port,
             felspar::test::injected check,
@@ -109,12 +104,7 @@ namespace {
         auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
         set_reuse_port(fd);
         bind_to_any_address(fd, port);
-
-        int constexpr backlog = 64;
-        if (::listen(fd.native_handle(), backlog) == -1) {
-            throw felspar::stdexcept::system_error{
-                    errno, std::system_category(), "Calling listen"};
-        }
+        listen(fd, 64);
 
         try {
             co_await ward.accept(fd, 10ms);

@@ -57,12 +57,15 @@ namespace felspar::io {
 
         /// Assign a value to the outcome
         outcome &operator=(R r) {
+            error = {};
+            message = "";
             result = std::move(r);
             return *this;
         }
         outcome &operator=(outcome<void> r) {
             error = r.error;
             message = r.message;
+            result = {};
             return *this;
         }
 
@@ -76,6 +79,14 @@ namespace felspar::io {
             } else {
                 throw felspar::stdexcept::logic_error{
                         "Optional in outcome was empty", loc};
+            }
+        }
+        R value(felspar::source_location const &loc =
+                        felspar::source_location::current()) & {
+            if (error) {
+                throw_exception(loc);
+            } else {
+                return result.value();
             }
         }
     };

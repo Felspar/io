@@ -13,7 +13,7 @@ namespace {
     auto const suite = felspar::testsuite("basics");
 
 
-    felspar::coro::task<void> echo_connection(
+    felspar::io::warden::task<void> echo_connection(
             felspar::io::warden &ward, felspar::posix::fd sock) {
         std::array<std::byte, 256> buffer;
         while (auto bytes = co_await ward.read_some(sock, buffer, 20ms)) {
@@ -23,19 +23,16 @@ namespace {
         }
     }
 
-    felspar::coro::task<void>
+    felspar::io::warden::task<void>
             echo_server(felspar::io::warden &ward, std::uint16_t port) {
         auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
         felspar::posix::set_reuse_port(fd);
         felspar::posix::bind_to_any_address(fd, port);
 
         int constexpr backlog = 64;
-        if (::listen(fd.native_handle(), backlog) == -1) {
-            throw felspar::stdexcept::system_error{
-                    errno, std::system_category(), "Calling listen"};
-        }
+        felspar::posix::listen(fd, backlog);
 
-        felspar::coro::starter<felspar::coro::task<void>> co;
+        felspar::io::warden::starter<void> co;
         for (auto acceptor = felspar::io::accept(ward, fd);
              auto cnx = co_await acceptor.next();) {
             co.post(echo_connection, ward, felspar::posix::fd{*cnx});
@@ -43,7 +40,7 @@ namespace {
         }
     }
 
-    felspar::coro::task<void>
+    felspar::io::warden::task<void>
             echo_client(felspar::io::warden &ward, std::uint16_t port) {
         felspar::test::injected check;
 
@@ -90,14 +87,14 @@ namespace {
 
     auto const tp = suite.test("echo/poll", []() {
         felspar::io::poll_warden ward;
-        felspar::coro::eager<> co;
+        felspar::io::warden::eager<> co;
         co.post(echo_server, ward, 5543);
         ward.run(echo_client, 5543);
     });
 #ifdef FELSPAR_ENABLE_IO_URING
     auto const tu = suite.test("echo/uring", []() {
         felspar::io::uring_warden ward{10};
-        felspar::coro::eager<> co;
+        felspar::io::warden::eager<> co;
         co.post(echo_server, ward, 5547);
         ward.run(echo_client, 5547);
     });

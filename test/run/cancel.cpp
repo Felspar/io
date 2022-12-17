@@ -1,4 +1,3 @@
-#include <felspar/coro/start.hpp>
 #include <felspar/io.hpp>
 #include <felspar/test.hpp>
 
@@ -12,12 +11,12 @@ namespace {
     auto const suite = felspar::testsuite("cancellation");
 
 
-    felspar::coro::task<void> sleeper(felspar::io::warden &ward) {
+    felspar::io::warden::task<void> sleeper(felspar::io::warden &ward) {
         co_await ward.sleep(30ms);
     }
-    felspar::coro::task<void> starter(felspar::io::warden &ward) {
+    felspar::io::warden::task<void> starter(felspar::io::warden &ward) {
         {
-            felspar::coro::starter<felspar::coro::task<void>> start;
+            felspar::io::warden::starter<void> start;
             start.post(sleeper, std::ref(ward));
         }
         co_await ward.sleep(10ms);
