@@ -35,6 +35,8 @@ namespace felspar::io {
         poll_warden();
         ~poll_warden();
 
+        void run_batch() override;
+
       protected:
         /// File descriptors
         iop<void> do_close(

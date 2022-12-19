@@ -20,6 +20,8 @@ namespace felspar::io {
         allocator(warden &bw, memory_resource &ba)
         : backing_warden{bw}, backing_allocator{ba} {}
 
+        void run_batch() override { backing_warden.run_batch(); }
+
       private:
         /// Memory related APIs
         void *do_allocate(

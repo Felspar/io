@@ -51,6 +51,10 @@ namespace felspar::io {
             return handle.promise().consume_value();
         }
 
+        /// Run a single IO submission and resume ready coroutines. Only
+        /// processing is performed without any waits
+        virtual void run_batch() = 0;
+
         /**
          * ### File descriptors
          */

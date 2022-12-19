@@ -45,6 +45,12 @@ void felspar::io::poll_warden::run_until(felspar::coro::coroutine_handle<> coro)
 }
 
 
+void felspar::io::poll_warden::run_batch() {
+    clear_timeouts();
+    do_poll(0);
+}
+
+
 void felspar::io::poll_warden::do_poll(int const timeout) {
     bookkeeping->iops.clear();
     for (auto const &req : requests) {

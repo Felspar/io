@@ -29,6 +29,8 @@ namespace felspar::io {
         explicit uring_warden(unsigned entries, unsigned flags = {});
         ~uring_warden();
 
+        void run_batch() override;
+
       protected:
         /// File descriptors
         iop<void> do_close(
