@@ -8,7 +8,18 @@
 #endif
 
 
-felspar::io::poll_warden::poll_warden() {
+struct felspar::io::poll_warden::loop_data {
+#if defined(FELSPAR_WINSOCK2)
+    std::vector<::WSAPOLLFD> iops;
+#else
+    std::vector<::pollfd> iops;
+#endif
+    std::vector<retrier *> continuations;
+};
+
+
+felspar::io::poll_warden::poll_warden()
+: bookkeeping{std::make_unique<loop_data>()} {
 #if defined(FELSPAR_WINSOCK2)
     WORD vreq = MAKEWORD(2, 0);
     WSADATA sadat;
@@ -26,81 +37,84 @@ felspar::io::poll_warden::~poll_warden() {
 
 void felspar::io::poll_warden::run_until(felspar::coro::coroutine_handle<> coro) {
     coro.resume();
-#if defined(FELSPAR_WINSOCK2)
-    std::vector<::WSAPOLLFD> iops;
-#else
-    std::vector<::pollfd> iops;
-#endif
-    std::vector<retrier *> continuations;
-
-    auto const clear_timeouts = [&]() -> int {
-        while (timeouts.begin() != timeouts.end()) {
-            auto const tdiff =
-                    timeouts.begin()->first - std::chrono::steady_clock::now();
-            if (tdiff < std::chrono::milliseconds{1}) {
-                retrier *const retry = timeouts.begin()->second;
-                timeouts.erase(timeouts.begin());
-                retry->iop_timedout().resume();
-            } else {
-                return std::chrono::duration_cast<std::chrono::milliseconds>(
-                               tdiff)
-                        .count();
-            }
-        }
-        return -1;
-    };
-
     while (true) {
         auto const timeout = clear_timeouts();
         if (coro.done()) { return; }
+        do_poll(timeout);
+    }
+}
 
-        iops.clear();
-        for (auto const &req : requests) {
-            short flags = {};
-            if (not req.second.reads.empty()) { flags |= POLLIN; }
-            if (not req.second.writes.empty()) { flags |= POLLOUT; }
-            iops.push_back({req.first, flags, {}});
-        }
 
-        int const pr = [&]() {
-            if (iops.size()) {
+void felspar::io::poll_warden::do_poll(int const timeout) {
+    bookkeeping->iops.clear();
+    for (auto const &req : requests) {
+        short flags = {};
+        if (not req.second.reads.empty()) { flags |= POLLIN; }
+        if (not req.second.writes.empty()) { flags |= POLLOUT; }
+        bookkeeping->iops.push_back({req.first, flags, {}});
+    }
+
+    int const pr = [&]() {
+        if (bookkeeping->iops.size()) {
 #if defined(FELSPAR_WINSOCK2)
-                return ::WSAPoll(iops.data(), iops.size(), timeout);
+            return ::WSAPoll(
+                    bookkeeping->iops.data(), bookkeeping->iops.size(),
+                    timeout);
 #else
-                return ::poll(iops.data(), iops.size(), timeout);
+            return ::poll(
+                    bookkeeping->iops.data(), bookkeeping->iops.size(),
+                    timeout);
 #endif
-            } else {
-                ::timespec req{{}, timeout * 1'000'000}, rem{};
-                while (::nanosleep(&req, &rem) == -1 and errno == EINTR) {
-                    req = rem;
-                }
-                return 0;
+        } else {
+            ::timespec req{{}, timeout * 1'000'000}, rem{};
+            while (::nanosleep(&req, &rem) == -1 and errno == EINTR) {
+                req = rem;
             }
-        }();
-        if (pr < 0) {
-            throw felspar::stdexcept::system_error{
-                    get_error(), std::system_category(), "poll"};
-        } else if (pr > 0) {
-            continuations.clear();
-            for (auto events : iops) {
-                if (events.revents & (POLLIN | POLLERR | POLLNVAL)) {
-                    auto &reads = requests[events.fd].reads;
-                    continuations.insert(
-                            continuations.end(), reads.begin(), reads.end());
-                    reads.clear();
-                }
-                if (events.revents & (POLLOUT | POLLERR | POLLNVAL)) {
-                    auto &writes = requests[events.fd].writes;
-                    continuations.insert(
-                            continuations.end(), writes.begin(), writes.end());
-                    writes.clear();
-                }
+            return 0;
+        }
+    }();
+    if (pr < 0) {
+        throw felspar::stdexcept::system_error{
+                get_error(), std::system_category(), "poll"};
+    } else if (pr > 0) {
+        bookkeeping->continuations.clear();
+        for (auto events : bookkeeping->iops) {
+            if (events.revents & (POLLIN | POLLERR | POLLNVAL)) {
+                auto &reads = requests[events.fd].reads;
+                bookkeeping->continuations.insert(
+                        bookkeeping->continuations.end(), reads.begin(),
+                        reads.end());
+                reads.clear();
             }
-            for (auto continuation : continuations) {
-                continuation->try_or_resume().resume();
+            if (events.revents & (POLLOUT | POLLERR | POLLNVAL)) {
+                auto &writes = requests[events.fd].writes;
+                bookkeeping->continuations.insert(
+                        bookkeeping->continuations.end(), writes.begin(),
+                        writes.end());
+                writes.clear();
             }
+        }
+        for (auto continuation : bookkeeping->continuations) {
+            continuation->try_or_resume().resume();
         }
     }
+}
+
+
+int felspar::io::poll_warden::clear_timeouts() {
+    while (timeouts.begin() != timeouts.end()) {
+        auto const tdiff =
+                timeouts.begin()->first - std::chrono::steady_clock::now();
+        if (tdiff < std::chrono::milliseconds{1}) {
+            retrier *const retry = timeouts.begin()->second;
+            timeouts.erase(timeouts.begin());
+            retry->iop_timedout().resume();
+        } else {
+            return std::chrono::duration_cast<std::chrono::milliseconds>(tdiff)
+                    .count();
+        }
+    }
+    return -1;
 }
 
 

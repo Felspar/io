@@ -82,6 +82,17 @@ namespace felspar::io {
                 socket_descriptor fd,
                 std::optional<std::chrono::nanoseconds> timeout,
                 felspar::source_location const &) override;
+
+      private:
+        /// Used for managing the poll loop
+        struct loop_data;
+        std::unique_ptr<loop_data> bookkeeping;
+
+        /// Resume any coros that have now timed out and return the time out
+        /// number to pass to poll
+        int clear_timeouts();
+        /// Put together data for poll call and then process resulting `revents`
+        void do_poll(int timeout);
     };
 
 
