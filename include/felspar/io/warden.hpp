@@ -204,18 +204,21 @@ namespace felspar::io {
         }
 
         /**
-         * PMR based memory allocation.
+         * ### PMR based memory allocation.
          */
 
       private:
-        void *do_allocate(std::size_t bytes, std::size_t alignment) override {
-            return ::operator new(
-                    bytes, static_cast<std::align_val_t>(alignment));
+        void *do_allocate(
+                std::size_t const bytes, std::size_t const alignment) override {
+            return felspar::pmr::new_delete_resource()->allocate(
+                    bytes, alignment);
         }
         void do_deallocate(
-                void *p, std::size_t bytes, std::size_t alignment) override {
-            ::operator delete(
-                    p, bytes, static_cast<std::align_val_t>(alignment));
+                void *const p,
+                std::size_t const bytes,
+                std::size_t const alignment) override {
+            return felspar::pmr::new_delete_resource()->deallocate(
+                    p, bytes, alignment);
         }
 
         bool do_is_equal(memory_resource const &other) const noexcept override {

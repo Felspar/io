@@ -15,14 +15,22 @@ linux && $CMAKE -B build.tmp/gcc-release \
     -DCMAKE_BUILD_TYPE=Release
 
 
+linux && CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-debug \
+    -DCMAKE_INSTALL_PREFIX=dist/clang-debug
+
+linux && CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-release \
+    -DCMAKE_INSTALL_PREFIX=dist/clang-release \
+    -DCMAKE_BUILD_TYPE=Release
+
+
 export CXXFLAGS=-stdlib=libc++
 export LD_FLAGS=-stdlib=libc++
 
-CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-debug \
-    -DCMAKE_INSTALL_PREFIX=dist/clang-debug
+CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-debug-libc++ \
+    -DCMAKE_INSTALL_PREFIX=dist/clang-debug-libc++
 
-CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-release \
-    -DCMAKE_INSTALL_PREFIX=dist/clang-release \
+CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-release-libc++ \
+    -DCMAKE_INSTALL_PREFIX=dist/clang-release-libc++ \
     -DCMAKE_BUILD_TYPE=Release
 
 
