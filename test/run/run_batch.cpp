@@ -2,6 +2,8 @@
 #include <felspar/test.hpp>
 #include <felspar/coro/eager.hpp>
 
+#include <thread>
+
 
 using namespace std::literals;
 
@@ -52,6 +54,10 @@ namespace {
         connect.post(do_connect, std::ref(ward), 5544);
         check(time_loop(ward)) < 15ms;
 
+#ifdef __APPLE__
+        std::this_thread::sleep_for(10ms);
+        check(time_loop(ward)) < 15ms;
+#endif
         /// Should not hang
         accept.release().get();
     });
