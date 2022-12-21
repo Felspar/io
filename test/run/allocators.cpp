@@ -56,7 +56,7 @@ namespace {
                     check(count.allocations) == 1u;
                     check(count.deallocations) == 0u;
 
-                    co_await coro.release();
+                    co_await std::move(coro).release();
                     check(count.allocations) == 1u;
                     check(count.deallocations) == 1u;
                 });
