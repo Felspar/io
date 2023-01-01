@@ -20,7 +20,7 @@ namespace felspar::io {
     class warden : public felspar::pmr::memory_resource {
         friend class allocator;
         template<typename R>
-        friend struct felspar::io::iop;
+        friend class felspar::io::iop;
 
       public:
         virtual ~warden() = default;
