@@ -18,7 +18,7 @@ namespace {
         std::array<std::byte, 256> buffer;
         while (auto bytes = co_await ward.read_some(sock, buffer, 20ms)) {
             std::span writing{buffer};
-            auto written = co_await felspar::io::write_all(
+            [[maybe_unused]] auto written = co_await felspar::io::write_all(
                     ward, sock, writing.first(bytes), 20ms);
         }
     }
