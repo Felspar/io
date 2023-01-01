@@ -239,7 +239,7 @@ namespace felspar::io {
                 std::optional<std::chrono::nanoseconds> timeout,
                 felspar::source_location const &) = 0;
         virtual void do_prepare_socket(
-                socket_descriptor sock, felspar::source_location const &) {}
+                socket_descriptor, felspar::source_location const &) {}
         virtual iop<socket_descriptor> do_accept(
                 socket_descriptor fd,
                 std::optional<std::chrono::nanoseconds> timeout,
