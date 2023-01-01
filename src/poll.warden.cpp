@@ -106,5 +106,5 @@ void felspar::io::poll_warden::run_until(felspar::coro::coroutine_handle<> coro)
 
 void felspar::io::poll_warden::do_prepare_socket(
         socket_descriptor sock, felspar::source_location const &loc) {
-    felspar::posix::set_non_blocking(sock);
+    felspar::posix::set_non_blocking(sock, loc);
 }
