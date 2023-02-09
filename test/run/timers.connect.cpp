@@ -2,8 +2,10 @@
 #include <felspar/test.hpp>
 
 #include <sys/types.h>
+#if defined(FELSPAR_POSIX_SOCKETS)
 #include <sys/socket.h>
 #include <netdb.h>
+#endif
 
 
 using namespace std::literals;
