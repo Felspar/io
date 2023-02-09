@@ -59,7 +59,7 @@ namespace {
         check(time_loop(ward)) < 15ms;
 #endif
         /// Should not hang
-        accept.release().get();
+        std::move(accept).release().get();
     });
 #ifdef FELSPAR_ENABLE_IO_URING
     auto const au = suite.test("accept/io_uring", [](auto check, auto &log) {
