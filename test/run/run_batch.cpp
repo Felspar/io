@@ -74,7 +74,7 @@ namespace {
         check(time_loop(ward)) < 5ms;
 
         /// Should not hang
-        accept.release().get();
+        std::move(accept).release().get();
     });
 #endif
 
