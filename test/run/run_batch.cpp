@@ -62,7 +62,7 @@ namespace {
         std::move(accept).release().get();
     });
 #ifdef FELSPAR_ENABLE_IO_URING
-    auto const au = suite.test("accept/io_uring", [](auto check, auto &log) {
+    auto const au = suite.test("accept/io_uring", [](auto check) {
         felspar::io::uring_warden ward;
 
         felspar::io::warden::eager<> accept;
