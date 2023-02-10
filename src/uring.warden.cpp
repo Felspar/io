@@ -39,6 +39,13 @@ void felspar::io::uring_warden::run_until(
 }
 
 
+void felspar::io::uring_warden::run_batch() {
+    ::io_uring_submit(&ring->uring);
+    ::io_uring_cqe *cqe = {};
+    while (::io_uring_peek_cqe(&ring->uring, &cqe) == 0) { ring->execute(cqe); }
+}
+
+
 /**
  * `felspar::io::uring_warden::impl`
  */
