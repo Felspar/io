@@ -55,9 +55,7 @@ namespace felspar::io {
         /// processing is performed without any waits
         virtual void run_batch() = 0;
 
-        /**
-         * ### File descriptors
-         */
+        /// ### File descriptors
         iop<void>
                 close(socket_descriptor fd,
                       felspar::source_location const &loc =
@@ -71,9 +69,7 @@ namespace felspar::io {
             return close(s.release(), loc);
         }
 
-        /**
-         * ### Time management
-         */
+        /// ### Time management
         iop<void>
                 sleep(std::chrono::nanoseconds ns,
                       felspar::source_location const &loc =
@@ -81,11 +77,11 @@ namespace felspar::io {
             return do_sleep(ns, loc);
         }
 
+        /// ### Reading and writing
         /**
-         * ### Reading and writing
+         * Read or write bytes from the provided buffer returning the number of
+         * bytes read/written.
          */
-        /// Read or write bytes from the provided buffer returning the number of
-        /// bytes read/written.
         iop<std::size_t> read_some(
                 socket_descriptor fd,
                 std::span<std::byte> s,
@@ -119,12 +115,12 @@ namespace felspar::io {
             return write_some(s.native_handle(), b, timeout, l);
         }
 
+        /// ### Socket APIs
         /**
-         * ### Socket APIs
+         * Some wardens may need special socket options to be set, so in order
+         * to be portable across wardens use this API instead of the POSIX
+         * `::socket` one.
          */
-        /// Some wardens may need special socket options to be set, so in order
-        /// to be portable across wardens use this API instead of the POSIX
-        /// `::socket` one.
         posix::fd create_socket(
                 int domain,
                 int type,
@@ -171,9 +167,7 @@ namespace felspar::io {
         }
 
 
-        /**
-         * ### File readiness
-         */
+        /// ### File readiness
         iop<void> read_ready(
                 socket_descriptor fd,
                 std::optional<std::chrono::nanoseconds> timeout = {},
@@ -203,11 +197,8 @@ namespace felspar::io {
             return write_ready(sock.native_handle(), timeout, loc);
         }
 
-        /**
-         * ### PMR based memory allocation.
-         */
-
       private:
+        /// ### PMR based memory allocation
         void *do_allocate(
                 std::size_t const bytes, std::size_t const alignment) override {
             return felspar::pmr::new_delete_resource()->allocate(
@@ -220,7 +211,6 @@ namespace felspar::io {
             return felspar::pmr::new_delete_resource()->deallocate(
                     p, bytes, alignment);
         }
-
         bool do_is_equal(memory_resource const &other) const noexcept override {
             return this == &other;
         }
