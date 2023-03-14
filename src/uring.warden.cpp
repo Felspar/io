@@ -1,9 +1,7 @@
 #include "uring.hpp"
 
 
-/**
- * `felspar::io::uring_warden`
- */
+/// ## `felspar::io::uring_warden`
 
 
 felspar::io::uring_warden::uring_warden(unsigned entries, unsigned flags)
@@ -46,9 +44,7 @@ void felspar::io::uring_warden::run_batch() {
 }
 
 
-/**
- * `felspar::io::uring_warden::impl`
- */
+/// ## `felspar::io::uring_warden::impl`
 
 
 ::io_uring_sqe *felspar::io::uring_warden::impl::next_sqe() {
