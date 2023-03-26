@@ -7,6 +7,7 @@ add_library(felspar-io-headers-tests STATIC EXCLUDE_FROM_ALL
         io.cpp
         posix.cpp
         read.cpp
+        tls.cpp
         warden.cpp
         warden.poll.cpp
         write.cpp

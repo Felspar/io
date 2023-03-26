@@ -10,5 +10,6 @@ endif()
 if(TARGET felspar-stress)
     add_test_run(felspar-stress felspar-io TESTS
             timers.connect.cpp
+            tls.tests.cpp
         )
 endif()

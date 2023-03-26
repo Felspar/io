@@ -3,10 +3,11 @@ add_library(felspar-io
         poll.iops.cpp
         poll.warden.cpp
         posix.cpp
+        tls.cpp
         warden.cpp
     )
 target_include_directories(felspar-io PUBLIC ../include)
-target_link_libraries(felspar-io PUBLIC felspar-coro)
+target_link_libraries(felspar-io PUBLIC felspar-coro ssl)
 if(${FELSPAR_ENABLE_IO_URING})
     target_compile_definitions(felspar-io PUBLIC FELSPAR_ENABLE_IO_URING=1)
     target_sources(felspar-io PRIVATE
