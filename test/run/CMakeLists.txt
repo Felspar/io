@@ -8,7 +8,7 @@ if(TARGET felspar-check)
         )
 endif()
 if(TARGET felspar-stress)
-    add_test_run(felspar-stress felspar-io TESTS
+    add_test_run(felspar-stress felspar-io-openssl TESTS
             timers.connect.cpp
             tls.tests.cpp
         )

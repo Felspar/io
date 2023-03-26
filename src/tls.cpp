@@ -8,13 +8,20 @@
 
 
 struct felspar::io::tls::impl {
-    impl() : ctx{SSL_CTX_new(TLS_method())}, ssl{SSL_new(ctx)} {}
+    impl() : ctx{SSL_CTX_new(TLS_method())}, ssl{SSL_new(ctx)} {
+        /// TODO There should be some error handling here
+        BIO_new_bio_pair(&ib, 0, &nb, 0);
+        /// Give the internal BIO to `ssl`
+        SSL_set_bio(ssl, ib, ib);
+    }
     ~impl() {
+        if (nb) { BIO_free(nb); }
         if (ssl) { SSL_free(ssl); }
         if (ctx) { SSL_CTX_free(ctx); }
     }
     SSL_CTX *ctx = nullptr;
     SSL *ssl = nullptr;
+    /// `ib` is the internal BIO and `nb` is the network BIO
     BIO *ib = nullptr, *nb = nullptr;
     posix::fd fd;
 };

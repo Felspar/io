@@ -3,11 +3,14 @@ add_library(felspar-io
         poll.iops.cpp
         poll.warden.cpp
         posix.cpp
-        tls.cpp
         warden.cpp
     )
 target_include_directories(felspar-io PUBLIC ../include)
-target_link_libraries(felspar-io PUBLIC felspar-coro ssl)
+target_link_libraries(felspar-io PUBLIC felspar-coro)
+add_library(felspar-io-openssl
+        tls.cpp
+    )
+target_link_libraries(felspar-io-openssl felspar-io ssl crypto)
 if(${FELSPAR_ENABLE_IO_URING})
     target_compile_definitions(felspar-io PUBLIC FELSPAR_ENABLE_IO_URING=1)
     target_sources(felspar-io PRIVATE
@@ -24,4 +27,5 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 endif()
 
 install(TARGETS felspar-io LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
+install(TARGETS felspar-io-openssl LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 install(DIRECTORY ../include/felspar DESTINATION include)
