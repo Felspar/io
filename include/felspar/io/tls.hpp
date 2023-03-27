@@ -12,6 +12,8 @@ namespace felspar::io {
         struct impl;
         std::unique_ptr<impl> p;
 
+        explicit tls(std::unique_ptr<impl>);
+
       public:
         tls();
         tls(tls const &) = delete;
