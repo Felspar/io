@@ -11,6 +11,18 @@
 namespace felspar::io {
 
 
+    /// Free standing version of `read_some`
+    template<typename S>
+    inline auto read_some(
+            io::warden &warden,
+            S &&sock,
+            std::optional<std::chrono::nanoseconds> const timeout = {},
+            felspar::source_location const &loc =
+                    felspar::source_location::current()) {
+        return warden.read_some(sock, timeout, loc);
+    }
+
+
     /// A read buffer that can be split up and have more information read into
     /// it over time as data appears on the file descriptor
     template<typename R>

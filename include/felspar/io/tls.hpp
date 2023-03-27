@@ -32,6 +32,13 @@ namespace felspar::io {
                         felspar::source_location const & =
                                 felspar::source_location::current());
 
+        /// Read from the connection
+        warden::task<std::size_t> read_some(
+                warden &w,
+                std::span<std::byte>,
+                std::optional<std::chrono::nanoseconds> const timeout = {},
+                felspar::source_location const &loc =
+                        felspar::source_location::current());
         /// Write to the connection
         warden::task<std::size_t> write_some(
                 warden &w,
@@ -43,6 +50,16 @@ namespace felspar::io {
 
 
     /// ## Free-standing APIs
+
+    inline auto read_some(
+            warden &w,
+            tls &cnx,
+            std::span<std::byte> const s,
+            std::optional<std::chrono::nanoseconds> const timeout = {},
+            felspar::source_location const &loc =
+                    felspar::source_location::current()) {
+        return cnx.read_some(w, s, timeout, loc);
+    }
     inline auto write_some(
             warden &w,
             tls &cnx,

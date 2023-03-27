@@ -33,6 +33,13 @@ struct felspar::io::tls::impl {
      */
     std::array<std::byte, (17 << 10)> buffer;
 
+    std::string ssl_error(int const result) const {
+        auto const error = SSL_get_error(ssl, result);
+        switch (error) {
+        default: return "Unknown error " + std::to_string(error);
+        }
+    }
+
     /// Loop for handling read/write requests when trying to carry out an operation
     template<typename Op>
     io::warden::task<int> service_operation(
@@ -128,17 +135,36 @@ auto felspar::io::tls::connect(
 }
 
 
+auto felspar::io::tls::read_some(
+        io::warden &warden,
+        std::span<std::byte> const s,
+        std::optional<std::chrono::nanoseconds> const timeout,
+        felspar::source_location const &loc) -> warden::task<std::size_t> {
+    int const ret = co_await p->service_operation(
+            warden, timeout, loc,
+            [s, &loc](impl &i) { return SSL_read(i.ssl, s.data(), s.size()); });
+    if (ret <= 0) {
+        throw felspar::stdexcept::runtime_error{
+                "Error performing SSL_read: " + p->ssl_error(ret), loc};
+    } else {
+        co_return static_cast<std::size_t>(ret);
+    }
+}
+
+
 auto felspar::io::tls::write_some(
         io::warden &warden,
         std::span<std::byte const> const s,
         std::optional<std::chrono::nanoseconds> const timeout,
         felspar::source_location const &loc) -> warden::task<std::size_t> {
-    co_return co_await p->service_operation(warden, timeout, loc, [s](impl &i) {
-        if (auto const ret = SSL_write(i.ssl, s.data(), s.size()); ret <= 0) {
-            throw felspar::stdexcept::runtime_error{
-                    "Error performing SSL_write"};
-        } else {
-            return static_cast<std::size_t>(ret);
-        }
-    });
+    int const ret = co_await p->service_operation(
+            warden, timeout, loc, [s, &loc](impl &i) {
+                return SSL_write(i.ssl, s.data(), s.size());
+            });
+    if (ret <= 0) {
+        throw felspar::stdexcept::runtime_error{
+                "Error performing SSL_write", loc};
+    } else {
+        co_return static_cast<std::size_t>(ret);
+    }
 }

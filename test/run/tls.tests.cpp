@@ -41,6 +41,15 @@ namespace {
         auto written =
                 co_await felspar::io::write_all(warden, website, "Hello\r\n");
         check(written) == 7u;
+
+        std::array<std::byte, 4> buffer;
+        auto read = co_await felspar::io::read_some(warden, website, buffer);
+        check(read) == 4;
+
+        check(buffer[0]) == std::byte{'H'};
+        check(buffer[1]) == std::byte{'T'};
+        check(buffer[2]) == std::byte{'T'};
+        check(buffer[3]) == std::byte{'P'};
     }
 
 
