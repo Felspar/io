@@ -56,7 +56,7 @@ namespace {
         co_await ward.connect(
                 fd, reinterpret_cast<sockaddr const *>(&in), sizeof(in));
         try {
-            while (co_await ward.write_some(fd, buffer, 10ms))
+            while (co_await felspar::io::write_some(ward, fd, buffer, 10ms))
                 ;
             check(false) == true;
         } catch (felspar::io::timeout const &) {
@@ -71,7 +71,7 @@ namespace {
 
         while (true) {
             auto const result{co_await felspar::io::ec{
-                    ward.write_some(fd, buffer, 10ms)}};
+                    felspar::io::write_some(ward, fd, buffer, 10ms)}};
             if (not result and result.error == felspar::io::timeout::error) {
                 co_return;
             } else if (not result) {

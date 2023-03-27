@@ -13,7 +13,20 @@ namespace felspar::io {
     class warden;
 
 
-    /// Write all of the buffer to a file descriptor
+    /// ## Free standing version of `write_some`
+    template<typename S>
+    inline auto write_some(
+            warden &w,
+            S &&sock,
+            std::span<std::byte const> const s,
+            std::optional<std::chrono::nanoseconds> const timeout = {},
+            felspar::source_location const &loc =
+                    felspar::source_location::current()) {
+        return w.write_some(sock, s, timeout, loc);
+    }
+
+
+    /// ## Write all of the buffer to a file descriptor
     template<typename S>
     inline warden::task<std::size_t> write_all(
             warden &ward,
@@ -25,7 +38,7 @@ namespace felspar::io {
         auto out{s};
         while (out.size()) {
             auto const bytes =
-                    co_await ward.write_some(sock, out, timeout, loc);
+                    co_await write_some(ward, sock, out, timeout, loc);
             if (not bytes) { co_return s.size() - out.size(); }
             out = out.subspan(bytes);
         }

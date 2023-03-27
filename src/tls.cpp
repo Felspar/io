@@ -33,17 +33,15 @@ struct felspar::io::tls::impl {
      */
     std::array<std::byte, (17 << 10)> buffer;
 
-    /// openssl operations
-    int do_connect() { return SSL_connect(ssl); }
-
     /// Loop for handling read/write requests when trying to carry out an operation
+    template<typename Op>
     io::warden::task<int> service_operation(
             io::warden &warden,
-            int (impl::*op)(void),
             std::optional<std::chrono::nanoseconds> timeout,
-            felspar::source_location const &loc) {
+            felspar::source_location const &loc,
+            Op &&op) {
         while (true) {
-            auto const result = (this->*op)();
+            auto const result = op(*this);
             auto const error = SSL_get_error(ssl, result);
             switch (error) {
             case SSL_ERROR_NONE: co_return result;
@@ -123,7 +121,24 @@ auto felspar::io::tls::connect(
     co_await warden.connect(fd, addr, addrlen, timeout, loc);
 
     auto i = std::make_unique<impl>(std::move(fd));
-    co_await i->service_operation(warden, &impl::do_connect, timeout, loc);
+    co_await i->service_operation(
+            warden, timeout, loc, [](impl &i) { return SSL_connect(i.ssl); });
 
     co_return tls{std::move(i)};
+}
+
+
+auto felspar::io::tls::write_some(
+        io::warden &warden,
+        std::span<std::byte const> const s,
+        std::optional<std::chrono::nanoseconds> const timeout,
+        felspar::source_location const &loc) -> warden::task<std::size_t> {
+    co_return co_await p->service_operation(warden, timeout, loc, [s](impl &i) {
+        if (auto const ret = SSL_write(i.ssl, s.data(), s.size()); ret <= 0) {
+            throw felspar::stdexcept::runtime_error{
+                    "Error performing SSL_write"};
+        } else {
+            return static_cast<std::size_t>(ret);
+        }
+    });
 }

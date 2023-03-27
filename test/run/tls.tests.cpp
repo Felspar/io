@@ -1,5 +1,6 @@
 #include <felspar/io/tls.hpp>
 #include <felspar/io/warden.poll.hpp>
+#include <felspar/io/write.hpp>
 #include <felspar/test.hpp>
 
 #include <sys/types.h>
@@ -36,6 +37,10 @@ namespace {
         auto website = co_await felspar::io::tls::connect(
                 warden, reinterpret_cast<sockaddr const *>(&address),
                 sizeof(address), 5s);
+
+        auto written =
+                co_await felspar::io::write_all(warden, website, "Hello\r\n");
+        check(written) == 7u;
     }
 
 
