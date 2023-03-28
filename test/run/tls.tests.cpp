@@ -1,3 +1,4 @@
+#include <felspar/io/read.hpp>
 #include <felspar/io/tls.hpp>
 #include <felspar/io/warden.poll.hpp>
 #include <felspar/io/write.hpp>
@@ -38,18 +39,21 @@ namespace {
                 warden, hostname, reinterpret_cast<sockaddr const *>(&address),
                 sizeof(address), 5s);
 
+        constexpr std::string_view request = "GET / HTTP/1.0\r\n\r\n";
+
         auto written =
-                co_await felspar::io::write_all(warden, website, "Hello\r\n");
-        check(written) == 7u;
+                co_await felspar::io::write_all(warden, website, request);
+        check(written) == request.size();
 
-        std::array<std::byte, 4> buffer;
-        auto read = co_await felspar::io::read_some(warden, website, buffer);
-        check(read) == 4;
+        felspar::io::read_buffer<std::array<char, 2 << 10>> buffer;
+        auto line1 = co_await felspar::io::read_until_lf_strip_cr(
+                warden, website, buffer);
 
-        check(buffer[0]) == std::byte{'H'};
-        check(buffer[1]) == std::byte{'T'};
-        check(buffer[2]) == std::byte{'T'};
-        check(buffer[3]) == std::byte{'P'};
+        constexpr std::string_view expected = "HTTP/1.1 200 OK";
+        check(line1.size()) == expected.size();
+        check(std::equal(
+                line1.begin(), line1.end(), expected.begin(), expected.end()))
+                == true;
     }
 
 
