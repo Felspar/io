@@ -120,6 +120,7 @@ felspar::io::tls::tls(std::unique_ptr<impl> i) : p{std::move(i)} {}
 
 auto felspar::io::tls::connect(
         io::warden &warden,
+        char const *const sni_hostname,
         sockaddr const *addr,
         socklen_t addrlen,
         std::optional<std::chrono::nanoseconds> timeout,
@@ -128,6 +129,7 @@ auto felspar::io::tls::connect(
     co_await warden.connect(fd, addr, addrlen, timeout, loc);
 
     auto i = std::make_unique<impl>(std::move(fd));
+    SSL_set_tlsext_host_name(i->ssl, sni_hostname);
     co_await i->service_operation(
             warden, timeout, loc, [](impl &i) { return SSL_connect(i.ssl); });
 

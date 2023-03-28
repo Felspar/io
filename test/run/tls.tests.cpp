@@ -35,7 +35,7 @@ namespace {
         freeaddrinfo(addresses);
 
         auto website = co_await felspar::io::tls::connect(
-                warden, reinterpret_cast<sockaddr const *>(&address),
+                warden, hostname, reinterpret_cast<sockaddr const *>(&address),
                 sizeof(address), 5s);
 
         auto written =

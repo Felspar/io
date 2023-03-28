@@ -26,6 +26,7 @@ namespace felspar::io {
         /// ### Connect to a TLS secured server over TCP
         static warden::task<tls>
                 connect(warden &,
+                        char const *snI_hostname,
                         sockaddr const *addr,
                         socklen_t addrlen,
                         std::optional<std::chrono::nanoseconds> timeout = {},
