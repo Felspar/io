@@ -8,7 +8,7 @@
 namespace {
 
 
-    /// HTTP response options
+    /// ## HTTP response options
     std::span<std::byte const> short_text();
     std::span<std::byte const> big_octets();
 
@@ -30,9 +30,8 @@ namespace {
              header.size();
              header = co_await felspar::io::read_until_lf_strip_cr(
                      ward, fd, buffer)) {
-            /// The headers should really be processed
+            // TODO The headers should really be processed
         }
-        /// TODO Send response
         co_await write_all(ward, fd, response);
         co_await ward.close(std::move(fd));
         co_return;
@@ -55,9 +54,7 @@ namespace {
     }
 
 
-    /**
-     * ## Main
-     */
+    /// ## Main
     felspar::io::warden::task<int> co_main(felspar::io::warden &ward) {
         constexpr std::uint16_t port{4040};
         constexpr int backlog = 64;
