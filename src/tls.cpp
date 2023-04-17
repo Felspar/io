@@ -79,7 +79,8 @@ struct felspar::io::tls::impl {
                 read_int <= 0) {
                 throw felspar::stdexcept::runtime_error{
                         "Error reading from BIO"};
-            } else if (auto const read_bytes = read_int; read_bytes != bytes) {
+            } else if (std::size_t const read_bytes = read_int;
+                       read_bytes != bytes) {
                 throw felspar::stdexcept::runtime_error{
                         "Reading BIO read bytes mismatch"};
             } else {
@@ -96,7 +97,7 @@ struct felspar::io::tls::impl {
         if (auto const written_int = BIO_write(nb, buffer.data(), bytes);
             written_int <= 0) {
             throw felspar::stdexcept::runtime_error{"Error writing to BIO"};
-        } else if (auto const written_bytes = written_int;
+        } else if (std::size_t const written_bytes = written_int;
                    written_bytes != bytes) {
             throw felspar::stdexcept::runtime_error{
                     "Not all bytes written to BIO"};
