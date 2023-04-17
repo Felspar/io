@@ -143,9 +143,10 @@ auto felspar::io::tls::read_some(
         std::span<std::byte> const s,
         std::optional<std::chrono::nanoseconds> const timeout,
         felspar::source_location const &loc) -> warden::task<std::size_t> {
-    int const ret = co_await p->service_operation(
-            warden, timeout, loc,
-            [s, &loc](impl &i) { return SSL_read(i.ssl, s.data(), s.size()); });
+    int const ret =
+            co_await p->service_operation(warden, timeout, loc, [s](impl &i) {
+                return SSL_read(i.ssl, s.data(), s.size());
+            });
     if (ret <= 0) {
         throw felspar::stdexcept::runtime_error{
                 "Error performing SSL_read: " + p->ssl_error(ret), loc};
@@ -160,8 +161,8 @@ auto felspar::io::tls::write_some(
         std::span<std::byte const> const s,
         std::optional<std::chrono::nanoseconds> const timeout,
         felspar::source_location const &loc) -> warden::task<std::size_t> {
-    int const ret = co_await p->service_operation(
-            warden, timeout, loc, [s, &loc](impl &i) {
+    int const ret =
+            co_await p->service_operation(warden, timeout, loc, [s](impl &i) {
                 return SSL_write(i.ssl, s.data(), s.size());
             });
     if (ret <= 0) {
