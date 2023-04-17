@@ -11,6 +11,19 @@
 namespace felspar::io {
 
 
+    /// Free standing version of `read_some`
+    template<typename S, typename B>
+    inline auto read_some(
+            io::warden &warden,
+            S &&sock,
+            B &&buffer,
+            std::optional<std::chrono::nanoseconds> const timeout = {},
+            felspar::source_location const &loc =
+                    felspar::source_location::current()) {
+        return warden.read_some(sock, buffer, timeout, loc);
+    }
+
+
     /// A read buffer that can be split up and have more information read into
     /// it over time as data appears on the file descriptor
     template<typename R>
@@ -28,14 +41,14 @@ namespace felspar::io {
         read_buffer() {}
 
         template<typename S>
-        warden::task<void> read_some(
+        warden::task<void> do_read_some(
                 warden &ward,
                 S &&sock,
                 std::optional<std::chrono::nanoseconds> timeout = {},
                 felspar::source_location const &loc =
                         felspar::source_location::current()) {
             std::size_t const bytes_read =
-                    co_await ward.read_some(sock, remaining(), timeout, loc);
+                    co_await read_some(ward, sock, remaining(), timeout, loc);
             if (bytes_read == 0) {
                 throw stdexcept::runtime_error{
                         "Got a zero read, we're done", loc};
@@ -124,7 +137,7 @@ namespace felspar::io {
                     felspar::source_location::current()) {
         auto cr = read_buffer.find('\n');
         while (cr == read_buffer.end()) {
-            co_await read_buffer.read_some(ward, sock, timeout, loc);
+            co_await read_buffer.do_read_some(ward, sock, timeout, loc);
             cr = read_buffer.find('\n');
         }
         std::size_t const line = std::distance(read_buffer.begin(), cr);
