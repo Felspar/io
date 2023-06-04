@@ -56,6 +56,10 @@ namespace felspar::posix {
     /// ## A pipe has a read and a write end
     struct pipe {
         fd read, write;
+
+        /// ### Create a new pipe
+        /// The file descriptors will be set to non-blocking mode.
+        static pipe create();
     };
 
 

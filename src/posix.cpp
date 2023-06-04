@@ -8,6 +8,16 @@
 #endif
 
 
+auto felspar::posix::pipe::create() -> pipe {
+    int fds[2] = {};
+    if (::pipe2(fds, O_NONBLOCK) != 0) {
+        throw felspar::stdexcept::system_error{
+                errno, std::system_category(), "Calling pipe2"};
+    }
+    return {fd{fds[0]}, fd{fds[1]}};
+}
+
+
 std::pair<std::size_t, std::size_t>
         felspar::posix::promise_to_never_use_select() {
 #ifdef FELSPAR_POSIX_SOCKETS
