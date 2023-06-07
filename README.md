@@ -3,6 +3,10 @@
 **C++ coroutine based asynchronous IO**
 
 
+![https://badgen.net/badge/felspar/io/green?icon=github](https://github.com/Felspar/io)
+![https://badgen.net/badge/icon/discord?icon=discord&label](https://discord.gg/tKSabUa52v)
+
+
 **felspar-io** is a C++20 library to help you use coroutines to perform input and output operations (IOPs). *The library should not yet be considered stable.* It allows for the use of either `io_uring` or `poll` to be used as the event loop.
 
 
