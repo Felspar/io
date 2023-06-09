@@ -10,7 +10,7 @@
 namespace felspar::posix {
 
 
-    /// A very simple type for RAII management of a file descriptor
+    /// ## A very simple type for RAII management of a file descriptor
     class fd {
         io::socket_descriptor f;
 
@@ -29,15 +29,19 @@ namespace felspar::posix {
         }
         fd &operator=(fd const &) = delete;
 
-        /// `true` if the file descriptor looks valid
+
+        /// ### `true` if the file descriptor looks valid
         explicit operator bool() const noexcept { return f >= 0; }
         io::socket_descriptor native_handle() const noexcept { return f; }
 
+
+        /// ### Release the file descriptor
         io::socket_descriptor release() noexcept {
             return std::exchange(f, io::invalid_handle);
         }
 
-        /// Close the FD
+
+        /// ### Close the FD
         /**
          * This performs a blocking `close`. You should use the warden's
          * asynchronous `close` if you can.
@@ -49,21 +53,28 @@ namespace felspar::posix {
     };
 
 
-    /// A pipe has a read and a write end
+    /// ## A pipe has a read and a write end
     struct pipe {
         fd read, write;
+
+        /// ### Create a new pipe
+        /// The file descriptors will be set to non-blocking mode.
+        static pipe create();
     };
 
 
-    /// Set the number of open file descriptors this process can use to the
-    /// maximum allowed range. This is only set at a lower level due to the poor
-    /// design of the `select` system call, so if we promise never to use
-    /// `select` we can have a much higher number. Returns the old limit and the
-    /// new limit
+    /// ## `select` handling
+    /**
+     * Set the number of open file descriptors this process can use to the
+     * maximum allowed range. This is only set at a lower level due to the poor
+     * design of the `select` system call, so if we promise never to use
+     * `select` we can have a much higher number. Returns the old limit and the
+     * new limit
+     */
     std::pair<std::size_t, std::size_t> promise_to_never_use_select();
 
 
-    /// Set the listen queue length for the socket
+    /// ## Set the listen queue length for the socket
     void
             listen(io::socket_descriptor fd,
                    int backlog,
@@ -78,7 +89,7 @@ namespace felspar::posix {
     }
 
 
-    /// Set a file descriptor to non-blocking mode
+    /// ## Set a file descriptor to non-blocking mode
     void set_non_blocking(
             io::socket_descriptor sock,
             felspar::source_location const & =
@@ -91,7 +102,7 @@ namespace felspar::posix {
     }
 
 
-    /// Set a socket port for re-use
+    /// ## Set a socket port for re-use
     void set_reuse_port(
             io::socket_descriptor sock,
             felspar::source_location const & =
@@ -104,7 +115,7 @@ namespace felspar::posix {
     }
 
 
-    /// Bind to any address
+    /// ## Bind to any address
     void bind_to_any_address(
             io::socket_descriptor sock,
             std::uint16_t port,
