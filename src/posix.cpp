@@ -9,12 +9,20 @@
 
 
 auto felspar::posix::pipe::create() -> pipe {
+#if defined(FELSPAR_POSIX_SOCKETS)
     int fds[2] = {};
-    if (::pipe2(fds, O_NONBLOCK) != 0) {
+    if (::pipe2(fds, O_NONBLOCK) == 0) {
+        return {fd{fds[0]}, fd{fds[1]}};
+    } else {
         throw felspar::stdexcept::system_error{
-                errno, std::system_category(), "Calling pipe2"};
+                io::get_error(), std::system_category(),
+                "Creating pipe", loc};
     }
-    return {fd{fds[0]}, fd{fds[1]}};
+#elif defined(FELSPAR_WINSOCK2)
+    return {};
+#else
+#error "No implementation for this platform"
+#endif
 }
 
 
