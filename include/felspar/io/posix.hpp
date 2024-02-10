@@ -111,18 +111,34 @@ namespace felspar::posix {
     }
 
 
-    /// ## Bind to any address
-    void bind_to_any_address(
+    /// ## Bind
+    void bind(
             io::socket_descriptor sock,
+            std::uint32_t addr,
             std::uint16_t port,
             felspar::source_location const & =
                     felspar::source_location::current());
+    inline void bind(
+            fd const &sock,
+            std::uint32_t const addr,
+            std::uint16_t const port,
+            felspar::source_location const &loc =
+                    felspar::source_location::current()) {
+        return bind(sock.native_handle(), addr, port, loc);
+    }
+    inline void bind_to_any_address(
+            io::socket_descriptor sock,
+            std::uint16_t port,
+            felspar::source_location const &loc =
+                    felspar::source_location::current()) {
+                        bind(sock, INADDR_ANY, port, loc);
+                    }
     inline void bind_to_any_address(
             fd const &sock,
             std::uint16_t const port,
             felspar::source_location const &loc =
                     felspar::source_location::current()) {
-        return bind_to_any_address(sock.native_handle(), port, loc);
+        return bind(sock.native_handle(), INADDR_ANY, port, loc);
     }
 
 

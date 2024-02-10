@@ -88,14 +88,15 @@ void felspar::posix::set_reuse_port(
 }
 
 
-void felspar::posix::bind_to_any_address(
+void felspar::posix::bind(
         io::socket_descriptor const sock,
+        std::uint32_t const addr,
         std::uint16_t const port,
         felspar::source_location const &loc) {
     sockaddr_in in;
     in.sin_family = AF_INET;
     in.sin_port = htons(port);
-    in.sin_addr.s_addr = htonl(INADDR_ANY);
+    in.sin_addr.s_addr = htonl(addr);
     if (::bind(sock, reinterpret_cast<sockaddr const *>(&in), sizeof(in))
         != 0) {
         throw felspar::stdexcept::system_error{
