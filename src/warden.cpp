@@ -32,7 +32,8 @@ auto felspar::io::warden::create_pipe(felspar::source_location const &loc)
     int namelen = sizeof(sockaddr);
     if (getsockname(server.native_handle(), &name, &namelen) != 0) {
         throw felspar::stdexcept::system_error{
-            io::get_error(), std::system_category(), "getsockname to determine port", loc};
+                io::get_error(), std::system_category(),
+                "getsockname to determine port", loc};
     }
     posix::listen(server, 1, loc);
 
@@ -41,15 +42,18 @@ auto felspar::io::warden::create_pipe(felspar::source_location const &loc)
         auto const error = io::get_error();
         if (error != WSAEWOULDBLOCK) {
             throw felspar::stdexcept::system_error{
-                error, std::system_category(), "connecting write end part 1", loc};
+                    error, std::system_category(),
+                    "connecting write end part 1", loc};
         }
     } else {
-        throw felspar::stdexcept::runtime_error{"Expected WSAEWOULDBLOCK when connecting write end", loc};
+        throw felspar::stdexcept::runtime_error{
+                "Expected WSAEWOULDBLOCK when connecting write end", loc};
     }
 
     auto read = posix::fd{::accept(server.native_handle(), &name, &namelen)};
     if (not read) {
-        throw felspar::stdexcept::runtime_error{"Didn't get a valid read socket from accept"};
+        throw felspar::stdexcept::runtime_error{
+                "Didn't get a valid read socket from accept"};
     }
 
     return {std::move(read), std::move(write)};
