@@ -61,7 +61,9 @@ namespace felspar::posix {
 
         /// ### Create a new pipe
         /// The file descriptors will be set to non-blocking mode.
-        static pipe create();
+        static pipe
+                create(felspar::source_location const & =
+                               felspar::source_location::current());
     };
 
 

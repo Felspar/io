@@ -8,15 +8,14 @@
 #endif
 
 
-auto felspar::posix::pipe::create() -> pipe {
+auto felspar::posix::pipe::create(felspar::source_location const &loc) -> pipe {
 #if defined(FELSPAR_POSIX_SOCKETS)
     int fds[2] = {};
     if (::pipe2(fds, O_NONBLOCK) == 0) {
         return {fd{fds[0]}, fd{fds[1]}};
     } else {
         throw felspar::stdexcept::system_error{
-                io::get_error(), std::system_category(),
-                "Creating pipe", loc};
+                io::get_error(), std::system_category(), "Creating pipe", loc};
     }
 #elif defined(FELSPAR_WINSOCK2)
     return {};
