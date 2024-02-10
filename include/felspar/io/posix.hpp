@@ -4,6 +4,8 @@
 #include <felspar/io/socket_descriptor.hpp>
 #include <felspar/exceptions/system_error.hpp>
 
+#include <cstdint>
+
 #include <unistd.h>
 
 

@@ -23,7 +23,7 @@ namespace {
             felspar::posix::fd fd,
             std::span<std::byte const> const response) {
         felspar::io::read_buffer<std::array<char, 2 << 10>> buffer;
-        auto const request{
+        [[maybe_unused]] auto const request{
                 co_await felspar::io::read_until_lf_strip_cr(ward, fd, buffer)};
         for (auto header = co_await felspar::io::read_until_lf_strip_cr(
                      ward, fd, buffer);
@@ -91,7 +91,7 @@ int main() {
 namespace {
 
 
-    std::span<std::byte const> short_text() {
+    [[maybe_unused]] std::span<std::byte const> short_text() {
         constexpr std::string_view sv{
                 "HTTP/1.0 200 OK\r\n"
                 "Content-Length: 3\r\n"
