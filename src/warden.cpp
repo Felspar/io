@@ -1,6 +1,10 @@
 #include <felspar/exceptions.hpp>
 #include <felspar/io/warden.hpp>
 
+#ifdef FELSPAR_POSIX_SOCKETS
+#include <fcntl.h>
+#endif
+
 
 felspar::posix::fd felspar::io::warden::create_socket(
         int domain,
@@ -19,21 +23,18 @@ felspar::posix::fd felspar::io::warden::create_socket(
 }
 
 
-felspar::posix::pipe
-        felspar::io::warden::create_pipe(felspar::source_location const &loc) {
+auto felspar::io::warden::create_pipe(felspar::source_location const &loc)
+        -> pipe {
 #ifdef FELSPAR_WINSOCK2
     throw felspar::stdexcept::runtime_error{
             "Windows pipe creation is not implemented"};
 #else
-    std::array<int, 2> ends;
-    if (::pipe(ends.data()) == -1) {
-        throw felspar::stdexcept::system_error{
-                errno, std::system_category(), "Error creating pipe", loc};
+    int fds[2] = {};
+    if (::pipe2(fds, O_NONBLOCK) == 0) {
+        return {posix::fd{fds[0]}, posix::fd{fds[1]}};
     } else {
-        posix::pipe p{posix::fd{ends[0]}, posix::fd{ends[1]}};
-        do_prepare_socket(p.read.native_handle(), loc);
-        do_prepare_socket(p.write.native_handle(), loc);
-        return p;
+        throw felspar::stdexcept::system_error{
+                io::get_error(), std::system_category(), "Creating pipe", loc};
     }
 #endif
 }

@@ -1,4 +1,4 @@
-#include <felspar/io/posix.hpp>
+#include <felspar/io/pipe.hpp>
 #include <felspar/test.hpp>
 
 #include <felspar/io/read.hpp>
@@ -16,7 +16,8 @@ namespace {
 
 
     auto const cons = suite.test("construct", [](auto check) {
-        auto p = felspar::posix::pipe::create();
+        felspar::io::poll_warden ward;
+        auto p = ward.create_pipe();
         check(p.read).is_truthy();
         check(p.write).is_truthy();
     });
@@ -24,11 +25,12 @@ namespace {
 
     auto const tp = suite.test("transmission", []() {
         felspar::io::poll_warden ward;
-        auto pipe = felspar::posix::pipe::create();
         ward.run(
-                +[](felspar::io::warden &ward, felspar::posix::pipe &pipe)
+                +[](felspar::io::warden &ward)
                         -> felspar::io::warden::task<void> {
                     felspar::test::injected check;
+
+                    auto pipe = ward.create_pipe();
 
                     std::array<std::uint8_t, 6> out{1, 2, 3, 4, 5, 6}, buffer{};
                     co_await felspar::io::write_all(
@@ -43,8 +45,7 @@ namespace {
                     check(buffer[3]) == out[3];
                     check(buffer[4]) == out[4];
                     check(buffer[5]) == out[5];
-                },
-                std::ref(pipe));
+                });
     });
 
 

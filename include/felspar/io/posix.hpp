@@ -59,18 +59,6 @@ namespace felspar::posix {
     };
 
 
-    /// ## A pipe has a read and a write end
-    struct pipe {
-        fd read, write;
-
-        /// ### Create a new pipe
-        /// The file descriptors will be set to non-blocking mode.
-        static pipe
-                create(felspar::source_location const & =
-                               felspar::source_location::current());
-    };
-
-
     /// ## `select` handling
     /**
      * Set the number of open file descriptors this process can use to the

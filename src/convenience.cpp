@@ -1,4 +1,5 @@
 #include <felspar/io/accept.hpp>
+#include <felspar/io/pipe.hpp>
 #include <felspar/io/read.hpp>
 #include <felspar/io/warden.hpp>
 #include <felspar/io/write.hpp>
