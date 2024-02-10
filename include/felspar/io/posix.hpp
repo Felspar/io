@@ -16,14 +16,16 @@ namespace felspar::posix {
     class fd {
         io::socket_descriptor f;
 
+        static void close_socket_if_valid(io::socket_descriptor const s) {
+            if (s != io::invalid_handle) { ::close(s); }
+        }
+
       public:
         fd() : f{io::invalid_handle} {}
         explicit fd(io::socket_descriptor f) : f{f} {}
         fd(fd &&o) : f{std::exchange(o.f, io::invalid_handle)} {}
         fd(fd const &) = delete;
-        ~fd() {
-            if (f >= 0) { ::close(f); }
-        }
+        ~fd() { close_socket_if_valid(f); }
 
         fd &operator=(fd &&o) {
             fd s{std::exchange(f, std::exchange(o.f, io::invalid_handle))};
@@ -33,7 +35,9 @@ namespace felspar::posix {
 
 
         /// ### `true` if the file descriptor looks valid
-        explicit operator bool() const noexcept { return f >= 0; }
+        explicit operator bool() const noexcept {
+            return f != io::invalid_handle;
+        }
         io::socket_descriptor native_handle() const noexcept { return f; }
 
 
@@ -50,7 +54,7 @@ namespace felspar::posix {
          */
         void close() noexcept {
             io::socket_descriptor c = std::exchange(f, io::invalid_handle);
-            if (c >= 0) { ::close(c); }
+            close_socket_if_valid(c);
         }
     };
 
