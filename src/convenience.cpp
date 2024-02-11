@@ -27,11 +27,13 @@ felspar::io::warden::stream<felspar::io::socket_descriptor> felspar::io::accept(
 }
 
 
-std::size_t felspar::io::write_some(socket_descriptor sock, void * const data, std::size_t const bytes) {
+std::size_t felspar::io::write_some(
+        socket_descriptor sock,
+        void const *const data,
+        std::size_t const bytes) {
 #ifdef FELSPAR_WINSOCK2
     if (auto const r =
-                ::send(sock, reinterpret_cast<char const *>(data),
-                        bytes, {});
+                ::send(sock, reinterpret_cast<char const *>(data), bytes, {});
         r != SOCKET_ERROR) {
 #else
     if (auto const r = ::write(sock, data, bytes); r >= 0) {
@@ -39,6 +41,7 @@ std::size_t felspar::io::write_some(socket_descriptor sock, void * const data, s
         return r;
     } else {
         throw felspar::stdexcept::system_error{
-                get_error(), std::system_category(), "Writing to socket\n" + std::to_string(bytes)};
+                get_error(), std::system_category(),
+                "Writing to socket\n" + std::to_string(bytes)};
     }
 }
