@@ -29,8 +29,8 @@ auto felspar::io::warden::create_pipe(felspar::source_location const &loc)
     posix::fd server{::socket(AF_INET, SOCK_STREAM, 0)};
     if (not server) {
         throw felspar::stdexcept::system_error{
-                get_error(), std::system_category(), "Error creating pipe accept socket",
-                loc};
+                get_error(), std::system_category(),
+                "Error creating pipe accept socket", loc};
     }
     posix::bind(server, INADDR_LOOPBACK, 0);
     sockaddr name;
