@@ -3,6 +3,7 @@
 #include <felspar/coro/start.hpp>
 #include <felspar/coro/stream.hpp>
 #include <felspar/io/completion.hpp>
+#include <felspar/io/pipe.hpp>
 #include <felspar/io/posix.hpp>
 #include <felspar/memory/pmr.hpp>
 #include <felspar/test/source.hpp>
@@ -116,6 +117,8 @@ namespace felspar::io {
         }
 
         /// ### Socket APIs
+
+        /// #### Socket creation
         /**
          * Some wardens may need special socket options to be set, so in order
          * to be portable across wardens use this API instead of the POSIX
@@ -127,8 +130,13 @@ namespace felspar::io {
                 int protocol,
                 felspar::source_location const & =
                         felspar::source_location::current());
-        /// Create a pipe that has also had its end points wrapped by this warden.
-        posix::pipe create_pipe(
+
+        /// #### Pipe
+        /**
+         * Create a pipe usable by this warden. On Windows a true pipe will be
+         * simulated by a socket pair.
+         */
+        pipe create_pipe(
                 felspar::source_location const & =
                         felspar::source_location::current());
 

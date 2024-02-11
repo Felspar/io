@@ -16,14 +16,16 @@ namespace felspar::posix {
     class fd {
         io::socket_descriptor f;
 
+        static void close_socket_if_valid(io::socket_descriptor const s) {
+            if (s != io::invalid_handle) { ::close(s); }
+        }
+
       public:
         fd() : f{io::invalid_handle} {}
         explicit fd(io::socket_descriptor f) : f{f} {}
         fd(fd &&o) : f{std::exchange(o.f, io::invalid_handle)} {}
         fd(fd const &) = delete;
-        ~fd() {
-            if (f >= 0) { ::close(f); }
-        }
+        ~fd() { close_socket_if_valid(f); }
 
         fd &operator=(fd &&o) {
             fd s{std::exchange(f, std::exchange(o.f, io::invalid_handle))};
@@ -33,7 +35,9 @@ namespace felspar::posix {
 
 
         /// ### `true` if the file descriptor looks valid
-        explicit operator bool() const noexcept { return f >= 0; }
+        explicit operator bool() const noexcept {
+            return f != io::invalid_handle;
+        }
         io::socket_descriptor native_handle() const noexcept { return f; }
 
 
@@ -50,18 +54,8 @@ namespace felspar::posix {
          */
         void close() noexcept {
             io::socket_descriptor c = std::exchange(f, io::invalid_handle);
-            if (c >= 0) { ::close(c); }
+            close_socket_if_valid(c);
         }
-    };
-
-
-    /// ## A pipe has a read and a write end
-    struct pipe {
-        fd read, write;
-
-        /// ### Create a new pipe
-        /// The file descriptors will be set to non-blocking mode.
-        static pipe create();
     };
 
 
@@ -117,18 +111,34 @@ namespace felspar::posix {
     }
 
 
-    /// ## Bind to any address
-    void bind_to_any_address(
+    /// ## Bind
+    void
+            bind(io::socket_descriptor sock,
+                 std::uint32_t addr,
+                 std::uint16_t port,
+                 felspar::source_location const & =
+                         felspar::source_location::current());
+    inline void
+            bind(fd const &sock,
+                 std::uint32_t const addr,
+                 std::uint16_t const port,
+                 felspar::source_location const &loc =
+                         felspar::source_location::current()) {
+        return bind(sock.native_handle(), addr, port, loc);
+    }
+    inline void bind_to_any_address(
             io::socket_descriptor sock,
             std::uint16_t port,
-            felspar::source_location const & =
-                    felspar::source_location::current());
+            felspar::source_location const &loc =
+                    felspar::source_location::current()) {
+        bind(sock, INADDR_ANY, port, loc);
+    }
     inline void bind_to_any_address(
             fd const &sock,
             std::uint16_t const port,
             felspar::source_location const &loc =
                     felspar::source_location::current()) {
-        return bind_to_any_address(sock.native_handle(), port, loc);
+        return bind(sock.native_handle(), INADDR_ANY, port, loc);
     }
 
 
