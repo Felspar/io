@@ -26,6 +26,13 @@ namespace felspar::io {
     }
 
 
+    /// ## Try to write data
+    /**
+     * This performs a synchronous write of as much data as the socket can take at the moment. Write errors results in thrown exceptions.
+     */
+    std::size_t write_some(socket_descriptor, void *, std::size_t);
+
+
     /// ## Write all of the buffer to a file descriptor
     template<typename S>
     inline warden::task<std::size_t> write_all(
