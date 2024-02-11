@@ -26,13 +26,18 @@ felspar::posix::fd felspar::io::warden::create_socket(
 auto felspar::io::warden::create_pipe(felspar::source_location const &loc)
         -> pipe {
 #ifdef FELSPAR_WINSOCK2
-    auto server = create_socket(AF_INET, SOCK_STREAM, 0, loc);
+    posix::fd server{::socket(AF_INET, SOCK_STREAM, 0)};
+    if (not server) {
+        throw felspar::stdexcept::system_error{
+                get_error(), std::system_category(), "Error creating pipe accept socket",
+                loc};
+    }
     posix::bind(server, INADDR_LOOPBACK, 0);
     sockaddr name;
     int namelen = sizeof(sockaddr);
     if (getsockname(server.native_handle(), &name, &namelen) != 0) {
         throw felspar::stdexcept::system_error{
-                io::get_error(), std::system_category(),
+                get_error(), std::system_category(),
                 "getsockname to determine port", loc};
     }
     posix::listen(server, 1, loc);
@@ -52,8 +57,9 @@ auto felspar::io::warden::create_pipe(felspar::source_location const &loc)
 
     auto read = posix::fd{::accept(server.native_handle(), &name, &namelen)};
     if (not read) {
-        throw felspar::stdexcept::runtime_error{
-                "Didn't get a valid read socket from accept"};
+        throw felspar::stdexcept::system_error{
+                get_error(), std::system_category(),
+                "Didn't get a valid read socket from accept for a pipe", loc};
     }
 
     return {std::move(read), std::move(write)};
