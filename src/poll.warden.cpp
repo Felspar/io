@@ -72,10 +72,14 @@ void felspar::io::poll_warden::do_poll(int const timeout) {
                     timeout);
 #endif
         } else {
+#if defined(FELSPAR_WINSOCK2)
+            ::Sleep(timeout);
+#else
             ::timespec req{{}, timeout * 1'000'000}, rem{};
             while (::nanosleep(&req, &rem) == -1 and errno == EINTR) {
                 req = rem;
             }
+#endif
             return 0;
         }
     }();
