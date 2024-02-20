@@ -69,8 +69,8 @@ void felspar::io::poll_warden::do_poll(int const timeout) {
         if (bookkeeping->iops.size()) {
 #if defined(FELSPAR_WINSOCK2)
             return ::WSAPoll(
-                    bookkeeping->iops.data(), static_cast<ULONG>(bookkeeping->iops.size()),
-                    timeout);
+                    bookkeeping->iops.data(),
+                    static_cast<ULONG>(bookkeeping->iops.size()), timeout);
 #else
             return ::poll(
                     bookkeeping->iops.data(), bookkeeping->iops.size(),
