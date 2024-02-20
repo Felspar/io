@@ -58,13 +58,18 @@ void felspar::io::poll_warden::do_poll(int const timeout) {
         if (not req.second.reads.empty()) { flags |= POLLIN; }
         if (not req.second.writes.empty()) { flags |= POLLOUT; }
         bookkeeping->iops.push_back({req.first, flags, {}});
+#if defined(FELSPAR_WINSOCK2)
+        if (bookkeeping->iops.size() == std::numeric_limits<ULONG>::max()) {
+            break;
+        }
+#endif
     }
 
     int const pr = [&]() {
         if (bookkeeping->iops.size()) {
 #if defined(FELSPAR_WINSOCK2)
             return ::WSAPoll(
-                    bookkeeping->iops.data(), bookkeeping->iops.size(),
+                    bookkeeping->iops.data(), static_cast<ULONG>(bookkeeping->iops.size()),
                     timeout);
 #else
             return ::poll(
