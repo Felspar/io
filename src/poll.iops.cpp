@@ -13,7 +13,11 @@ struct felspar::io::poll_warden::close_completion : public completion<void> {
     socket_descriptor fd;
     void cancel_iop() override {}
     felspar::coro::coroutine_handle<> try_or_resume() override {
+#ifdef FELSPAR_WINSOCK2
+        ::closesocket(fd);
+#else
         ::close(fd);
+#endif
         return cancel_timeout_then_resume();
     }
 };

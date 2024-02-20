@@ -17,7 +17,13 @@ namespace felspar::posix {
         io::socket_descriptor f;
 
         static void close_socket_if_valid(io::socket_descriptor const s) {
-            if (s != io::invalid_handle) { ::close(s); }
+            if (s != io::invalid_handle) {
+#ifdef FELSPAR_WINSOCK2
+                ::closesocket(s);
+#else
+                ::close(s);
+#endif
+            }
         }
 
       public:
