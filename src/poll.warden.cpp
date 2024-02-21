@@ -3,6 +3,8 @@
 #include <felspar/exceptions.hpp>
 #include <felspar/io/posix.hpp>
 
+#include <thread>
+
 #if __has_include(<poll.h>)
 #include <poll.h>
 #endif
@@ -77,14 +79,7 @@ void felspar::io::poll_warden::do_poll(int const timeout) {
                     timeout);
 #endif
         } else {
-#if defined(FELSPAR_WINSOCK2)
-            ::Sleep(timeout);
-#else
-            ::timespec req{{}, timeout * 1'000'000}, rem{};
-            while (::nanosleep(&req, &rem) == -1 and errno == EINTR) {
-                req = rem;
-            }
-#endif
+            std::this_thread::sleep_for(std::chrono::milliseconds{timeout});
             return 0;
         }
     }();
