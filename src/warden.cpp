@@ -60,6 +60,8 @@ auto felspar::io::warden::create_pipe(felspar::source_location const &loc)
         throw felspar::stdexcept::system_error{
                 get_error(), std::system_category(),
                 "Didn't get a valid read socket from accept for a pipe", loc};
+    } else {
+        posix::set_non_blocking(read);
     }
 
     return {std::move(read), std::move(write)};
