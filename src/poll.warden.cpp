@@ -3,6 +3,8 @@
 #include <felspar/exceptions.hpp>
 #include <felspar/io/posix.hpp>
 
+#include <thread>
+
 #if __has_include(<poll.h>)
 #include <poll.h>
 #endif
@@ -58,24 +60,26 @@ void felspar::io::poll_warden::do_poll(int const timeout) {
         if (not req.second.reads.empty()) { flags |= POLLIN; }
         if (not req.second.writes.empty()) { flags |= POLLOUT; }
         bookkeeping->iops.push_back({req.first, flags, {}});
+#if defined(FELSPAR_WINSOCK2)
+        if (bookkeeping->iops.size() == std::numeric_limits<ULONG>::max()) {
+            break;
+        }
+#endif
     }
 
     int const pr = [&]() {
         if (bookkeeping->iops.size()) {
 #if defined(FELSPAR_WINSOCK2)
             return ::WSAPoll(
-                    bookkeeping->iops.data(), bookkeeping->iops.size(),
-                    timeout);
+                    bookkeeping->iops.data(),
+                    static_cast<ULONG>(bookkeeping->iops.size()), timeout);
 #else
             return ::poll(
                     bookkeeping->iops.data(), bookkeeping->iops.size(),
                     timeout);
 #endif
         } else {
-            ::timespec req{{}, timeout * 1'000'000}, rem{};
-            while (::nanosleep(&req, &rem) == -1 and errno == EINTR) {
-                req = rem;
-            }
+            std::this_thread::sleep_for(std::chrono::milliseconds{timeout});
             return 0;
         }
     }();

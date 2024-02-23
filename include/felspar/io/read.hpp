@@ -5,7 +5,9 @@
 
 #include <span>
 
+#if __has_include(<unistd.h>)
 #include <unistd.h>
+#endif
 
 
 namespace felspar::io {
