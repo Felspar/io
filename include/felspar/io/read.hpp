@@ -60,9 +60,22 @@ namespace felspar::io {
             }
         }
 
+
+        /// ### Consume part of the read buffer
+        /**
+         * Data can be read from the returned span up until the point in time
+         * when another read is issued through the buffer.
+         */
         span_type consume(std::size_t const bytes) {
             auto const start = data_read.first(bytes);
-            data_read = data_read.subspan(bytes);
+            if (data_read.size() == bytes) {
+                data_read = {storage.data(), {}};
+                empty_buffer = {
+                        reinterpret_cast<std::byte *>(storage.data()),
+                        storage.size()};
+            } else {
+                data_read = data_read.subspan(bytes);
+            }
             return start;
         }
 
