@@ -84,7 +84,7 @@ namespace felspar::io {
 
 
         template<typename S>
-        warden::task<void> do_read_some(
+        warden::task<std::size_t> do_read_some(
                 warden &ward,
                 S &&sock,
                 std::optional<std::chrono::nanoseconds> timeout = {},
@@ -98,6 +98,7 @@ namespace felspar::io {
             } else {
                 data_read = {data_read.data(), data_read.size() + bytes_read};
                 empty_buffer = empty_buffer.subspan(bytes_read);
+                co_return bytes_read;
             }
         }
 
@@ -135,7 +136,7 @@ namespace felspar::io {
     };
 
 
-    /// Issue a read request for a specific amount of data
+    /// ### Issue a read request for a specific amount of data
     template<typename S>
     inline warden::task<std::size_t> read_exactly(
             warden &ward,
@@ -146,7 +147,7 @@ namespace felspar::io {
                     felspar::source_location::current()) {
         std::span<std::byte> in{b};
         while (in.size()) {
-            auto const bytes = co_await ward.read_some(sock, in, timeout, loc);
+            auto const bytes = co_await read_some(ward, sock, in, timeout, loc);
             if (not bytes) { co_return b.size() - in.size(); }
             in = in.subspan(bytes);
         }
@@ -182,7 +183,7 @@ namespace felspar::io {
     }
 
 
-    /// Read a line (up to the next LF) and strip any final CR
+    /// ### Read a line (up to the next LF) and strip any final CR
     template<typename S, typename R>
     inline warden::task<typename R::span_type> read_until_lf_strip_cr(
             warden &ward,
