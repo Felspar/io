@@ -130,6 +130,13 @@ namespace felspar::io {
                 int protocol,
                 felspar::source_location const & =
                         felspar::source_location::current());
+        /// #### Create a TCP socket
+        posix::fd create_tcp_socket(
+                felspar::source_location const &loc =
+                        felspar::source_location::current()) {
+            return create_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP, loc);
+        }
+
 
         /// #### Pipe
         /**
