@@ -26,21 +26,62 @@ namespace felspar::io {
     }
 
 
-    /// A read buffer that can be split up and have more information read into
-    /// it over time as data appears on the file descriptor
+    /// ### Read buffer
+    /**
+     * A read buffer that can be split up and have more information read into it
+     * over time as data appears on the file descriptor
+     */
     template<typename R>
     class read_buffer {
+        using dr_type = std::span<typename R::value_type>;
+        using eb_type = std::span<std::byte>;
+
         R storage = {};
-        std::span<typename R::value_type> data_read = {storage.data(), {}};
-        std::span<std::byte> empty_buffer = {
+        dr_type data_read = {storage.data(), {}};
+        eb_type empty_buffer = {
                 reinterpret_cast<std::byte *>(storage.data()), storage.size()};
+
+        static auto recalculate_data_read(
+                R &new_storage, R &old_storage, dr_type old) {
+            return dr_type{
+                    new_storage.data() + (old.data() - old_storage.data()),
+                    old.size()};
+        }
+        static auto recalculate_empty_buffer(
+                R &new_storage, R &old_storage, eb_type old) {
+            return eb_type{
+                    reinterpret_cast<std::byte *>(new_storage.data())
+                            + (old.data()
+                               - reinterpret_cast<std::byte *>(
+                                       old_storage.data())),
+                    old.size()};
+        }
+
 
       public:
         using storage_type = R;
-        using span_type = decltype(data_read);
+        using span_type = dr_type;
         using value_type = typename R::value_type;
 
+
         read_buffer() {}
+        read_buffer(read_buffer &&rb)
+        : storage{std::move(rb.storage)},
+          data_read{recalculate_data_read(storage, rb.storage, rb.data_read)},
+          empty_buffer{recalculate_empty_buffer(
+                  storage, rb.storage, rb.empty_buffer)} {}
+        read_buffer(read_buffer const &) = delete;
+
+        read_buffer &operator=(read_buffer &&rb) {
+            storage = std::move(rb.storage);
+            data_read =
+                    recalculate_data_read(storage, rb.storage, rb.data_read);
+            empty_buffer = recalculate_empty_buffer(
+                    storage, rb.storage, rb.empty_buffer);
+            return *this;
+        }
+        read_buffer &operator=(read_buffer const &) = delete;
+
 
         template<typename S>
         warden::task<void> do_read_some(
