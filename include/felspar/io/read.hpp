@@ -154,7 +154,7 @@ namespace felspar::io {
         co_return b.size();
     }
     template<typename S>
-    inline warden::task<std::size_t> read_exactly(
+    FELSPAR_CORO_WRAPPER inline warden::task<std::size_t> read_exactly(
             warden &w,
             S &&s,
             void *buf,
@@ -168,7 +168,7 @@ namespace felspar::io {
                 std::move(timeout), loc);
     }
     template<typename S>
-    inline warden::task<std::size_t> read_exactly(
+    FELSPAR_CORO_WRAPPER inline warden::task<std::size_t> read_exactly(
             warden &w,
             S &&s,
             std::span<std::uint8_t> b,

@@ -53,7 +53,7 @@ namespace felspar::io {
         co_return s.size();
     }
     template<typename S>
-    inline warden::task<std::size_t> write_all(
+    FELSPAR_CORO_WRAPPER inline warden::task<std::size_t> write_all(
             warden &w,
             S &&fd,
             void const *buf,
@@ -68,7 +68,7 @@ namespace felspar::io {
                 std::move(timeout), loc);
     }
     template<typename S>
-    inline warden::task<std::size_t> write_all(
+    FELSPAR_CORO_WRAPPER inline warden::task<std::size_t> write_all(
             warden &w,
             S &&fd,
             std::span<std::uint8_t const> s,
@@ -82,7 +82,7 @@ namespace felspar::io {
                 std::move(timeout), loc);
     }
     template<typename S>
-    inline warden::task<std::size_t> write_all(
+    FELSPAR_CORO_WRAPPER inline warden::task<std::size_t> write_all(
             warden &w,
             S &&fd,
             std::string_view s,

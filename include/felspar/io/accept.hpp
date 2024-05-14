@@ -14,7 +14,7 @@ namespace felspar::io {
             warden &,
             socket_descriptor,
             felspar::source_location = felspar::source_location::current());
-    inline warden::stream<socket_descriptor>
+    FELSPAR_CORO_WRAPPER inline warden::stream<socket_descriptor>
             accept(warden &w,
                    posix::fd const &sock,
                    felspar::source_location const &loc =

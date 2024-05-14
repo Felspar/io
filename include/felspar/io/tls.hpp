@@ -23,6 +23,7 @@ namespace felspar::io {
         tls &operator=(tls const &) = delete;
         tls &operator=(tls &&);
 
+
         /// ### Connect to a TLS secured server over TCP
         static warden::task<tls>
                 connect(warden &,
@@ -52,7 +53,7 @@ namespace felspar::io {
 
     /// ## Free-standing APIs
 
-    inline auto read_some(
+    FELSPAR_CORO_WRAPPER inline auto read_some(
             warden &w,
             tls &cnx,
             std::span<std::byte> const s,
@@ -61,7 +62,7 @@ namespace felspar::io {
                     felspar::source_location::current()) {
         return cnx.read_some(w, s, timeout, loc);
     }
-    inline auto write_some(
+    FELSPAR_CORO_WRAPPER inline auto write_some(
             warden &w,
             tls &cnx,
             std::span<std::byte const> const s,
