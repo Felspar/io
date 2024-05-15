@@ -6,8 +6,8 @@
 
 felspar::io::uring_warden::uring_warden(unsigned entries, unsigned flags)
 : ring{std::make_unique<impl>()} {
-    if (auto const ret =
-                ::io_uring_queue_init(entries, &ring->uring, flags) < 0) {
+    if (auto const ret = ::io_uring_queue_init(entries, &ring->uring, flags);
+        ret < 0) {
         throw felspar::stdexcept::system_error{
                 -ret, std::system_category(), "uring_queue_init"};
     }
