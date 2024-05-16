@@ -47,7 +47,7 @@ jobs:
       - checkout
       - run:
           name: cmake
-          command: cmake -G Ninja -S .circleci -B .circleci -DCMAKE_BUILD_TYPE=<< parameters.variant >> $CMAKE_EXTRA
+          command: cmake -G Ninja -S .circleci -B .circleci -DCMAKE_BUILD_TYPE=<< parameters.variant >> $CMAKE_EXTRA -DFELSPAR_ENABLE_IO_URING=NO
       - run:
           name: ninja
           command: ninja -j1 -C .circleci
