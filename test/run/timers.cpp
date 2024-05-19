@@ -56,8 +56,7 @@ namespace {
         co_await ward.connect(
                 fd, reinterpret_cast<sockaddr const *>(&in), sizeof(in));
         try {
-            while (co_await felspar::io::write_some(ward, fd, buffer, 10ms))
-                ;
+            while (co_await felspar::io::write_some(ward, fd, buffer, 10ms));
             check(false) == true;
         } catch (felspar::io::timeout const &) {
             check(true) == true;
