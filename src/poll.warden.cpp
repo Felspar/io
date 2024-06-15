@@ -8,6 +8,9 @@
 #if __has_include(<poll.h>)
 #include <poll.h>
 #endif
+#if not defined(FELSPAR_WINSOCK2)
+#include <signal.h>
+#endif
 
 
 struct felspar::io::poll_warden::loop_data {
@@ -26,6 +29,8 @@ felspar::io::poll_warden::poll_warden()
     WORD vreq = MAKEWORD(2, 0);
     WSADATA sadat;
     WSAStartup(vreq, &sadat);
+#else
+    ::signal(SIGPIPE, SIG_IGN);
 #endif
 }
 

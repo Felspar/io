@@ -10,6 +10,15 @@
 namespace felspar::io {
 
 
+    /// ## `poll` based warden
+    /**
+     * This warden is compatible with both most POSIX systems and Windows
+     * (through the use of `WSAPoll`).
+     *
+     * Creation of any `poll_warden` instance will turn on ignoring of the
+     * `SIGPIPE` signal. This allows the `write` calls to return errors without
+     * also needing to install signal handler.
+     */
     class poll_warden : public warden {
         struct retrier;
         template<typename R>
@@ -31,24 +40,26 @@ namespace felspar::io {
         struct read_ready_completion;
         struct write_ready_completion;
 
+
       public:
         poll_warden();
         ~poll_warden();
 
         void run_batch() override;
 
+
       protected:
-        /// File descriptors
+        /// ### File descriptors
         iop<void> do_close(
                 socket_descriptor fd,
                 felspar::source_location const &) override;
 
-        /// Time management
+        /// ### Time management
         iop<void> do_sleep(
                 std::chrono::nanoseconds,
                 felspar::source_location const &) override;
 
-        /// Read & write
+        /// ### Read & write
         iop<std::size_t> do_read_some(
                 socket_descriptor fd,
                 std::span<std::byte>,
@@ -60,7 +71,7 @@ namespace felspar::io {
                 std::optional<std::chrono::nanoseconds> timeout,
                 felspar::source_location const &) override;
 
-        /// Sockets
+        /// ### Sockets
         void do_prepare_socket(
                 socket_descriptor sock,
                 felspar::source_location const &) override;
@@ -75,7 +86,7 @@ namespace felspar::io {
                 std::optional<std::chrono::nanoseconds> timeout,
                 felspar::source_location const &) override;
 
-        /// File descriptor readiness
+        /// ### File descriptor readiness
         iop<void> do_read_ready(
                 socket_descriptor fd,
                 std::optional<std::chrono::nanoseconds> timeout,
@@ -85,13 +96,16 @@ namespace felspar::io {
                 std::optional<std::chrono::nanoseconds> timeout,
                 felspar::source_location const &) override;
 
+
       private:
         /// Used for managing the poll loop
         struct loop_data;
         std::unique_ptr<loop_data> bookkeeping;
 
-        /// Resume any coros that have now timed out and return the time out
-        /// number to pass to poll
+        /**
+         * Resume any coros that have now timed out and return the time out
+         * number to pass to poll
+         */
         int clear_timeouts();
         /// Put together data for poll call and then process resulting `revents`
         void do_poll(int timeout);
