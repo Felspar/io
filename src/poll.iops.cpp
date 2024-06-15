@@ -208,7 +208,9 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
             insert_timeout();
             return felspar::coro::noop_coroutine();
         } else {
-            result = {{errno, std::system_category()}, "connect"};
+            result = {
+                    {errno, std::system_category()},
+                    "connect failure in initial call"};
             return handle;
         }
 #endif
@@ -224,8 +226,14 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
         if (getsockopt(fd, SOL_SOCKET, SO_ERROR, perr, &length) == 0) {
             if (errvalue == 0) {
                 return cancel_timeout_then_resume();
+            } else if (errno == EINPROGRESS) {
+                self->requests[fd].writes.push_back(this);
+                insert_timeout();
+                return felspar::coro::noop_coroutine();
             } else {
-                result = {{get_error(), std::system_category()}, "connect"};
+                result = {
+                        {get_error(), std::system_category()},
+                        "connect in follow up call"};
                 return cancel_timeout_then_resume();
             }
         } else {
