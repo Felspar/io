@@ -49,10 +49,10 @@ namespace {
                     felspar::test::injected check;
 
                     counting_allocator count;
-                    felspar::io::allocator merged{ward, count};
+                    felspar::io::allocator allocator{ward, count};
 
                     felspar::io::warden::eager<> coro;
-                    coro.post(sleeper, std::ref(merged));
+                    coro.post(sleeper, std::ref(allocator));
                     check(count.allocations) == 1u;
                     check(count.deallocations) == 0u;
 
