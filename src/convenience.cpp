@@ -9,6 +9,11 @@
 
 felspar::io::warden::stream<felspar::io::socket_descriptor> felspar::io::accept(
         warden &ward, socket_descriptor fd, felspar::source_location loc) {
+    /**
+     * Because this is a coroutine it must take the source location by copy not
+     * by reference, as the referenced source location would go out of scope
+     * before it can be used in this coroutine.
+     */
     while (true) {
         auto s = co_await ward.accept(fd, {}, loc);
 #if defined(FELSPAR_WINSOCK2)

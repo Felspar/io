@@ -9,7 +9,9 @@
 namespace felspar::io {
 
 
-    /// Produce file descriptors for incoming connections to the provided socket
+    /// ## `accept`
+
+    /// ### Produce file descriptors for incoming connections
     warden::stream<socket_descriptor> accept(
             warden &,
             socket_descriptor,
