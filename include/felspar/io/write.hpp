@@ -39,7 +39,7 @@ namespace felspar::io {
     inline warden::task<std::size_t> write_all(
             warden &ward,
             S &&sock,
-            std::span<std::byte const> s,
+            std::span<std::byte const> const s,
             std::optional<std::chrono::nanoseconds> timeout = {},
             felspar::source_location const &loc =
                     felspar::source_location::current()) {
