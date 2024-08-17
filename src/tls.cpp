@@ -12,6 +12,7 @@ struct felspar::io::tls::impl {
     impl(posix::fd f)
     : ctx{SSL_CTX_new(TLS_method())}, ssl{SSL_new(ctx)}, fd{std::move(f)} {
         /// TODO There should be some error handling here
+        SSL_CTX_set_mode(ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
         BIO_new_bio_pair(&ib, 0, &nb, 0);
         /// Give the internal BIO to `ssl`
         SSL_set_bio(ssl, ib, ib);
@@ -55,9 +56,10 @@ struct felspar::io::tls::impl {
 
             case SSL_ERROR_WANT_READ:
                 co_await bio_read(warden, timeout, loc);
-                [[fallthrough]];
-            case SSL_ERROR_WANT_WRITE:
                 co_await bio_write(warden, timeout, loc);
+                break;
+            case SSL_ERROR_WANT_WRITE:
+                co_await bio_read(warden, timeout, loc);
                 break;
 
             default:
