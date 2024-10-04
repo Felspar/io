@@ -17,8 +17,8 @@ namespace {
 
 
     auto const wrep = suite.test("early poll", [](auto check) {
-        felspar::io::poll_warden ward;
         check([&]() {
+            felspar::io::poll_warden ward;
             ward.run(
                     +[](felspar::io::warden &)
                             -> felspar::io::warden::task<void> {
@@ -30,8 +30,8 @@ namespace {
 
 
     auto const wrlp = suite.test("late poll", [](auto check) {
-        felspar::io::poll_warden ward;
         check([&]() {
+            felspar::io::poll_warden ward;
             ward.run(
                     +[](felspar::io::warden &ward)
                             -> felspar::io::warden::task<void> {
@@ -44,8 +44,8 @@ namespace {
 
 #ifdef FELSPAR_ENABLE_IO_URING
     auto const wreu = suite.test("early io_uring", [](auto check) {
-        felspar::io::uring_warden ward;
         check([&]() {
+            felspar::io::uring_warden ward;
             ward.run(
                     +[](felspar::io::warden &)
                             -> felspar::io::warden::task<void> {
@@ -57,8 +57,8 @@ namespace {
 
 
     auto const wrlu = suite.test("late io_uring", [](auto check) {
-        felspar::io::uring_warden ward;
         check([&]() {
+            felspar::io::uring_warden ward;
             ward.run(
                     +[](felspar::io::warden &ward)
                             -> felspar::io::warden::task<void> {
