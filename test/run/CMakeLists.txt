@@ -3,6 +3,7 @@ if(TARGET felspar-check)
             allocators.cpp
             basics.cpp
             cancel.cpp
+            exceptions.cpp
             pipe.cpp
             run_batch.cpp
             timers.cpp
