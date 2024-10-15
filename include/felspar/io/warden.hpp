@@ -1,6 +1,6 @@
 #pragma once
 
-#include <felspar/coro/start.hpp>
+#include <felspar/coro/starter.hpp>
 #include <felspar/coro/stream.hpp>
 #include <felspar/io/completion.hpp>
 #include <felspar/io/pipe.hpp>

@@ -1,6 +1,6 @@
 #include <felspar/io.hpp>
 #include <felspar/coro/eager.hpp>
-#include <felspar/coro/start.hpp>
+#include <felspar/coro/starter.hpp>
 #include <felspar/test.hpp>
 
 
