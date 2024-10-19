@@ -75,9 +75,25 @@ void felspar::io::poll_warden::do_poll(int const timeout) {
     int const pr = [&]() {
         if (bookkeeping->iops.size()) {
 #if defined(FELSPAR_WINSOCK2)
-            return ::WSAPoll(
+            int response = ::WSAPoll(
                     bookkeeping->iops.data(),
                     static_cast<ULONG>(bookkeeping->iops.size()), timeout);
+            if (response < 0) {
+                /**
+                 * Windows seems to return errors here for no good reason, but
+                 * even if it is for a good reason, we kind of need to keep
+                 * going anyway (for example if the network is down). We'll let
+                 * things time out and have the application's error handling
+                 * take over instead.
+                 *
+                 * We'll just pretend that one of the file descriptors was
+                 * signalled (the number isn't ever used so it's value doesn't
+                 * matter).
+                 */
+                return 1;
+            } else {
+                return response;
+            }
 #else
             return ::poll(
                     bookkeeping->iops.data(), bookkeeping->iops.size(),
