@@ -56,11 +56,15 @@ struct felspar::io::tls::impl {
 
             case SSL_ERROR_WANT_READ:
                 co_await bio_read(warden, timeout, loc);
-                co_await bio_write(warden, timeout, loc);
+                if (0 == co_await bio_write(warden, timeout, loc)) {
+                    co_return 0;
+                }
                 break;
             case SSL_ERROR_WANT_WRITE:
                 co_await bio_read(warden, timeout, loc);
                 break;
+
+            case SSL_ERROR_ZERO_RETURN: co_return 0;
 
             default:
                 throw felspar::stdexcept::runtime_error{
@@ -96,8 +100,10 @@ struct felspar::io::tls::impl {
             std::optional<std::chrono::nanoseconds> timeout,
             felspar::source_location const &loc) {
         auto const bytes = co_await warden.read_some(fd, buffer, timeout, loc);
-        if (auto const written_int = BIO_write(nb, buffer.data(), bytes);
-            written_int <= 0) {
+        if (bytes == 0) {
+            co_return 0;
+        } else if (auto const written_int = BIO_write(nb, buffer.data(), bytes);
+                   written_int < 0) {
             throw felspar::stdexcept::runtime_error{"Error writing to BIO"};
         } else if (std::size_t const written_bytes = written_int;
                    written_bytes != bytes) {
@@ -149,7 +155,7 @@ auto felspar::io::tls::read_some(
             co_await p->service_operation(warden, timeout, loc, [s](impl &i) {
                 return SSL_read(i.ssl, s.data(), s.size());
             });
-    if (ret <= 0) {
+    if (ret < 0) {
         throw felspar::stdexcept::runtime_error{
                 "Error performing SSL_read: " + p->ssl_error(ret), loc};
     } else {
