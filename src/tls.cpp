@@ -68,7 +68,7 @@ struct felspar::io::tls::impl {
 
             default:
                 throw felspar::stdexcept::runtime_error{
-                        "Unknown openssl error " + std::to_string(error), loc};
+                        "Unknown openssl error " + std::to_string(error)};
             }
         }
     }
