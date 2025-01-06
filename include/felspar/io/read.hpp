@@ -93,8 +93,7 @@ namespace felspar::io {
             std::size_t const bytes_read =
                     co_await read_some(ward, sock, remaining(), timeout, loc);
             if (bytes_read == 0) {
-                throw stdexcept::runtime_error{
-                        "Got a zero read, we're done", loc};
+                co_return 0;
             } else {
                 data_read = {data_read.data(), data_read.size() + bytes_read};
                 empty_buffer = empty_buffer.subspan(bytes_read);
