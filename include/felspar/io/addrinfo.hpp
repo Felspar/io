@@ -21,7 +21,7 @@ namespace felspar::io {
      * are also running.
      */
     felspar::coro::generator<std::pair<sockaddr *, socklen_t>>
-            addrinfo(std::string_view, std::uint16_t);
+            addrinfo(char const *, std::uint16_t);
 
 
 }

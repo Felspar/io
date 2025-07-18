@@ -144,6 +144,26 @@ auto felspar::io::tls::connect(
 
     co_return tls{std::move(i)};
 }
+auto felspar::io::tls::connect(
+        warden &ward,
+        char const *const hostname,
+        std::uint16_t const port,
+        std::optional<std::chrono::nanoseconds> const timeout,
+        felspar::source_location const &loc) -> warden::task<tls> {
+    std::exception_ptr eptr;
+    for (auto host : addrinfo(hostname, port)) {
+        try {
+            co_return co_await tls::connect(
+                    ward, hostname, host.first, host.second, timeout, loc);
+        } catch (...) { eptr = std::current_exception(); }
+    }
+    if (eptr) {
+        std::rethrow_exception(eptr);
+    } else {
+        throw felspar::stdexcept::runtime_error{
+                "No host found for " + std::string{hostname}};
+    }
+}
 
 
 auto felspar::io::tls::read_some(
