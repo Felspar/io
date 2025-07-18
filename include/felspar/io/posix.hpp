@@ -119,6 +119,10 @@ namespace felspar::posix {
     }
 
 
+    /// ## Set the port number on an address
+    void set_port(::sockaddr &, in_port_t);
+
+
     /// ## Bind
     void
             bind(io::socket_descriptor sock,

@@ -32,14 +32,14 @@ namespace {
         check(getaddrinfo(hostname, nullptr, &hints, &addresses)) == 0;
         check(addresses) != nullptr;
 
-        sockaddr_in address =
-                *reinterpret_cast<sockaddr_in *>(addresses->ai_addr);
-        address.sin_port = htons(443);
+        auto address = *addresses->ai_addr;
+        auto address_length = addresses->ai_addrlen;
+        felspar::posix::set_port(address, 443);
+
         freeaddrinfo(addresses);
 
         auto website = co_await felspar::io::tls::connect(
-                warden, hostname, reinterpret_cast<sockaddr const *>(&address),
-                sizeof(address), 5s);
+                warden, hostname, &address, address_length, 5s);
 
         auto const request =
                 std::string{"GET / HTTP/1.0\r\nHost: "} + hostname + "\r\n\r\n";

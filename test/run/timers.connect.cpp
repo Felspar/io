@@ -26,22 +26,19 @@ namespace {
         check(getaddrinfo("www.felspar.com", nullptr, &hints, &addresses)) == 0;
         check(addresses) != nullptr;
 
-        sockaddr_in address =
-                *reinterpret_cast<sockaddr_in *>(addresses->ai_addr);
+        auto address = *addresses->ai_addr;
+        auto address_length = addresses->ai_addrlen;
+
         freeaddrinfo(addresses);
 
         try {
-            address.sin_port = htons(80);
-            auto fd1 = ward.create_socket(AF_INET, SOCK_STREAM, 0);
-            co_await ward.connect(
-                    fd1, reinterpret_cast<sockaddr const *>(&address),
-                    sizeof(address), 5s);
+            felspar::posix::set_port(address, 80);
+            auto fd1 = ward.create_socket(address.sa_family, SOCK_STREAM, 0);
+            co_await ward.connect(fd1, &address, address_length, 5s);
 
-            address.sin_port = htons(808);
-            auto fd2 = ward.create_socket(AF_INET, SOCK_STREAM, 0);
-            co_await ward.connect(
-                    fd2, reinterpret_cast<sockaddr const *>(&address),
-                    sizeof(address), 10ms);
+            felspar::posix::set_port(address, 808);
+            auto fd2 = ward.create_socket(address.sa_family, SOCK_STREAM, 0);
+            co_await ward.connect(fd2, &address, address_length, 10ms);
 
             check(false) == true;
         } catch (felspar::io::timeout const &) {

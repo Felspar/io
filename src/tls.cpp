@@ -134,7 +134,7 @@ auto felspar::io::tls::connect(
         socklen_t addrlen,
         std::optional<std::chrono::nanoseconds> timeout,
         felspar::source_location const &loc) -> warden::task<tls> {
-    posix::fd fd = warden.create_socket(AF_INET, SOCK_STREAM, 0);
+    posix::fd fd = warden.create_socket(addr->sa_family, SOCK_STREAM, 0);
     co_await warden.connect(fd, addr, addrlen, timeout, loc);
 
     auto i = std::make_unique<impl>(std::move(fd));
