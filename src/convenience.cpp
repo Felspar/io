@@ -39,26 +39,6 @@ felspar::io::warden::stream<felspar::io::socket_descriptor> felspar::io::accept(
 }
 
 
-std::size_t felspar::io::write_some(
-        socket_descriptor sock,
-        void const *const data,
-        std::size_t const bytes) {
-#ifdef FELSPAR_WINSOCK2
-    if (auto const r =
-                ::send(sock, reinterpret_cast<char const *>(data), bytes, {});
-        r != SOCKET_ERROR) {
-#else
-    if (auto const r = ::write(sock, data, bytes); r >= 0) {
-#endif
-        return r;
-    } else {
-        throw felspar::stdexcept::system_error{
-                get_error(), std::system_category(),
-                "Writing to socket\n" + std::to_string(bytes)};
-    }
-}
-
-
 felspar::coro::generator<std::pair<sockaddr *, socklen_t>> felspar::io::addrinfo(
         std::string_view const hostname, std::uint16_t const port) {
     struct getaddr {
@@ -84,5 +64,25 @@ felspar::coro::generator<std::pair<sockaddr *, socklen_t>> felspar::io::addrinfo
          current = current->ai_next) {
         felspar::posix::set_port(*current->ai_addr, port);
         co_yield std::pair{current->ai_addr, current->ai_addrlen};
+    }
+}
+
+
+std::size_t felspar::io::write_some(
+        socket_descriptor sock,
+        void const *const data,
+        std::size_t const bytes) {
+#ifdef FELSPAR_WINSOCK2
+    if (auto const r =
+                ::send(sock, reinterpret_cast<char const *>(data), bytes, {});
+        r != SOCKET_ERROR) {
+#else
+    if (auto const r = ::write(sock, data, bytes); r >= 0) {
+#endif
+        return r;
+    } else {
+        throw felspar::stdexcept::system_error{
+                get_error(), std::system_category(),
+                "Writing to socket\n" + std::to_string(bytes)};
     }
 }
