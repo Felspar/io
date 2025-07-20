@@ -88,6 +88,15 @@ void felspar::posix::set_reuse_port(
 }
 
 
+void felspar::posix::set_port(::sockaddr &address, std::uint16_t const port) {
+    if (address.sa_family == AF_INET) {
+        reinterpret_cast<sockaddr_in *>(&address)->sin_port = htons(port);
+    } else if (address.sa_family == AF_INET6) {
+        reinterpret_cast<sockaddr_in6 *>(&address)->sin6_port = htons(port);
+    }
+}
+
+
 void felspar::posix::bind(
         io::socket_descriptor const sock,
         std::uint32_t const addr,

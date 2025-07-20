@@ -134,7 +134,7 @@ auto felspar::io::tls::connect(
         socklen_t addrlen,
         std::optional<std::chrono::nanoseconds> timeout,
         felspar::source_location const &loc) -> warden::task<tls> {
-    posix::fd fd = warden.create_socket(AF_INET, SOCK_STREAM, 0);
+    posix::fd fd = warden.create_socket(addr->sa_family, SOCK_STREAM, 0);
     co_await warden.connect(fd, addr, addrlen, timeout, loc);
 
     auto i = std::make_unique<impl>(std::move(fd));
@@ -143,6 +143,26 @@ auto felspar::io::tls::connect(
             warden, timeout, loc, [](impl &i) { return SSL_connect(i.ssl); });
 
     co_return tls{std::move(i)};
+}
+auto felspar::io::tls::connect(
+        warden &ward,
+        char const *const hostname,
+        std::uint16_t const port,
+        std::optional<std::chrono::nanoseconds> const timeout,
+        felspar::source_location const &loc) -> warden::task<tls> {
+    std::exception_ptr eptr;
+    for (auto host : addrinfo(hostname, port)) {
+        try {
+            co_return co_await tls::connect(
+                    ward, hostname, host.first, host.second, timeout, loc);
+        } catch (...) { eptr = std::current_exception(); }
+    }
+    if (eptr) {
+        std::rethrow_exception(eptr);
+    } else {
+        throw felspar::stdexcept::runtime_error{
+                "No host found for " + std::string{hostname}};
+    }
 }
 
 

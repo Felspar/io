@@ -1,6 +1,7 @@
 #pragma once
 
 
+#include <felspar/io/addrinfo.hpp>
 #include <felspar/io/warden.hpp>
 
 
@@ -33,6 +34,20 @@ namespace felspar::io {
                         std::optional<std::chrono::nanoseconds> timeout = {},
                         felspar::source_location const & =
                                 felspar::source_location::current());
+        static warden::task<tls> connect(
+                warden &ward,
+                char const *const hostname,
+                std::uint16_t const port = 443,
+                std::optional<std::chrono::nanoseconds> const timeout = {},
+                felspar::source_location const &loc =
+                        felspar::source_location::current());
+        /**
+         * Goes through each host address associated with the `hostname` and
+         * tries to connect to them in turn. Returns the first one that works.
+         * If all of them fail it throws the exception associated with the last
+         * one tried. Also throws if no hosts are returned.
+         */
+
 
         /// Read from the connection
         warden::task<std::size_t> read_some(

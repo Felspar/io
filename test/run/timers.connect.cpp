@@ -1,12 +1,6 @@
 #include <felspar/io.hpp>
 #include <felspar/test.hpp>
 
-#include <sys/types.h>
-#if defined(FELSPAR_POSIX_SOCKETS)
-#include <sys/socket.h>
-#include <netdb.h>
-#endif
-
 
 using namespace std::literals;
 
@@ -17,31 +11,22 @@ namespace {
     auto const suite = felspar::testsuite("connect");
 
 
-    felspar::io::warden::task<void> timed_connect(felspar::io::warden &ward) {
+    felspar::io::warden::task<void> timed_connect(
+            felspar::io::warden &ward, char const *const hostname) {
         felspar::test::injected check;
 
-        struct addrinfo hints = {};
-        hints.ai_socktype = SOCK_STREAM;
-        struct addrinfo *addresses = nullptr;
-        check(getaddrinfo("www.felspar.com", nullptr, &hints, &addresses)) == 0;
-        check(addresses) != nullptr;
-
-        sockaddr_in address =
-                *reinterpret_cast<sockaddr_in *>(addresses->ai_addr);
-        freeaddrinfo(addresses);
+        auto addresses = felspar::io::addrinfo(hostname, 80);
+        auto address = *addresses.next();
 
         try {
-            address.sin_port = htons(80);
-            auto fd1 = ward.create_socket(AF_INET, SOCK_STREAM, 0);
-            co_await ward.connect(
-                    fd1, reinterpret_cast<sockaddr const *>(&address),
-                    sizeof(address), 5s);
+            auto fd1 = ward.create_socket(
+                    address.first->sa_family, SOCK_STREAM, 0);
+            co_await ward.connect(fd1, address.first, address.second, 5s);
 
-            address.sin_port = htons(808);
-            auto fd2 = ward.create_socket(AF_INET, SOCK_STREAM, 0);
-            co_await ward.connect(
-                    fd2, reinterpret_cast<sockaddr const *>(&address),
-                    sizeof(address), 10ms);
+            felspar::posix::set_port(*address.first, 808);
+            auto fd2 = ward.create_socket(
+                    address.first->sa_family, SOCK_STREAM, 0);
+            co_await ward.connect(fd2, address.first, address.second, 10ms);
 
             check(false) == true;
         } catch (felspar::io::timeout const &) {
@@ -50,15 +35,27 @@ namespace {
             check(e.what()) == ""; /// Print out the exception message
         } catch (...) { check(false) == true; }
     }
-    auto const p = suite.test("poll", []() {
-        felspar::io::poll_warden ward;
-        ward.run(timed_connect);
-    });
+    auto const p = suite.test(
+            "poll",
+            []() {
+                felspar::io::poll_warden ward;
+                ward.run(timed_connect, "felspar.com");
+            },
+            []() {
+                felspar::io::poll_warden ward;
+                ward.run(timed_connect, "api.blue5alamander.com");
+            });
 #ifdef FELSPAR_ENABLE_IO_URING
-    auto const u = suite.test("uring", []() {
-        felspar::io::uring_warden ward{5};
-        ward.run(timed_connect);
-    });
+    auto const u = suite.test(
+            "uring",
+            []() {
+                felspar::io::uring_warden ward{5};
+                ward.run(timed_connect, "felspar.com");
+            },
+            []() {
+                felspar::io::uring_warden ward{5};
+                ward.run(timed_connect, "api.blue5alamander.com");
+            });
 #endif
 
 
