@@ -34,7 +34,7 @@ namespace {
         } catch (felspar::io::timeout const &) {
             check(true) == true;
         } catch (std::exception const &e) {
-            check(e.what()) == ""; /// Print out the exception message
+            check.failed(e.what(), loc);
         } catch (...) { check(false) == true; }
     }
     auto const p = suite.test(
