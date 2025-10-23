@@ -12,7 +12,9 @@ namespace {
 
 
     felspar::io::warden::task<void> timed_connect(
-            felspar::io::warden &ward, char const *const hostname) {
+            felspar::io::warden &ward,
+            char const *const hostname,
+            felspar::source_location const loc) {
         felspar::test::injected check;
 
         auto addresses = felspar::io::addrinfo(hostname, 80);
@@ -39,22 +41,24 @@ namespace {
             "poll",
             []() {
                 felspar::io::poll_warden ward;
-                ward.run(timed_connect, "felspar.com");
+                ward.run(
+                        timed_connect, "felspar.com",
+                        std::source_location::current());
             },
             []() {
                 felspar::io::poll_warden ward;
-                ward.run(timed_connect, "api.blue5alamander.com");
+                ward.run(
+                        timed_connect, "api.blue5alamander.com",
+                        std::source_location::current());
             });
 #ifdef FELSPAR_ENABLE_IO_URING
     auto const u = suite.test(
             "uring",
             []() {
                 felspar::io::uring_warden ward{5};
-                ward.run(timed_connect, "felspar.com");
-            },
-            []() {
-                felspar::io::uring_warden ward{5};
-                ward.run(timed_connect, "api.blue5alamander.com");
+                ward.run(
+                        timed_connect, "api.blue5alamander.com",
+                        std::source_location::current());
             });
 #endif
 
