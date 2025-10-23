@@ -54,6 +54,13 @@ namespace {
 #ifdef FELSPAR_ENABLE_IO_URING
     auto const u = suite.test(
             "uring",
+            /// TODO Work out why this test isn't working properly. Maybe an
+            /// IPv6 issue?
+            // []() {
+            //     felspar::io::uring_warden ward{5};
+            //     ward.run(timed_connect, "kirit.com",
+            //     std::source_location::current());
+            // },
             []() {
                 felspar::io::uring_warden ward{5};
                 ward.run(
