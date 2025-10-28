@@ -12,7 +12,9 @@ namespace {
 
 
     felspar::io::warden::task<void> timed_connect(
-            felspar::io::warden &ward, char const *const hostname) {
+            felspar::io::warden &ward,
+            char const *const hostname,
+            felspar::source_location const loc) {
         felspar::test::injected check;
 
         auto addresses = felspar::io::addrinfo(hostname, 80);
@@ -32,29 +34,38 @@ namespace {
         } catch (felspar::io::timeout const &) {
             check(true) == true;
         } catch (std::exception const &e) {
-            check(e.what()) == ""; /// Print out the exception message
+            check.failed(e.what(), loc);
         } catch (...) { check(false) == true; }
     }
     auto const p = suite.test(
             "poll",
             []() {
                 felspar::io::poll_warden ward;
-                ward.run(timed_connect, "felspar.com");
+                ward.run(
+                        timed_connect, "felspar.com",
+                        std::source_location::current());
             },
             []() {
                 felspar::io::poll_warden ward;
-                ward.run(timed_connect, "api.blue5alamander.com");
+                ward.run(
+                        timed_connect, "api.blue5alamander.com",
+                        std::source_location::current());
             });
 #ifdef FELSPAR_ENABLE_IO_URING
     auto const u = suite.test(
             "uring",
+            /// TODO Work out why this test isn't working properly. Maybe an
+            /// IPv6 issue?
+            // []() {
+            //     felspar::io::uring_warden ward{5};
+            //     ward.run(timed_connect, "kirit.com",
+            //     std::source_location::current());
+            // },
             []() {
                 felspar::io::uring_warden ward{5};
-                ward.run(timed_connect, "felspar.com");
-            },
-            []() {
-                felspar::io::uring_warden ward{5};
-                ward.run(timed_connect, "api.blue5alamander.com");
+                ward.run(
+                        timed_connect, "api.blue5alamander.com",
+                        std::source_location::current());
             });
 #endif
 

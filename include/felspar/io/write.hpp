@@ -41,12 +41,13 @@ namespace felspar::io {
             S &&sock,
             std::span<std::byte const> const s,
             std::optional<std::chrono::nanoseconds> timeout = {},
-            felspar::source_location const &loc =
+            felspar::source_location const loc =
                     felspar::source_location::current()) {
         auto out{s};
         while (out.size()) {
             auto const bytes =
                     co_await write_some(ward, sock, out, timeout, loc);
+            /// TODO This calculation for written bytes looks suspiciously wrong
             if (not bytes) { co_return s.size() - out.size(); }
             out = out.subspan(bytes);
         }
