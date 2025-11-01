@@ -29,7 +29,7 @@ namespace felspar::io {
         std::map<socket_descriptor, request> requests;
         std::multimap<std::chrono::steady_clock::time_point, retrier *> timeouts;
 
-        void run_until(felspar::coro::coroutine_handle<>) override;
+        void run_until(std::coroutine_handle<>) override;
 
         struct close_completion;
         struct sleep_completion;

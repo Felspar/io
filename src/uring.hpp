@@ -58,11 +58,11 @@ namespace felspar::io {
         std::optional<std::chrono::nanoseconds> timeout = {};
         __kernel_timespec kts;
 
-        ::io_uring_sqe *setup_submission(felspar::coro::coroutine_handle<> h) {
+        ::io_uring_sqe *setup_submission(std::coroutine_handle<> h) {
             io::completion<R>::handle = h;
             return self->ring->next_sqe();
         }
-        felspar::coro::coroutine_handle<> setup_timeout(::io_uring_sqe *sqe) {
+        std::coroutine_handle<> setup_timeout(::io_uring_sqe *sqe) {
             ::io_uring_sqe_set_data(sqe, this);
             if (timeout) {
                 sqe->flags |= IOSQE_IO_LINK;
@@ -73,7 +73,7 @@ namespace felspar::io {
                 ::io_uring_sqe_set_data(tsqe, this);
                 iop_count = 2;
             }
-            return felspar::coro::noop_coroutine();
+            return std::noop_coroutine();
         }
 
         void deliver(int result) override {
@@ -119,11 +119,11 @@ namespace felspar::io {
         std::optional<std::chrono::nanoseconds> timeout = {};
         __kernel_timespec kts;
 
-        ::io_uring_sqe *setup_submission(felspar::coro::coroutine_handle<> h) {
+        ::io_uring_sqe *setup_submission(std::coroutine_handle<> h) {
             io::completion<void>::handle = h;
             return self->ring->next_sqe();
         }
-        felspar::coro::coroutine_handle<> setup_timeout(::io_uring_sqe *sqe) {
+        std::coroutine_handle<> setup_timeout(::io_uring_sqe *sqe) {
             ::io_uring_sqe_set_data(sqe, this);
             if (timeout) {
                 sqe->flags |= IOSQE_IO_LINK;
@@ -134,7 +134,7 @@ namespace felspar::io {
                 ::io_uring_sqe_set_data(tsqe, this);
                 iop_count = 2;
             }
-            return felspar::coro::noop_coroutine();
+            return std::noop_coroutine();
         }
 
         void deliver(int result) override {

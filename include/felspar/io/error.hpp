@@ -16,8 +16,7 @@ namespace felspar::io {
         ec(iop<R> &&i) : wrapped{std::move(i)} {}
 
         bool await_ready() const noexcept { return wrapped.await_ready(); }
-        felspar::coro::coroutine_handle<>
-                await_suspend(felspar::coro::coroutine_handle<> h) {
+        std::coroutine_handle<> await_suspend(std::coroutine_handle<> h) {
             return wrapped.await_suspend(h);
         }
         auto await_resume() { return std::move(wrapped.comp->result); }

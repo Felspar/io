@@ -12,7 +12,7 @@ struct felspar::io::poll_warden::close_completion : public completion<void> {
     : completion<void>{s, {}, loc}, fd{f} {}
     socket_descriptor fd;
     void cancel_iop() override {}
-    felspar::coro::coroutine_handle<> try_or_resume() override {
+    std::coroutine_handle<> try_or_resume() override {
 #ifdef FELSPAR_WINSOCK2
         ::closesocket(fd);
 #else
@@ -34,11 +34,11 @@ struct felspar::io::poll_warden::sleep_completion : public completion<void> {
             felspar::source_location const &loc)
     : completion<void>{s, ns, loc} {}
     void cancel_iop() override {}
-    felspar::coro::coroutine_handle<> iop_timedout() override {
+    std::coroutine_handle<> iop_timedout() override {
         return io::completion<void>::handle;
     }
-    felspar::coro::coroutine_handle<> try_or_resume() override {
-        return felspar::coro::noop_coroutine();
+    std::coroutine_handle<> try_or_resume() override {
+        return std::noop_coroutine();
     }
 };
 felspar::io::iop<void> felspar::io::poll_warden::do_sleep(
@@ -59,7 +59,7 @@ public completion<std::size_t> {
     socket_descriptor fd;
     std::span<std::byte> buf;
     void cancel_iop() override { std::erase(self->requests[fd].reads, this); }
-    felspar::coro::coroutine_handle<> try_or_resume() override {
+    std::coroutine_handle<> try_or_resume() override {
 #ifdef FELSPAR_WINSOCK2
         if (auto const bytes = recv(
                     fd, reinterpret_cast<char *>(buf.data()), buf.size(), {});
@@ -71,7 +71,7 @@ public completion<std::size_t> {
             return cancel_timeout_then_resume();
         } else if (auto const error = get_error(); would_block(error)) {
             self->requests[fd].reads.push_back(this);
-            return felspar::coro::noop_coroutine();
+            return std::noop_coroutine();
         } else {
             result = {{error, std::system_category()}, "read"};
             return cancel_timeout_then_resume();
@@ -99,7 +99,7 @@ public completion<std::size_t> {
     socket_descriptor fd;
     std::span<std::byte const> buf;
     void cancel_iop() override { std::erase(self->requests[fd].writes, this); }
-    felspar::coro::coroutine_handle<> try_or_resume() override {
+    std::coroutine_handle<> try_or_resume() override {
 #ifdef FELSPAR_WINSOCK2
         if (auto const bytes =
                     ::send(fd, reinterpret_cast<char const *>(buf.data()),
@@ -113,7 +113,7 @@ public completion<std::size_t> {
             return cancel_timeout_then_resume();
         } else if (auto const error = get_error(); would_block(error)) {
             self->requests[fd].writes.push_back(this);
-            return felspar::coro::noop_coroutine();
+            return std::noop_coroutine();
         } else {
             result = {{error, std::system_category()}, "write"};
             return cancel_timeout_then_resume();
@@ -139,7 +139,7 @@ public completion<socket_descriptor> {
     : completion<socket_descriptor>{s, t, loc}, fd{f} {}
     socket_descriptor fd;
     void cancel_iop() override { std::erase(self->requests[fd].reads, this); }
-    felspar::coro::coroutine_handle<> try_or_resume() override {
+    std::coroutine_handle<> try_or_resume() override {
 #ifdef FELSPAR_WINSOCK2
         if (auto const r = ::accept(fd, nullptr, nullptr);
             r != INVALID_SOCKET) {
@@ -154,7 +154,7 @@ public completion<socket_descriptor> {
             return cancel_timeout_then_resume();
         } else if (auto const error = get_error(); would_block(error)) {
             self->requests[fd].reads.push_back(this);
-            return felspar::coro::noop_coroutine();
+            return std::noop_coroutine();
         } else if (bad_fd(error)) {
             result = r;
             return cancel_timeout_then_resume();
@@ -186,8 +186,7 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
     sockaddr const *addr;
     socklen_t addrlen;
     void cancel_iop() override { std::erase(self->requests[fd].writes, this); }
-    felspar::coro::coroutine_handle<>
-            await_suspend(felspar::coro::coroutine_handle<> h) override {
+    std::coroutine_handle<> await_suspend(std::coroutine_handle<> h) override {
         handle = h;
 #ifdef FELSPAR_WINSOCK2
         if (auto err = ::connect(fd, addr, addrlen); err != SOCKET_ERROR) {
@@ -195,7 +194,7 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
         } else if (auto const wsae = WSAGetLastError(); would_block(wsae)) {
             self->requests[fd].writes.push_back(this);
             insert_timeout();
-            return felspar::coro::noop_coroutine();
+            return std::noop_coroutine();
         } else {
             result = {{wsae, std::system_category()}, "connect error"};
             return handle;
@@ -206,7 +205,7 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
         } else if (errno == EINPROGRESS) {
             self->requests[fd].writes.push_back(this);
             insert_timeout();
-            return felspar::coro::noop_coroutine();
+            return std::noop_coroutine();
         } else {
             result = {
                     {errno, std::system_category()},
@@ -215,7 +214,7 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
         }
 #endif
     }
-    felspar::coro::coroutine_handle<> try_or_resume() override {
+    std::coroutine_handle<> try_or_resume() override {
         int errvalue{};
 #if defined(FELSPAR_WINSOCK2)
         char *perr = reinterpret_cast<char *>(&errvalue);
@@ -229,7 +228,7 @@ struct felspar::io::poll_warden::connect_completion : public completion<void> {
             } else if (errno == EINPROGRESS) {
                 self->requests[fd].writes.push_back(this);
                 insert_timeout();
-                return felspar::coro::noop_coroutine();
+                return std::noop_coroutine();
             } else {
                 result = {
                         {get_error(), std::system_category()},
@@ -264,14 +263,13 @@ public completion<void> {
     : completion<void>{s, t, loc}, fd{f} {}
     socket_descriptor fd;
     void cancel_iop() override { std::erase(self->requests[fd].reads, this); }
-    felspar::coro::coroutine_handle<>
-            await_suspend(felspar::coro::coroutine_handle<> h) override {
+    std::coroutine_handle<> await_suspend(std::coroutine_handle<> h) override {
         handle = h;
         self->requests[fd].reads.push_back(this);
         insert_timeout();
-        return felspar::coro::noop_coroutine();
+        return std::noop_coroutine();
     }
-    felspar::coro::coroutine_handle<> try_or_resume() override {
+    std::coroutine_handle<> try_or_resume() override {
         return cancel_timeout_then_resume();
     }
 };
@@ -293,14 +291,14 @@ public completion<void> {
     : completion<void>{s, t, loc}, fd{f} {}
     socket_descriptor fd;
     void cancel_iop() override { std::erase(self->requests[fd].writes, this); }
-    felspar::coro::coroutine_handle<> await_suspend(
-            felspar::coro::coroutine_handle<> h) noexcept override {
+    std::coroutine_handle<>
+            await_suspend(std::coroutine_handle<> h) noexcept override {
         handle = h;
         self->requests[fd].writes.push_back(this);
         insert_timeout();
-        return felspar::coro::noop_coroutine();
+        return std::noop_coroutine();
     }
-    felspar::coro::coroutine_handle<> try_or_resume() override {
+    std::coroutine_handle<> try_or_resume() override {
         return cancel_timeout_then_resume();
     }
 };

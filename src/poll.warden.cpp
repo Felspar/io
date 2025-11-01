@@ -42,7 +42,7 @@ felspar::io::poll_warden::~poll_warden() {
 }
 
 
-void felspar::io::poll_warden::run_until(felspar::coro::coroutine_handle<> coro) {
+void felspar::io::poll_warden::run_until(std::coroutine_handle<> coro) {
     coro.resume();
     while (true) {
         auto const timeout = clear_timeouts();

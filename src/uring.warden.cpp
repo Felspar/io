@@ -17,8 +17,7 @@ felspar::io::uring_warden::~uring_warden() {
 }
 
 
-void felspar::io::uring_warden::run_until(
-        felspar::coro::coroutine_handle<> coro) {
+void felspar::io::uring_warden::run_until(std::coroutine_handle<> coro) {
     coro.resume();
     while (not coro.done()) {
         ::io_uring_submit(&ring->uring);

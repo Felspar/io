@@ -9,8 +9,8 @@ namespace felspar::io {
 
 
     struct poll_warden::retrier {
-        virtual felspar::coro::coroutine_handle<> try_or_resume() = 0;
-        virtual felspar::coro::coroutine_handle<> iop_timedout() = 0;
+        virtual std::coroutine_handle<> try_or_resume() = 0;
+        virtual std::coroutine_handle<> iop_timedout() = 0;
     };
 
 
@@ -44,18 +44,18 @@ namespace felspar::io {
         }
         virtual void cancel_iop() = 0;
 
-        felspar::coro::coroutine_handle<>
-                await_suspend(felspar::coro::coroutine_handle<> h) override {
+        std::coroutine_handle<>
+                await_suspend(std::coroutine_handle<> h) override {
             io::completion<R>::handle = h;
             insert_timeout();
             return try_or_resume();
         }
-        felspar::coro::coroutine_handle<> iop_timedout() override {
+        std::coroutine_handle<> iop_timedout() override {
             cancel_iop();
             io::completion<R>::result = {timeout::error, "IOP timed out"};
             return io::completion<R>::handle;
         }
-        felspar::coro::coroutine_handle<> cancel_timeout_then_resume() {
+        std::coroutine_handle<> cancel_timeout_then_resume() {
             cancel_timeout();
             return io::completion<R>::handle;
         }

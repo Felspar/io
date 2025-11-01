@@ -40,7 +40,7 @@ namespace felspar::io {
         }
 
         /// Warden related APIs
-        void run_until(felspar::coro::coroutine_handle<> h) override {
+        void run_until(std::coroutine_handle<> h) override {
             backing_warden.run_until(h);
         }
         iop<void> do_close(

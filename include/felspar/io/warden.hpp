@@ -232,7 +232,7 @@ namespace felspar::io {
 
 
       protected:
-        virtual void run_until(felspar::coro::coroutine_handle<>) = 0;
+        virtual void run_until(std::coroutine_handle<>) = 0;
         virtual iop<void> do_close(
                 socket_descriptor fd, felspar::source_location const &) = 0;
         virtual iop<void> do_sleep(

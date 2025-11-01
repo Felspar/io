@@ -98,7 +98,7 @@ namespace felspar::io {
     struct [[nodiscard]] completion {
         using result_type = R;
 
-        felspar::coro::coroutine_handle<> handle = {};
+        std::coroutine_handle<> handle = {};
         felspar::source_location loc;
         outcome<R> result = {};
 
@@ -106,8 +106,8 @@ namespace felspar::io {
         virtual ~completion() = default;
 
         virtual warden *ward() = 0;
-        virtual felspar::coro::coroutine_handle<>
-                await_suspend(felspar::coro::coroutine_handle<>) = 0;
+        virtual std::coroutine_handle<>
+                await_suspend(std::coroutine_handle<>) = 0;
 
         /// Return true if the completion should be destroyed when the iop is
         virtual bool delete_due_to_iop_destructed() = 0;
@@ -136,8 +136,7 @@ namespace felspar::io {
         }
 
         bool await_ready() const noexcept { return false; }
-        felspar::coro::coroutine_handle<>
-                await_suspend(felspar::coro::coroutine_handle<> h) {
+        std::coroutine_handle<> await_suspend(std::coroutine_handle<> h) {
             return comp->await_suspend(h);
         }
         R await_resume() { return std::move(comp->result).value(comp->loc); }
