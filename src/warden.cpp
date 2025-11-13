@@ -7,10 +7,7 @@
 
 
 felspar::posix::fd felspar::io::warden::create_socket(
-        int domain,
-        int type,
-        int protocol,
-        felspar::source_location const &loc) {
+        int domain, int type, int protocol, std::source_location const &loc) {
     posix::fd s{::socket(domain, type, protocol)};
     if (not s) {
         throw felspar::stdexcept::system_error{
@@ -23,8 +20,7 @@ felspar::posix::fd felspar::io::warden::create_socket(
 }
 
 
-auto felspar::io::warden::create_pipe(felspar::source_location const &loc)
-        -> pipe {
+auto felspar::io::warden::create_pipe(std::source_location const &loc) -> pipe {
 #ifdef FELSPAR_WINSOCK2
     posix::fd server{::socket(AF_INET, SOCK_STREAM, 0)};
     if (not server) {

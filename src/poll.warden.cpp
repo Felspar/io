@@ -150,6 +150,6 @@ int felspar::io::poll_warden::clear_timeouts() {
 
 
 void felspar::io::poll_warden::do_prepare_socket(
-        socket_descriptor sock, felspar::source_location const &loc) {
+        socket_descriptor sock, std::source_location const &loc) {
     felspar::posix::set_non_blocking(sock, loc);
 }

@@ -14,7 +14,7 @@ namespace felspar::io {
       public:
         static std::error_code const error;
 
-        timeout(std::string msg, felspar::source_location const &loc)
+        timeout(std::string msg, std::source_location const &loc)
         : superclass{error, std::move(msg), loc} {}
     };
     inline std::error_code const timeout::error = {

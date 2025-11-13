@@ -19,7 +19,7 @@ namespace felspar::io {
         completion(
                 poll_warden *w,
                 std::optional<std::chrono::nanoseconds> t,
-                felspar::source_location const &loc)
+                std::source_location const &loc)
         : io::completion<R>{loc}, self{w}, timeout{t} {}
 
         poll_warden *self;

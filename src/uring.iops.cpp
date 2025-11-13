@@ -6,8 +6,7 @@
 
 
 struct felspar::io::uring_warden::close_completion : public completion<void> {
-    close_completion(
-            uring_warden *s, int fd, felspar::source_location const &loc)
+    close_completion(uring_warden *s, int fd, std::source_location const &loc)
     : completion<void>{s, {}, loc}, fd{fd} {}
     int fd;
     std::coroutine_handle<> await_suspend(std::coroutine_handle<> h) override {
@@ -17,7 +16,7 @@ struct felspar::io::uring_warden::close_completion : public completion<void> {
     }
 };
 felspar::io::iop<void> felspar::io::uring_warden::do_close(
-        int fd, felspar::source_location const &loc) {
+        int fd, std::source_location const &loc) {
     return {new close_completion{this, fd, loc}};
 }
 
@@ -26,7 +25,7 @@ struct felspar::io::uring_warden::sleep_completion : public completion<void> {
     sleep_completion(
             uring_warden *s,
             std::chrono::nanoseconds ns,
-            felspar::source_location const &loc)
+            std::source_location const &loc)
     : completion<void>{s, {}, loc} {
         kts = {{}, ns.count()};
     }
@@ -41,7 +40,7 @@ struct felspar::io::uring_warden::sleep_completion : public completion<void> {
     }
 };
 felspar::io::iop<void> felspar::io::uring_warden::do_sleep(
-        std::chrono::nanoseconds ns, felspar::source_location const &loc) {
+        std::chrono::nanoseconds ns, std::source_location const &loc) {
     return {new sleep_completion{this, ns, loc}};
 }
 
@@ -53,7 +52,7 @@ public completion<std::size_t> {
             int f,
             std::span<std::byte> b,
             std::optional<std::chrono::nanoseconds> t,
-            felspar::source_location const &loc)
+            std::source_location const &loc)
     : completion<std::size_t>{s, t, loc}, fd{f}, bytes{b} {}
     int fd;
     std::span<std::byte> bytes;
@@ -67,7 +66,7 @@ felspar::io::iop<std::size_t> felspar::io::uring_warden::do_read_some(
         socket_descriptor fd,
         std::span<std::byte> b,
         std::optional<std::chrono::nanoseconds> timeout,
-        felspar::source_location const &loc) {
+        std::source_location const &loc) {
     return {new read_some_completion{this, fd, b, timeout, loc}};
 }
 
@@ -79,7 +78,7 @@ public completion<std::size_t> {
             socket_descriptor f,
             std::span<std::byte const> b,
             std::optional<std::chrono::nanoseconds> t,
-            felspar::source_location const &loc)
+            std::source_location const &loc)
     : completion<std::size_t>{s, t, loc}, fd{f}, bytes{b} {}
     socket_descriptor fd;
     std::span<std::byte const> bytes;
@@ -93,7 +92,7 @@ felspar::io::iop<std::size_t> felspar::io::uring_warden::do_write_some(
         socket_descriptor fd,
         std::span<std::byte const> b,
         std::optional<std::chrono::nanoseconds> t,
-        felspar::source_location const &loc) {
+        std::source_location const &loc) {
     return {new write_some_completion{this, fd, b, t, loc}};
 }
 
@@ -104,7 +103,7 @@ public completion<socket_descriptor> {
             uring_warden *s,
             socket_descriptor f,
             std::optional<std::chrono::nanoseconds> t,
-            felspar::source_location const &loc)
+            std::source_location const &loc)
     : completion<socket_descriptor>{s, t, loc}, fd{f} {}
     socket_descriptor fd = {};
     sockaddr addr = {};
@@ -119,7 +118,7 @@ felspar::io::iop<felspar::io::socket_descriptor>
         felspar::io::uring_warden::do_accept(
                 socket_descriptor fd,
                 std::optional<std::chrono::nanoseconds> timeout,
-                felspar::source_location const &loc) {
+                std::source_location const &loc) {
     return {new accept_completion{this, fd, timeout, loc}};
 }
 
@@ -131,7 +130,7 @@ struct felspar::io::uring_warden::connect_completion : public completion<void> {
             sockaddr const *a,
             socklen_t l,
             std::optional<std::chrono::nanoseconds> t,
-            felspar::source_location const &loc)
+            std::source_location const &loc)
     : completion<void>{s, t, loc}, fd{f}, addr{a}, addrlen{l} {}
     socket_descriptor fd = {};
     sockaddr const *addr = {};
@@ -147,7 +146,7 @@ felspar::io::iop<void> felspar::io::uring_warden::do_connect(
         sockaddr const *addr,
         socklen_t addrlen,
         std::optional<std::chrono::nanoseconds> timeout,
-        felspar::source_location const &loc) {
+        std::source_location const &loc) {
     return {new connect_completion{this, fd, addr, addrlen, timeout, loc}};
 }
 
@@ -158,7 +157,7 @@ struct felspar::io::uring_warden::poll_completion : public completion<void> {
             socket_descriptor f,
             short m,
             std::optional<std::chrono::nanoseconds> t,
-            felspar::source_location const &loc)
+            std::source_location const &loc)
     : completion<void>{s, t, loc}, fd{f}, mask{m} {}
     socket_descriptor fd = {};
     short mask = {};
@@ -171,12 +170,12 @@ struct felspar::io::uring_warden::poll_completion : public completion<void> {
 felspar::io::iop<void> felspar::io::uring_warden::do_read_ready(
         socket_descriptor fd,
         std::optional<std::chrono::nanoseconds> timeout,
-        felspar::source_location const &loc) {
+        std::source_location const &loc) {
     return {new poll_completion{this, fd, POLLIN, timeout, loc}};
 }
 felspar::io::iop<void> felspar::io::uring_warden::do_write_ready(
         socket_descriptor fd,
         std::optional<std::chrono::nanoseconds> timeout,
-        felspar::source_location const &loc) {
+        std::source_location const &loc) {
     return {new poll_completion{this, fd, POLLOUT, timeout, loc}};
 }

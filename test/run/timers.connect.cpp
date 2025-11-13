@@ -14,7 +14,7 @@ namespace {
     felspar::io::warden::task<void> timed_connect(
             felspar::io::warden &ward,
             char const *const hostname,
-            felspar::source_location const loc) {
+            std::source_location const loc) {
         felspar::test::injected check;
 
         auto addresses = felspar::io::addrinfo(hostname, 80);

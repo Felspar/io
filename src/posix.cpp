@@ -35,9 +35,7 @@ std::pair<std::size_t, std::size_t>
 
 
 void felspar::posix::listen(
-        io::socket_descriptor fd,
-        int backlog,
-        felspar::source_location const &loc) {
+        io::socket_descriptor fd, int backlog, std::source_location const &loc) {
     if (::listen(fd, backlog) == -1) {
         throw felspar::stdexcept::system_error{
                 io::get_error(), std::system_category(), "listen error", loc};
@@ -45,7 +43,7 @@ void felspar::posix::listen(
 }
 
 void felspar::posix::set_non_blocking(
-        io::socket_descriptor sock, felspar::source_location const &loc) {
+        io::socket_descriptor sock, std::source_location const &loc) {
 #if defined(FELSPAR_POSIX_SOCKETS)
     if (int const err =
                 ::fcntl(sock, F_SETFL, ::fcntl(sock, F_GETFL, 0) | O_NONBLOCK);
@@ -69,7 +67,7 @@ void felspar::posix::set_non_blocking(
 
 
 void felspar::posix::set_reuse_port(
-        io::socket_descriptor const sock, felspar::source_location const &loc) {
+        io::socket_descriptor const sock, std::source_location const &loc) {
     int optval = 1;
 #if defined(FELSPAR_WINSOCK2)
     /// For Windows it looks like SO_REUSEADDR is the closest we can get
@@ -101,7 +99,7 @@ void felspar::posix::bind(
         io::socket_descriptor const sock,
         std::uint32_t const addr,
         std::uint16_t const port,
-        felspar::source_location const &loc) {
+        std::source_location const &loc) {
     sockaddr_in in;
     in.sin_family = AF_INET;
     in.sin_port = htons(port);

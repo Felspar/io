@@ -79,16 +79,14 @@ namespace felspar::posix {
 
 
     /// ## Set the listen queue length for the socket
-    void
-            listen(io::socket_descriptor fd,
-                   int backlog,
-                   felspar::source_location const & =
-                           felspar::source_location::current());
-    inline void
-            listen(posix::fd const &fd,
-                   int backlog,
-                   felspar::source_location const &loc =
-                           felspar::source_location::current()) {
+    void listen(
+            io::socket_descriptor fd,
+            int backlog,
+            std::source_location const & = std::source_location::current());
+    inline void listen(
+            posix::fd const &fd,
+            int backlog,
+            std::source_location const &loc = std::source_location::current()) {
         listen(fd.native_handle(), backlog, loc);
     }
 
@@ -96,12 +94,10 @@ namespace felspar::posix {
     /// ## Set a file descriptor to non-blocking mode
     void set_non_blocking(
             io::socket_descriptor sock,
-            felspar::source_location const & =
-                    felspar::source_location::current());
+            std::source_location const & = std::source_location::current());
     inline void set_non_blocking(
             fd const &sock,
-            felspar::source_location const &loc =
-                    felspar::source_location::current()) {
+            std::source_location const &loc = std::source_location::current()) {
         return set_non_blocking(sock.native_handle(), loc);
     }
 
@@ -109,12 +105,10 @@ namespace felspar::posix {
     /// ## Set a socket port for re-use
     void set_reuse_port(
             io::socket_descriptor sock,
-            felspar::source_location const & =
-                    felspar::source_location::current());
+            std::source_location const & = std::source_location::current());
     inline void set_reuse_port(
             fd const &sock,
-            felspar::source_location const &loc =
-                    felspar::source_location::current()) {
+            std::source_location const &loc = std::source_location::current()) {
         return set_reuse_port(sock.native_handle(), loc);
     }
 
@@ -124,32 +118,28 @@ namespace felspar::posix {
 
 
     /// ## Bind
-    void
-            bind(io::socket_descriptor sock,
-                 std::uint32_t addr,
-                 std::uint16_t port,
-                 felspar::source_location const & =
-                         felspar::source_location::current());
-    inline void
-            bind(fd const &sock,
-                 std::uint32_t const addr,
-                 std::uint16_t const port,
-                 felspar::source_location const &loc =
-                         felspar::source_location::current()) {
+    void bind(
+            io::socket_descriptor sock,
+            std::uint32_t addr,
+            std::uint16_t port,
+            std::source_location const & = std::source_location::current());
+    inline void bind(
+            fd const &sock,
+            std::uint32_t const addr,
+            std::uint16_t const port,
+            std::source_location const &loc = std::source_location::current()) {
         posix::bind(sock.native_handle(), addr, port, loc);
     }
     inline void bind_to_any_address(
             io::socket_descriptor sock,
             std::uint16_t port,
-            felspar::source_location const &loc =
-                    felspar::source_location::current()) {
+            std::source_location const &loc = std::source_location::current()) {
         posix::bind(sock, INADDR_ANY, port, loc);
     }
     inline void bind_to_any_address(
             fd const &sock,
             std::uint16_t const port,
-            felspar::source_location const &loc =
-                    felspar::source_location::current()) {
+            std::source_location const &loc = std::source_location::current()) {
         posix::bind(sock.native_handle(), INADDR_ANY, port, loc);
     }
 

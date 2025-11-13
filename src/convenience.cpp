@@ -16,7 +16,7 @@
 
 
 felspar::io::warden::stream<felspar::io::socket_descriptor> felspar::io::accept(
-        warden &ward, socket_descriptor fd, felspar::source_location loc) {
+        warden &ward, socket_descriptor fd, std::source_location loc) {
     /**
      * Because this is a coroutine it must take the source location by copy not
      * by reference, as the referenced source location would go out of scope
@@ -72,7 +72,7 @@ auto felspar::io::connect(
         char const *const hostname,
         std::uint16_t const port,
         std::optional<std::chrono::nanoseconds> const timeout,
-        felspar::source_location const &loc) -> warden::task<posix::fd> {
+        std::source_location const &loc) -> warden::task<posix::fd> {
     std::exception_ptr eptr;
     for (auto host : addrinfo(hostname, port)) {
         try {
