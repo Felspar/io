@@ -1,4 +1,5 @@
-#include <felspar/exceptions.hpp>
+#include <felspar/exceptions/runtime_error.hpp>
+#include <felspar/exceptions/system_error.hpp>
 #include <felspar/io/warden.hpp>
 
 #ifdef FELSPAR_POSIX_SOCKETS

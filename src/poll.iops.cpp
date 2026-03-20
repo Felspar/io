@@ -1,6 +1,5 @@
 #include "poll.hpp"
 
-#include <felspar/exceptions.hpp>
 #include <felspar/io/connect.hpp>
 
 

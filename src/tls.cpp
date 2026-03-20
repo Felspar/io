@@ -1,6 +1,7 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 
+#include <felspar/exceptions/runtime_error.hpp>
 #include <felspar/io/tls.hpp>
 #include <felspar/io/write.hpp>
 
@@ -68,7 +69,7 @@ struct felspar::io::tls::impl {
 
             default:
                 throw felspar::stdexcept::runtime_error{
-                        "Unknown openssl error " + std::to_string(error)};
+                        "Unknown openssl error " + std::to_string(error), loc};
             }
         }
     }

@@ -6,7 +6,8 @@
 #include <felspar/io/warden.hpp>
 #include <felspar/io/write.hpp>
 
-#include <felspar/exceptions.hpp>
+#include <felspar/exceptions/runtime_error.hpp>
+#include <felspar/exceptions/system_error.hpp>
 
 #include <sys/types.h>
 #if defined(FELSPAR_POSIX_SOCKETS)

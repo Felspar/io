@@ -1,10 +1,11 @@
 #pragma once
 
 #include <felspar/coro/task.hpp>
+#include <felspar/exceptions/logic_error.hpp>
+#include <felspar/exceptions/system_error.hpp>
 #include <felspar/io/exceptions.hpp>
 
 #include <memory>
-#include <system_error>
 
 
 namespace felspar::io {

@@ -1,5 +1,7 @@
 #include "uring.hpp"
 
+#include <felspar/exceptions/runtime_error.hpp>
+
 
 /// ## `felspar::io::uring_warden`
 

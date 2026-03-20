@@ -1,3 +1,4 @@
+#include <felspar/exceptions/runtime_error.hpp>
 #include <felspar/io.hpp>
 #include <felspar/test.hpp>
 

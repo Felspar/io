@@ -1,7 +1,6 @@
 #pragma once
 
 
-#include <felspar/exceptions.hpp>
 #include <felspar/io/warden.uring.hpp>
 
 #include <liburing.h>

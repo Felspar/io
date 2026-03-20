@@ -1,6 +1,6 @@
 #include "poll.hpp"
 
-#include <felspar/exceptions.hpp>
+#include <felspar/exceptions/system_error.hpp>
 #include <felspar/io/posix.hpp>
 
 #include <thread>
