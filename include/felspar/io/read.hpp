@@ -179,6 +179,10 @@ namespace felspar::io {
 
 
     /// ### Read a line (up to the next LF) and strip any final CR
+    /**
+     * An empty span notifies that the file descriptor that is being read from
+     * has been closed.
+     */
     template<typename S, typename R>
     inline warden::task<typename R::span_type> read_until_lf_strip_cr(
             warden &ward,
@@ -188,7 +192,9 @@ namespace felspar::io {
             std::source_location const &loc = std::source_location::current()) {
         auto cr = read_buffer.find('\n');
         while (cr == read_buffer.end()) {
-            co_await read_buffer.do_read_some(ward, sock, timeout, loc);
+            auto const bytes =
+                    co_await read_buffer.do_read_some(ward, sock, timeout, loc);
+            if (bytes == 0) { co_return {}; }
             cr = read_buffer.find('\n');
         }
         std::size_t const line = std::distance(read_buffer.begin(), cr);
