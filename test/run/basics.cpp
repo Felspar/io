@@ -33,8 +33,8 @@ namespace {
         felspar::posix::listen(fd, backlog);
 
         felspar::io::warden::starter<void> co;
-        for (auto acceptor = felspar::io::accept(ward, fd);
-             auto cnx = co_await acceptor.next();) {
+        auto acceptor = felspar::io::accept(ward, fd);
+        while (auto cnx = co_await acceptor.next()) {
             co.post(echo_connection, ward, felspar::posix::fd{*cnx});
             co.garbage_collect_completed();
         }

@@ -45,8 +45,8 @@ namespace {
     felspar::io::warden::task<void> accept_loop(
             felspar::io::warden &ward, const felspar::posix::fd &socket) {
         felspar::io::warden::starter<void> co;
-        for (auto connections = felspar::io::accept(ward, socket);
-             auto cnx = co_await connections.next();) {
+        auto connections = felspar::io::accept(ward, socket);
+        while (auto cnx = co_await connections.next()) {
             co.post(http_request, std::ref(ward), felspar::posix::fd{*cnx},
                     big_octets());
             co.garbage_collect_completed();
