@@ -117,7 +117,7 @@ void felspar::io::poll_warden::do_poll(int const timeout) {
                         reads.end());
                 reads.clear();
             }
-            if (events.revents & (POLLOUT | POLLHUP | POLLERR | POLLNVAL)) {
+            if (events.revents & (POLLOUT | POLLERR | POLLNVAL)) {
                 auto &writes = requests[events.fd].writes;
                 bookkeeping->continuations.insert(
                         bookkeeping->continuations.end(), writes.begin(),
