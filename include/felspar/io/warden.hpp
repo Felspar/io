@@ -50,6 +50,13 @@ namespace felspar::io {
             run_until(handle.get());
             return handle.promise().consume_value();
         }
+        template<typename Ret, typename N, typename... PArgs, typename... MArgs>
+        Ret run(N &o, task<Ret> (N::*f)(warden &, PArgs...), MArgs &&...margs) {
+            auto task = (o.*f)(*this, std::forward<MArgs>(margs)...);
+            auto handle = task.release();
+            run_until(handle.get());
+            return handle.promise().consume_value();
+        }
 
         /// Run a single IO submission and resume ready coroutines. Only
         /// processing is performed without any waits
