@@ -110,14 +110,14 @@ void felspar::io::poll_warden::do_poll(int const timeout) {
     } else if (pr > 0) {
         bookkeeping->continuations.clear();
         for (auto events : bookkeeping->iops) {
-            if (events.revents & (POLLIN | POLLERR | POLLNVAL)) {
+            if (events.revents & (POLLIN | POLLHUP | POLLERR | POLLNVAL)) {
                 auto &reads = requests[events.fd].reads;
                 bookkeeping->continuations.insert(
                         bookkeeping->continuations.end(), reads.begin(),
                         reads.end());
                 reads.clear();
             }
-            if (events.revents & (POLLOUT | POLLERR | POLLNVAL)) {
+            if (events.revents & (POLLOUT | POLLHUP | POLLERR | POLLNVAL)) {
                 auto &writes = requests[events.fd].writes;
                 bookkeeping->continuations.insert(
                         bookkeeping->continuations.end(), writes.begin(),
