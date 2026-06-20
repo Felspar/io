@@ -10,7 +10,12 @@ target_link_libraries(felspar-io PUBLIC felspar-coro)
 add_library(felspar-io-openssl
         tls.cpp
     )
-target_link_libraries(felspar-io-openssl felspar-io ssl crypto)
+if(TARGET ssl AND TARGET crypto)
+    target_link_libraries(felspar-io-openssl felspar-io ssl crypto)
+else()
+    find_package(OpenSSL REQUIRED)
+    target_link_libraries(felspar-io-openssl felspar-io OpenSSL::SSL OpenSSL::Crypto)
+endif()
 if(${FELSPAR_ENABLE_IO_URING})
     target_compile_definitions(felspar-io PUBLIC FELSPAR_ENABLE_IO_URING=1)
     target_sources(felspar-io PRIVATE
