@@ -4,6 +4,7 @@
 #include <felspar/coro/generator.hpp>
 #include <felspar/io/socket_descriptor.hpp>
 
+#include <cstdint>
 #include <string_view>
 
 
