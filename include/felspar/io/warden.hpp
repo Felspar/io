@@ -65,13 +65,13 @@ namespace felspar::io {
         /// ### File descriptors
         iop<void>
                 close(socket_descriptor fd,
-                      std::source_location const &loc =
+                      std::source_location const loc =
                               std::source_location::current()) {
             return do_close(fd, loc);
         }
         iop<void>
                 close(posix::fd s,
-                      std::source_location const &loc =
+                      std::source_location const loc =
                               std::source_location::current()) {
             return close(s.release(), loc);
         }
@@ -79,7 +79,7 @@ namespace felspar::io {
         /// ### Time management
         iop<void>
                 sleep(std::chrono::nanoseconds ns,
-                      std::source_location const &loc =
+                      std::source_location const loc =
                               std::source_location::current()) {
             return do_sleep(ns, loc);
         }
@@ -93,7 +93,7 @@ namespace felspar::io {
                 socket_descriptor fd,
                 std::span<std::byte> s,
                 std::optional<std::chrono::nanoseconds> timeout,
-                std::source_location const &loc =
+                std::source_location const loc =
                         std::source_location::current()) {
             return do_read_some(fd, s, timeout, loc);
         }
@@ -101,14 +101,14 @@ namespace felspar::io {
                 posix::fd const &s,
                 std::span<std::byte> b,
                 std::optional<std::chrono::nanoseconds> timeout = {},
-                std::source_location const &l = std::source_location::current()) {
+                std::source_location const l = std::source_location::current()) {
             return read_some(s.native_handle(), b, timeout, l);
         }
         iop<std::size_t> write_some(
                 socket_descriptor fd,
                 std::span<std::byte const> s,
                 std::optional<std::chrono::nanoseconds> timeout = {},
-                std::source_location const &loc =
+                std::source_location const loc =
                         std::source_location::current()) {
             return do_write_some(fd, s, timeout, loc);
         }
@@ -116,7 +116,7 @@ namespace felspar::io {
                 posix::fd const &s,
                 std::span<std::byte const> b,
                 std::optional<std::chrono::nanoseconds> timeout = {},
-                std::source_location const &l = std::source_location::current()) {
+                std::source_location const l = std::source_location::current()) {
             return write_some(s.native_handle(), b, timeout, l);
         }
 
@@ -132,10 +132,10 @@ namespace felspar::io {
                 int domain,
                 int type,
                 int protocol,
-                std::source_location const & = std::source_location::current());
+                std::source_location = std::source_location::current());
         /// #### Create a TCP socket
         posix::fd create_tcp_socket(
-                std::source_location const &loc =
+                std::source_location const loc =
                         std::source_location::current()) {
             return create_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP, loc);
         }
@@ -146,21 +146,20 @@ namespace felspar::io {
          * Create a pipe usable by this warden. On Windows a true pipe will be
          * simulated by a socket pair.
          */
-        pipe create_pipe(
-                std::source_location const & = std::source_location::current());
+        pipe create_pipe(std::source_location = std::source_location::current());
 
 
         iop<socket_descriptor>
                 accept(socket_descriptor fd,
                        std::optional<std::chrono::nanoseconds> timeout = {},
-                       std::source_location const &loc =
+                       std::source_location const loc =
                                std::source_location::current()) {
             return do_accept(fd, timeout, loc);
         }
         iop<socket_descriptor>
                 accept(posix::fd const &sock,
                        std::optional<std::chrono::nanoseconds> timeout = {},
-                       std::source_location const &loc =
+                       std::source_location const loc =
                                std::source_location::current()) {
             return accept(sock.native_handle(), timeout, loc);
         }
@@ -169,7 +168,7 @@ namespace felspar::io {
                         sockaddr const *addr,
                         socklen_t addrlen,
                         std::optional<std::chrono::nanoseconds> timeout = {},
-                        std::source_location const &loc =
+                        std::source_location const loc =
                                 std::source_location::current()) {
             return do_connect(fd, addr, addrlen, timeout, loc);
         }
@@ -178,7 +177,7 @@ namespace felspar::io {
                         sockaddr const *addr,
                         socklen_t addrlen,
                         std::optional<std::chrono::nanoseconds> timeout = {},
-                        std::source_location const &loc =
+                        std::source_location const loc =
                                 std::source_location::current()) {
             return connect(sock.native_handle(), addr, addrlen, timeout, loc);
         }
@@ -188,28 +187,28 @@ namespace felspar::io {
         iop<void> read_ready(
                 socket_descriptor fd,
                 std::optional<std::chrono::nanoseconds> timeout = {},
-                std::source_location const &loc =
+                std::source_location const loc =
                         std::source_location::current()) {
             return do_read_ready(fd, timeout, loc);
         }
         iop<void> read_ready(
                 posix::fd const &sock,
                 std::optional<std::chrono::nanoseconds> timeout = {},
-                std::source_location const &loc =
+                std::source_location const loc =
                         std::source_location::current()) {
             return read_ready(sock.native_handle(), timeout, loc);
         }
         iop<void> write_ready(
                 socket_descriptor fd,
                 std::optional<std::chrono::nanoseconds> timeout = {},
-                std::source_location const &loc =
+                std::source_location const loc =
                         std::source_location::current()) {
             return do_write_ready(fd, timeout, loc);
         }
         iop<void> write_ready(
                 posix::fd const &sock,
                 std::optional<std::chrono::nanoseconds> timeout = {},
-                std::source_location const &loc =
+                std::source_location const loc =
                         std::source_location::current()) {
             return write_ready(sock.native_handle(), timeout, loc);
         }
@@ -235,40 +234,40 @@ namespace felspar::io {
 
       protected:
         virtual void run_until(std::coroutine_handle<>) = 0;
-        virtual iop<void> do_close(
-                socket_descriptor fd, std::source_location const &) = 0;
-        virtual iop<void> do_sleep(
-                std::chrono::nanoseconds, std::source_location const &) = 0;
+        virtual iop<void>
+                do_close(socket_descriptor fd, std::source_location) = 0;
+        virtual iop<void>
+                do_sleep(std::chrono::nanoseconds, std::source_location) = 0;
         virtual iop<std::size_t> do_read_some(
                 socket_descriptor fd,
                 std::span<std::byte>,
                 std::optional<std::chrono::nanoseconds> timeout,
-                std::source_location const &) = 0;
+                std::source_location) = 0;
         virtual iop<std::size_t> do_write_some(
                 socket_descriptor fd,
                 std::span<std::byte const>,
                 std::optional<std::chrono::nanoseconds> timeout,
-                std::source_location const &) = 0;
-        virtual void do_prepare_socket(
-                socket_descriptor, std::source_location const &) {}
+                std::source_location) = 0;
+        virtual void do_prepare_socket(socket_descriptor, std::source_location) {
+        }
         virtual iop<socket_descriptor> do_accept(
                 socket_descriptor fd,
                 std::optional<std::chrono::nanoseconds> timeout,
-                std::source_location const &) = 0;
+                std::source_location) = 0;
         virtual iop<void> do_connect(
                 socket_descriptor fd,
                 sockaddr const *,
                 socklen_t,
                 std::optional<std::chrono::nanoseconds> timeout,
-                std::source_location const &) = 0;
+                std::source_location) = 0;
         virtual iop<void> do_read_ready(
                 socket_descriptor fd,
                 std::optional<std::chrono::nanoseconds> timeout,
-                std::source_location const &) = 0;
+                std::source_location) = 0;
         virtual iop<void> do_write_ready(
                 socket_descriptor fd,
                 std::optional<std::chrono::nanoseconds> timeout,
-                std::source_location const &) = 0;
+                std::source_location) = 0;
     };
 
 

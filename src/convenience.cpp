@@ -73,7 +73,7 @@ auto felspar::io::connect(
         char const *const hostname,
         std::uint16_t const port,
         std::optional<std::chrono::nanoseconds> const timeout,
-        std::source_location const &loc) -> warden::task<posix::fd> {
+        std::source_location const loc) -> warden::task<posix::fd> {
     std::exception_ptr eptr;
     for (auto host : addrinfo(hostname, port)) {
         try {

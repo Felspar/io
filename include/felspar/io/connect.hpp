@@ -16,7 +16,7 @@ namespace felspar::io {
             sockaddr const *const addr,
             socklen_t const addrlen,
             std::optional<std::chrono::nanoseconds> const timeout = {},
-            std::source_location const &loc = std::source_location::current()) {
+            std::source_location const loc = std::source_location::current()) {
         return ward.connect(
                 std::forward<Socket>(sock), addr, addrlen, timeout, loc);
     }
@@ -28,7 +28,7 @@ namespace felspar::io {
             char const *hostname,
             std::uint16_t port,
             std::optional<std::chrono::nanoseconds> timeout = {},
-            std::source_location const &loc = std::source_location::current());
+            std::source_location const loc = std::source_location::current());
     /**
      * Goes through each host address associated with the `hostname` and tries
      * to connect to them in turn. Returns the first one that works. If all of

@@ -18,7 +18,7 @@ namespace felspar::io {
     FELSPAR_CORO_WRAPPER inline warden::stream<socket_descriptor> accept(
             warden &w,
             posix::fd const &sock,
-            std::source_location const &loc = std::source_location::current()) {
+            std::source_location const loc = std::source_location::current()) {
         return accept(w, sock.native_handle(), loc);
     }
 

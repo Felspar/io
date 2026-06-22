@@ -47,7 +47,7 @@ struct felspar::io::tls::impl {
     io::warden::task<int> service_operation(
             io::warden &warden,
             std::optional<std::chrono::nanoseconds> timeout,
-            std::source_location const &loc,
+            std::source_location const loc,
             Op &&op) {
         while (true) {
             auto const result = op(*this);
@@ -77,7 +77,7 @@ struct felspar::io::tls::impl {
     io::warden::task<void> bio_read(
             io::warden &warden,
             std::optional<std::chrono::nanoseconds> timeout,
-            std::source_location const &loc) {
+            std::source_location const loc) {
         if (auto bytes = BIO_ctrl_pending(nb); bytes > buffer.size()) {
             throw felspar::stdexcept::logic_error{
                     "Pending read BIO buffer too small"};
@@ -99,7 +99,7 @@ struct felspar::io::tls::impl {
     io::warden::task<std::size_t> bio_write(
             io::warden &warden,
             std::optional<std::chrono::nanoseconds> timeout,
-            std::source_location const &loc) {
+            std::source_location const loc) {
         auto const bytes = co_await warden.read_some(fd, buffer, timeout, loc);
         if (bytes == 0) {
             co_return 0;
@@ -134,7 +134,7 @@ auto felspar::io::tls::connect(
         sockaddr const *addr,
         socklen_t addrlen,
         std::optional<std::chrono::nanoseconds> timeout,
-        std::source_location const &loc) -> warden::task<tls> {
+        std::source_location const loc) -> warden::task<tls> {
     posix::fd fd = warden.create_socket(addr->sa_family, SOCK_STREAM, 0);
     co_await warden.connect(fd, addr, addrlen, timeout, loc);
 
@@ -150,7 +150,7 @@ auto felspar::io::tls::connect(
         char const *const hostname,
         std::uint16_t const port,
         std::optional<std::chrono::nanoseconds> const timeout,
-        std::source_location const &loc) -> warden::task<tls> {
+        std::source_location const loc) -> warden::task<tls> {
     std::exception_ptr eptr;
     for (auto host : addrinfo(hostname, port)) {
         try {
@@ -171,7 +171,7 @@ auto felspar::io::tls::read_some(
         io::warden &warden,
         std::span<std::byte> const s,
         std::optional<std::chrono::nanoseconds> const timeout,
-        std::source_location const &loc) -> warden::task<std::size_t> {
+        std::source_location const loc) -> warden::task<std::size_t> {
     int const ret =
             co_await p->service_operation(warden, timeout, loc, [s](impl &i) {
                 return SSL_read(i.ssl, s.data(), s.size());
@@ -189,7 +189,7 @@ auto felspar::io::tls::write_some(
         io::warden &warden,
         std::span<std::byte const> const s,
         std::optional<std::chrono::nanoseconds> const timeout,
-        std::source_location const &loc) -> warden::task<std::size_t> {
+        std::source_location const loc) -> warden::task<std::size_t> {
     int const ret =
             co_await p->service_operation(warden, timeout, loc, [s](impl &i) {
                 return SSL_write(i.ssl, s.data(), s.size());

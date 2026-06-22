@@ -30,7 +30,7 @@ namespace felspar::io {
         }
         /// Throw the exception associated with the error
         [[noreturn]] void throw_exception(
-                std::source_location const &loc =
+                std::source_location const loc =
                         std::source_location::current()) {
             if (error == timeout::error) {
                 throw timeout{message, loc};
@@ -40,7 +40,7 @@ namespace felspar::io {
         }
         /// Throw the exception if there was one
         void
-                value(std::source_location const &loc =
+                value(std::source_location const loc =
                               std::source_location::current()) {
             if (error) { throw_exception(loc); }
         }
@@ -70,7 +70,7 @@ namespace felspar::io {
         }
 
         /// Consume the value, or throw the exception
-        R value(std::source_location const &loc =
+        R value(std::source_location const loc =
                         std::source_location::current()) && {
             if (error) {
                 throw_exception(loc);
@@ -81,7 +81,7 @@ namespace felspar::io {
                         "Optional in outcome was empty", loc};
             }
         }
-        R value(std::source_location const &loc =
+        R value(std::source_location const loc =
                         std::source_location::current()) & {
             if (error) {
                 throw_exception(loc);
@@ -102,7 +102,7 @@ namespace felspar::io {
         std::source_location loc;
         outcome<R> result = {};
 
-        completion(std::source_location const &l) : loc{l} {}
+        completion(std::source_location const l) : loc{l} {}
         virtual ~completion() = default;
 
         virtual warden *ward() = 0;

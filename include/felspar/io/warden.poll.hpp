@@ -50,49 +50,47 @@ namespace felspar::io {
 
       protected:
         /// ### File descriptors
-        iop<void> do_close(
-                socket_descriptor fd, std::source_location const &) override;
+        iop<void> do_close(socket_descriptor fd, std::source_location) override;
 
         /// ### Time management
         iop<void> do_sleep(
-                std::chrono::nanoseconds,
-                std::source_location const &) override;
+                std::chrono::nanoseconds, std::source_location) override;
 
         /// ### Read & write
         iop<std::size_t> do_read_some(
                 socket_descriptor fd,
                 std::span<std::byte>,
                 std::optional<std::chrono::nanoseconds>,
-                std::source_location const &) override;
+                std::source_location) override;
         iop<std::size_t> do_write_some(
                 socket_descriptor fd,
                 std::span<std::byte const>,
                 std::optional<std::chrono::nanoseconds> timeout,
-                std::source_location const &) override;
+                std::source_location) override;
 
         /// ### Sockets
         void do_prepare_socket(
-                socket_descriptor sock, std::source_location const &) override;
+                socket_descriptor sock, std::source_location) override;
         iop<socket_descriptor> do_accept(
                 socket_descriptor fd,
                 std::optional<std::chrono::nanoseconds> timeout,
-                std::source_location const &) override;
+                std::source_location) override;
         iop<void> do_connect(
                 socket_descriptor fd,
                 sockaddr const *,
                 socklen_t,
                 std::optional<std::chrono::nanoseconds> timeout,
-                std::source_location const &) override;
+                std::source_location) override;
 
         /// ### File descriptor readiness
         iop<void> do_read_ready(
                 socket_descriptor fd,
                 std::optional<std::chrono::nanoseconds> timeout,
-                std::source_location const &) override;
+                std::source_location) override;
         iop<void> do_write_ready(
                 socket_descriptor fd,
                 std::optional<std::chrono::nanoseconds> timeout,
-                std::source_location const &) override;
+                std::source_location) override;
 
 
       private:

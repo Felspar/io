@@ -20,7 +20,7 @@ namespace felspar::io {
             S &&sock,
             std::span<std::byte const> const s,
             std::optional<std::chrono::nanoseconds> const timeout = {},
-            std::source_location const &loc = std::source_location::current()) {
+            std::source_location const loc = std::source_location::current()) {
         return w.write_some(sock, s, timeout, loc);
     }
 
@@ -58,7 +58,7 @@ namespace felspar::io {
             void const *buf,
             std::size_t count,
             std::optional<std::chrono::nanoseconds> timeout = {},
-            std::source_location const &loc = std::source_location::current()) {
+            std::source_location const loc = std::source_location::current()) {
         return write_all(
                 w, std::forward<S>(fd),
                 std::span<std::byte const>{
@@ -71,7 +71,7 @@ namespace felspar::io {
             S &&fd,
             std::span<std::uint8_t const> s,
             std::optional<std::chrono::nanoseconds> timeout = {},
-            std::source_location const &loc = std::source_location::current()) {
+            std::source_location const loc = std::source_location::current()) {
         return write_all(
                 w, std::forward<S>(fd),
                 std::span<std::byte const>{
@@ -84,7 +84,7 @@ namespace felspar::io {
             S &&fd,
             std::string_view s,
             std::optional<std::chrono::nanoseconds> timeout = {},
-            std::source_location const &loc = std::source_location::current()) {
+            std::source_location const loc = std::source_location::current()) {
         return write_all(
                 w, std::forward<S>(fd),
                 std::span<std::byte const>{

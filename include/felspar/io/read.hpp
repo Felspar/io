@@ -20,7 +20,7 @@ namespace felspar::io {
             S &&sock,
             B &&buffer,
             std::optional<std::chrono::nanoseconds> const timeout = {},
-            std::source_location const &loc = std::source_location::current()) {
+            std::source_location const loc = std::source_location::current()) {
         return warden.read_some(sock, buffer, timeout, loc);
     }
 
@@ -87,7 +87,7 @@ namespace felspar::io {
                 warden &ward,
                 S &&sock,
                 std::optional<std::chrono::nanoseconds> timeout = {},
-                std::source_location const &loc =
+                std::source_location const loc =
                         std::source_location::current()) {
             std::size_t const bytes_read =
                     co_await read_some(ward, sock, remaining(), timeout, loc);
@@ -141,7 +141,7 @@ namespace felspar::io {
             S &&sock,
             std::span<std::byte> b,
             std::optional<std::chrono::nanoseconds> timeout = {},
-            std::source_location const &loc = std::source_location::current()) {
+            std::source_location const loc = std::source_location::current()) {
         std::span<std::byte> in{b};
         while (in.size()) {
             auto const bytes = co_await read_some(ward, sock, in, timeout, loc);
@@ -157,7 +157,7 @@ namespace felspar::io {
             void *buf,
             std::size_t count,
             std::optional<std::chrono::nanoseconds> timeout = {},
-            std::source_location const &loc = std::source_location::current()) {
+            std::source_location const loc = std::source_location::current()) {
         return read_exactly(
                 w, std::forward<S>(s),
                 std::span<std::byte>{reinterpret_cast<std::byte *>(buf), count},
@@ -169,7 +169,7 @@ namespace felspar::io {
             S &&s,
             std::span<std::uint8_t> b,
             std::optional<std::chrono::nanoseconds> timeout = {},
-            std::source_location const &loc = std::source_location::current()) {
+            std::source_location const loc = std::source_location::current()) {
         return read_exactly(
                 w, std::forward<S>(s),
                 std::span<std::byte>{
@@ -189,7 +189,7 @@ namespace felspar::io {
             S &&sock,
             R &read_buffer,
             std::optional<std::chrono::nanoseconds> timeout = {},
-            std::source_location const &loc = std::source_location::current()) {
+            std::source_location const loc = std::source_location::current()) {
         auto cr = read_buffer.find('\n');
         while (cr == read_buffer.end()) {
             auto const bytes =
