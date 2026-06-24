@@ -40,13 +40,14 @@ Every end-user API currently takes a `std::optional<std::chrono::nanoseconds>` t
 ### Chunk 1.3: Add deadline overloads to the public warden IOP methods
 
 **Tests:**
-* [ ] New test (extend `test/run/timers.cpp`): `co_await ward.accept(fd, deadline)` with a deadline a few ms in the future throws `felspar::io::timeout`, for both `poll_warden` and `uring_warden`.
-* [ ] New test: a deadline already in the past (`steady_clock::now() - 1ms`) times out essentially immediately.
+* [x] New test (extend `test/run/timers.cpp`): `co_await ward.accept(fd, deadline)` with a deadline a few ms in the future throws `felspar::io::timeout`, for both `poll_warden` and `uring_warden`.
+* [x] New test: a deadline already in the past (`steady_clock::now() - 1ms`) times out essentially immediately.
 
 **Implementation:**
-* [ ] In `include/felspar/io/warden.hpp`, for `read_some`, `write_some`, `accept`, `connect`, `read_ready`, `write_ready` (both the `socket_descriptor` and `posix::fd` variants), make the **deadline** overload canonical: `std::optional<deadline> = {}`, carrying the default. Calling the `do_*` virtual happens here.
-* [ ] Change each **timeout** overload to take a plain `std::chrono::nanoseconds` (drop the `std::optional` and the default); its body is `return <name>(fd, …, deadline_from(timeout), loc);`.
-* [ ] Fix the one public call site that passes an explicit `{}` ahead of a positional `source_location`: in `src/convenience.cpp` the streaming `accept` does `ward.accept(fd, {}, loc)` — change `{}` to an explicitly-typed `std::optional<deadline>{}` so it binds the deadline overload unambiguously (semantics unchanged — still "no timeout"). The internal `completion<void>{s, {}, loc}` constructors are single-type and need no change.
+* [x] In `include/felspar/io/warden.hpp`, for `read_some`, `write_some`, `accept`, `connect`, `read_ready`, `write_ready` (both the `socket_descriptor` and `posix::fd` variants), make the **deadline** overload canonical: `std::optional<deadline> = {}`, carrying the default. Calling the `do_*` virtual happens here.
+* [x] Change each **timeout** overload to take a plain `std::chrono::nanoseconds` (drop the `std::optional` and the default); its body is `return <name>(fd, …, deadline_from(timeout), loc);`.
+* [x] Fix the one public call site that passes an explicit `{}` ahead of a positional `source_location`: in `src/convenience.cpp` the streaming `accept` does `ward.accept(fd, {}, loc)` — change `{}` to an explicitly-typed `std::optional<deadline>{}` so it binds the deadline overload unambiguously (semantics unchanged — still "no timeout"). The internal `completion<void>{s, {}, loc}` constructors are single-type and need no change.
+* [x] **Forced compile-fixes** (the warden no longer accepts `std::optional<std::chrono::nanoseconds>`, so every existing forwarder of an optional timeout must convert before calling the warden — these stay on their current single `std::optional<std::chrono::nanoseconds>` public signatures, the proper dual overloads land in Phase 2): the free-function forwarders in `include/felspar/io/read.hpp`, `write.hpp`, `connect.hpp` (plain `return`, safe), and the two `co_await` sites in `src/tls.cpp` (`bio_write` → `warden.read_some`, SNI `connect` → `warden.connect`). **GCC caveat:** the guarded ternary must NOT sit directly inside a `co_await` argument — GCC mis-sequences it and dereferences an empty optional under `_GLIBCXX_ASSERTIONS`; hoist it to a local first. See [[deadline-gcc-coroutine-ternary]].
 
 ---
 

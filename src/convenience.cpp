@@ -24,7 +24,7 @@ felspar::io::warden::stream<felspar::io::socket_descriptor> felspar::io::accept(
      * before it can be used in this coroutine.
      */
     while (true) {
-        auto s = co_await ward.accept(fd, {}, loc);
+        auto s = co_await ward.accept(fd, std::optional<deadline>{}, loc);
 #if defined(FELSPAR_WINSOCK2)
         co_yield s;
 #else

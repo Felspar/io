@@ -21,7 +21,11 @@ namespace felspar::io {
             B &&buffer,
             std::optional<std::chrono::nanoseconds> const timeout = {},
             std::source_location const loc = std::source_location::current()) {
-        return warden.read_some(sock, buffer, timeout, loc);
+        return warden.read_some(
+                sock, buffer,
+                timeout ? std::optional<deadline>{deadline_from(*timeout)}
+                        : std::nullopt,
+                loc);
     }
 
 

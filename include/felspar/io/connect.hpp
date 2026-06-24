@@ -18,7 +18,10 @@ namespace felspar::io {
             std::optional<std::chrono::nanoseconds> const timeout = {},
             std::source_location const loc = std::source_location::current()) {
         return ward.connect(
-                std::forward<Socket>(sock), addr, addrlen, timeout, loc);
+                std::forward<Socket>(sock), addr, addrlen,
+                timeout ? std::optional<deadline>{deadline_from(*timeout)}
+                        : std::nullopt,
+                loc);
     }
 
 

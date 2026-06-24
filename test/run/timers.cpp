@@ -127,4 +127,77 @@ namespace {
 #endif
 
 
+    felspar::io::warden::task<void> short_accept_deadline(
+            felspar::io::warden &ward,
+            std::uint16_t port,
+            felspar::test::injected check,
+            std::ostream &log) {
+        auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
+        set_reuse_port(fd);
+        bind_to_any_address(fd, port);
+        listen(fd, 64);
+
+        try {
+            co_await ward.accept(fd, std::chrono::steady_clock::now() + 10ms);
+            check(false) == true;
+        } catch (felspar::io::timeout const &) {
+            check(true) == true;
+        } catch (std::exception const &e) {
+            log << e.what() << '\n';
+            check(false) == true;
+        } catch (...) { check(false) == true; }
+    }
+    auto const adp =
+            suite.test("accept-deadline/poll", [](auto check, auto &log) {
+                felspar::io::poll_warden ward;
+                ward.run(short_accept_deadline, 5542, check, std::ref(log));
+            });
+#ifdef FELSPAR_ENABLE_IO_URING
+    auto const adu =
+            suite.test("accept-deadline/io_uring", [](auto check, auto &log) {
+                felspar::io::uring_warden ward;
+                ward.run(short_accept_deadline, 5544, check, std::ref(log));
+            });
+#endif
+
+
+    felspar::io::warden::task<void> past_accept_deadline(
+            felspar::io::warden &ward,
+            std::uint16_t port,
+            felspar::test::injected check,
+            std::ostream &log) {
+        auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
+        set_reuse_port(fd);
+        bind_to_any_address(fd, port);
+        listen(fd, 64);
+
+        auto const start = std::chrono::steady_clock::now();
+        try {
+            co_await ward.accept(fd, start - 1ms);
+            check(false) == true;
+        } catch (felspar::io::timeout const &) {
+            check(true) == true;
+        } catch (std::exception const &e) {
+            log << e.what() << '\n';
+            check(false) == true;
+        } catch (...) { check(false) == true; }
+        /// A deadline already in the past must time out essentially
+        /// immediately rather than waiting any real length of time
+        auto const elapsed = std::chrono::steady_clock::now() - start;
+        check(elapsed <= 80ms) == true;
+    }
+    auto const apdp =
+            suite.test("accept-past-deadline/poll", [](auto check, auto &log) {
+                felspar::io::poll_warden ward;
+                ward.run(past_accept_deadline, 5546, check, std::ref(log));
+            });
+#ifdef FELSPAR_ENABLE_IO_URING
+    auto const apdu = suite.test(
+            "accept-past-deadline/io_uring", [](auto check, auto &log) {
+                felspar::io::uring_warden ward;
+                ward.run(past_accept_deadline, 5548, check, std::ref(log));
+            });
+#endif
+
+
 }

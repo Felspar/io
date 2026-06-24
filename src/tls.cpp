@@ -100,7 +100,10 @@ struct felspar::io::tls::impl {
             io::warden &warden,
             std::optional<std::chrono::nanoseconds> timeout,
             std::source_location const loc) {
-        auto const bytes = co_await warden.read_some(fd, buffer, timeout, loc);
+        std::optional<deadline> const dl = timeout
+                ? std::optional<deadline>{deadline_from(*timeout)}
+                : std::nullopt;
+        auto const bytes = co_await warden.read_some(fd, buffer, dl, loc);
         if (bytes == 0) {
             co_return 0;
         } else if (auto const written_int = BIO_write(nb, buffer.data(), bytes);
@@ -136,7 +139,10 @@ auto felspar::io::tls::connect(
         std::optional<std::chrono::nanoseconds> timeout,
         std::source_location const loc) -> warden::task<tls> {
     posix::fd fd = warden.create_socket(addr->sa_family, SOCK_STREAM, 0);
-    co_await warden.connect(fd, addr, addrlen, timeout, loc);
+    std::optional<deadline> const dl = timeout
+            ? std::optional<deadline>{deadline_from(*timeout)}
+            : std::nullopt;
+    co_await warden.connect(fd, addr, addrlen, dl, loc);
 
     auto i = std::make_unique<impl>(std::move(fd));
     SSL_set_tlsext_host_name(i->ssl, sni_hostname);
