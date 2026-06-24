@@ -29,7 +29,7 @@ struct felspar::io::poll_warden::sleep_completion : public completion<void> {
             poll_warden *s,
             std::chrono::nanoseconds ns,
             std::source_location const loc)
-    : completion<void>{s, std::chrono::steady_clock::now() + ns, loc} {}
+    : completion<void>{s, deadline_from(ns), loc} {}
     void cancel_iop() override {}
     std::coroutine_handle<> iop_timedout() override {
         return io::completion<void>::handle;
