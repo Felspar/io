@@ -23,17 +23,17 @@ Every end-user API currently takes a `std::optional<std::chrono::nanoseconds>` t
 ### Chunk 1.2: Convert the `do_*` IOP virtuals and completions to deadlines
 
 **Tests:**
-* [ ] Existing timeout regression tests stay green: `timers` (`write/poll`, `accept/poll`, and the io_uring variants) and `connect` in `test/run/timers.cpp` / `test/run/timers.connect.cpp`.
-* [ ] Existing `test/run/cancel.cpp` stays green (verifies IOP destruction/cancel still cancels timeouts).
+* [x] Existing timeout regression tests stay green: `timers` (`write/poll`, `accept/poll`, and the io_uring variants) and `connect` in `test/run/timers.cpp` / `test/run/timers.connect.cpp`.
+* [x] Existing `test/run/cancel.cpp` stays green (verifies IOP destruction/cancel still cancels timeouts).
 
 **Implementation:**
-* [ ] In `include/felspar/io/warden.hpp` change the protected virtuals `do_read_some`, `do_write_some`, `do_accept`, `do_connect`, `do_read_ready`, `do_write_ready` to take `std::optional<deadline>` instead of `std::optional<std::chrono::nanoseconds>`. Keep `do_close` (no timeout) and `do_sleep` (handled in 1.4) unchanged.
-* [ ] Update the public warden timeout methods to convert inline before calling the `do_*` virtual (no new public overload yet). These methods still take `std::optional<std::chrono::nanoseconds>` at this stage, so guard the conversion: `timeout ? std::optional<deadline>{deadline_from(*timeout)} : std::nullopt`. (Once Chunk 1.3 makes the timeout overload a plain `std::chrono::nanoseconds`, this collapses to a bare `deadline_from(timeout)`.)
-* [ ] `src/poll.hpp`: rename the completion's `timeout` field to `deadline` (type `std::optional<deadline>`); `insert_timeout()` inserts the stored deadline directly into `self->timeouts` (drop the `now() + *timeout` calculation — the multimap is already deadline-keyed).
-* [ ] `src/uring.hpp`: store `std::optional<deadline>` in both `completion<R>` and `completion<void>`; in `setup_timeout()` compute the link-timeout `kts` from `*deadline - std::chrono::steady_clock::now()` (clamp negative to zero so an already-passed deadline fires immediately).
-* [ ] Update completion constructors/`do_*` definitions in `src/poll.iops.cpp` and `src/uring.iops.cpp` to pass the deadline through; `sleep_completion` constructs its base with `now() + ns` for now; `close_completion` keeps `{}`.
-* [ ] Update the forwarding overrides in `include/felspar/io/allocator.hpp` to the new `std::optional<deadline>` signatures.
-* [ ] Update the override declarations in `include/felspar/io/warden.poll.hpp` and `include/felspar/io/warden.uring.hpp`.
+* [x] In `include/felspar/io/warden.hpp` change the protected virtuals `do_read_some`, `do_write_some`, `do_accept`, `do_connect`, `do_read_ready`, `do_write_ready` to take `std::optional<deadline>` instead of `std::optional<std::chrono::nanoseconds>`. Keep `do_close` (no timeout) and `do_sleep` (handled in 1.4) unchanged.
+* [x] Update the public warden timeout methods to convert inline before calling the `do_*` virtual (no new public overload yet). These methods still take `std::optional<std::chrono::nanoseconds>` at this stage, so guard the conversion: `timeout ? std::optional<deadline>{deadline_from(*timeout)} : std::nullopt`. (Once Chunk 1.3 makes the timeout overload a plain `std::chrono::nanoseconds`, this collapses to a bare `deadline_from(timeout)`.)
+* [x] `src/poll.hpp`: rename the completion's `timeout` field to `deadline` (type `std::optional<deadline>`); `insert_timeout()` inserts the stored deadline directly into `self->timeouts` (drop the `now() + *timeout` calculation — the multimap is already deadline-keyed).
+* [x] `src/uring.hpp`: store `std::optional<deadline>` in both `completion<R>` and `completion<void>`; in `setup_timeout()` compute the link-timeout `kts` from `*deadline - std::chrono::steady_clock::now()` (clamp negative to zero so an already-passed deadline fires immediately).
+* [x] Update completion constructors/`do_*` definitions in `src/poll.iops.cpp` and `src/uring.iops.cpp` to pass the deadline through; `sleep_completion` constructs its base with `now() + ns` for now; `close_completion` keeps `{}`.
+* [x] Update the forwarding overrides in `include/felspar/io/allocator.hpp` to the new `std::optional<deadline>` signatures.
+* [x] Update the override declarations in `include/felspar/io/warden.poll.hpp` and `include/felspar/io/warden.uring.hpp`.
 
 ---
 

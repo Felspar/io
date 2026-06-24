@@ -96,7 +96,11 @@ namespace felspar::io {
                 std::optional<std::chrono::nanoseconds> timeout,
                 std::source_location const loc =
                         std::source_location::current()) {
-            return do_read_some(fd, s, timeout, loc);
+            return do_read_some(
+                    fd, s,
+                    timeout ? std::optional<deadline>{deadline_from(*timeout)}
+                            : std::nullopt,
+                    loc);
         }
         iop<std::size_t> read_some(
                 posix::fd const &s,
@@ -111,7 +115,11 @@ namespace felspar::io {
                 std::optional<std::chrono::nanoseconds> timeout = {},
                 std::source_location const loc =
                         std::source_location::current()) {
-            return do_write_some(fd, s, timeout, loc);
+            return do_write_some(
+                    fd, s,
+                    timeout ? std::optional<deadline>{deadline_from(*timeout)}
+                            : std::nullopt,
+                    loc);
         }
         iop<std::size_t> write_some(
                 posix::fd const &s,
@@ -155,7 +163,11 @@ namespace felspar::io {
                        std::optional<std::chrono::nanoseconds> timeout = {},
                        std::source_location const loc =
                                std::source_location::current()) {
-            return do_accept(fd, timeout, loc);
+            return do_accept(
+                    fd,
+                    timeout ? std::optional<deadline>{deadline_from(*timeout)}
+                            : std::nullopt,
+                    loc);
         }
         iop<socket_descriptor>
                 accept(posix::fd const &sock,
@@ -171,7 +183,11 @@ namespace felspar::io {
                         std::optional<std::chrono::nanoseconds> timeout = {},
                         std::source_location const loc =
                                 std::source_location::current()) {
-            return do_connect(fd, addr, addrlen, timeout, loc);
+            return do_connect(
+                    fd, addr, addrlen,
+                    timeout ? std::optional<deadline>{deadline_from(*timeout)}
+                            : std::nullopt,
+                    loc);
         }
         iop<void>
                 connect(posix::fd const &sock,
@@ -190,7 +206,11 @@ namespace felspar::io {
                 std::optional<std::chrono::nanoseconds> timeout = {},
                 std::source_location const loc =
                         std::source_location::current()) {
-            return do_read_ready(fd, timeout, loc);
+            return do_read_ready(
+                    fd,
+                    timeout ? std::optional<deadline>{deadline_from(*timeout)}
+                            : std::nullopt,
+                    loc);
         }
         iop<void> read_ready(
                 posix::fd const &sock,
@@ -204,7 +224,11 @@ namespace felspar::io {
                 std::optional<std::chrono::nanoseconds> timeout = {},
                 std::source_location const loc =
                         std::source_location::current()) {
-            return do_write_ready(fd, timeout, loc);
+            return do_write_ready(
+                    fd,
+                    timeout ? std::optional<deadline>{deadline_from(*timeout)}
+                            : std::nullopt,
+                    loc);
         }
         iop<void> write_ready(
                 posix::fd const &sock,
@@ -242,32 +266,32 @@ namespace felspar::io {
         virtual iop<std::size_t> do_read_some(
                 socket_descriptor fd,
                 std::span<std::byte>,
-                std::optional<std::chrono::nanoseconds> timeout,
+                std::optional<deadline> timeout,
                 std::source_location) = 0;
         virtual iop<std::size_t> do_write_some(
                 socket_descriptor fd,
                 std::span<std::byte const>,
-                std::optional<std::chrono::nanoseconds> timeout,
+                std::optional<deadline> timeout,
                 std::source_location) = 0;
         virtual void do_prepare_socket(socket_descriptor, std::source_location) {
         }
         virtual iop<socket_descriptor> do_accept(
                 socket_descriptor fd,
-                std::optional<std::chrono::nanoseconds> timeout,
+                std::optional<deadline> timeout,
                 std::source_location) = 0;
         virtual iop<void> do_connect(
                 socket_descriptor fd,
                 sockaddr const *,
                 socklen_t,
-                std::optional<std::chrono::nanoseconds> timeout,
+                std::optional<deadline> timeout,
                 std::source_location) = 0;
         virtual iop<void> do_read_ready(
                 socket_descriptor fd,
-                std::optional<std::chrono::nanoseconds> timeout,
+                std::optional<deadline> timeout,
                 std::source_location) = 0;
         virtual iop<void> do_write_ready(
                 socket_descriptor fd,
-                std::optional<std::chrono::nanoseconds> timeout,
+                std::optional<deadline> timeout,
                 std::source_location) = 0;
     };
 

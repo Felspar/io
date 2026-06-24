@@ -51,7 +51,7 @@ public completion<std::size_t> {
             uring_warden *s,
             int f,
             std::span<std::byte> b,
-            std::optional<std::chrono::nanoseconds> t,
+            std::optional<io::deadline> t,
             std::source_location const loc)
     : completion<std::size_t>{s, t, loc}, fd{f}, bytes{b} {}
     int fd;
@@ -65,7 +65,7 @@ public completion<std::size_t> {
 felspar::io::iop<std::size_t> felspar::io::uring_warden::do_read_some(
         socket_descriptor fd,
         std::span<std::byte> b,
-        std::optional<std::chrono::nanoseconds> timeout,
+        std::optional<deadline> timeout,
         std::source_location const loc) {
     return {new read_some_completion{this, fd, b, timeout, loc}};
 }
@@ -77,7 +77,7 @@ public completion<std::size_t> {
             uring_warden *s,
             socket_descriptor f,
             std::span<std::byte const> b,
-            std::optional<std::chrono::nanoseconds> t,
+            std::optional<io::deadline> t,
             std::source_location const loc)
     : completion<std::size_t>{s, t, loc}, fd{f}, bytes{b} {}
     socket_descriptor fd;
@@ -91,7 +91,7 @@ public completion<std::size_t> {
 felspar::io::iop<std::size_t> felspar::io::uring_warden::do_write_some(
         socket_descriptor fd,
         std::span<std::byte const> b,
-        std::optional<std::chrono::nanoseconds> t,
+        std::optional<deadline> t,
         std::source_location const loc) {
     return {new write_some_completion{this, fd, b, t, loc}};
 }
@@ -102,7 +102,7 @@ public completion<socket_descriptor> {
     accept_completion(
             uring_warden *s,
             socket_descriptor f,
-            std::optional<std::chrono::nanoseconds> t,
+            std::optional<io::deadline> t,
             std::source_location const loc)
     : completion<socket_descriptor>{s, t, loc}, fd{f} {}
     socket_descriptor fd = {};
@@ -117,7 +117,7 @@ public completion<socket_descriptor> {
 felspar::io::iop<felspar::io::socket_descriptor>
         felspar::io::uring_warden::do_accept(
                 socket_descriptor fd,
-                std::optional<std::chrono::nanoseconds> timeout,
+                std::optional<deadline> timeout,
                 std::source_location const loc) {
     return {new accept_completion{this, fd, timeout, loc}};
 }
@@ -129,7 +129,7 @@ struct felspar::io::uring_warden::connect_completion : public completion<void> {
             socket_descriptor f,
             sockaddr const *a,
             socklen_t l,
-            std::optional<std::chrono::nanoseconds> t,
+            std::optional<io::deadline> t,
             std::source_location const loc)
     : completion<void>{s, t, loc}, fd{f}, addr{a}, addrlen{l} {}
     socket_descriptor fd = {};
@@ -145,7 +145,7 @@ felspar::io::iop<void> felspar::io::uring_warden::do_connect(
         socket_descriptor fd,
         sockaddr const *addr,
         socklen_t addrlen,
-        std::optional<std::chrono::nanoseconds> timeout,
+        std::optional<deadline> timeout,
         std::source_location const loc) {
     return {new connect_completion{this, fd, addr, addrlen, timeout, loc}};
 }
@@ -156,7 +156,7 @@ struct felspar::io::uring_warden::poll_completion : public completion<void> {
             uring_warden *s,
             socket_descriptor f,
             short m,
-            std::optional<std::chrono::nanoseconds> t,
+            std::optional<io::deadline> t,
             std::source_location const loc)
     : completion<void>{s, t, loc}, fd{f}, mask{m} {}
     socket_descriptor fd = {};
@@ -169,13 +169,13 @@ struct felspar::io::uring_warden::poll_completion : public completion<void> {
 };
 felspar::io::iop<void> felspar::io::uring_warden::do_read_ready(
         socket_descriptor fd,
-        std::optional<std::chrono::nanoseconds> timeout,
+        std::optional<deadline> timeout,
         std::source_location const loc) {
     return {new poll_completion{this, fd, POLLIN, timeout, loc}};
 }
 felspar::io::iop<void> felspar::io::uring_warden::do_write_ready(
         socket_descriptor fd,
-        std::optional<std::chrono::nanoseconds> timeout,
+        std::optional<deadline> timeout,
         std::source_location const loc) {
     return {new poll_completion{this, fd, POLLOUT, timeout, loc}};
 }

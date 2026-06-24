@@ -18,24 +18,20 @@ namespace felspar::io {
     struct poll_warden::completion : public retrier, public io::completion<R> {
         completion(
                 poll_warden *w,
-                std::optional<std::chrono::nanoseconds> t,
+                std::optional<io::deadline> t,
                 std::source_location const loc)
-        : io::completion<R>{loc}, self{w}, timeout{t} {}
+        : io::completion<R>{loc}, self{w}, deadline{t} {}
 
         poll_warden *self;
         warden *ward() override { return self; }
 
-        std::optional<std::chrono::nanoseconds> timeout = {};
+        std::optional<io::deadline> deadline = {};
 
         void insert_timeout() {
-            if (timeout) {
-                auto const deadline =
-                        std::chrono::steady_clock::now() + *timeout;
-                self->timeouts.insert({deadline, this});
-            }
+            if (deadline) { self->timeouts.insert({*deadline, this}); }
         }
         void cancel_timeout() {
-            if (timeout) {
+            if (deadline) {
                 auto pos = std::find_if(
                         self->timeouts.begin(), self->timeouts.end(),
                         [this](auto const &s) { return s.second == this; });

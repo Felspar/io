@@ -47,14 +47,14 @@ namespace felspar::io {
             public io::completion<R> {
         completion(
                 uring_warden *w,
-                std::optional<std::chrono::nanoseconds> tout,
+                std::optional<io::deadline> tout,
                 std::source_location const loc)
-        : io::completion<R>{loc}, self{w}, timeout{tout} {}
+        : io::completion<R>{loc}, self{w}, deadline{tout} {}
 
         uring_warden *self = nullptr;
         warden *ward() override { return self; }
 
-        std::optional<std::chrono::nanoseconds> timeout = {};
+        std::optional<io::deadline> deadline = {};
         __kernel_timespec kts;
 
         ::io_uring_sqe *setup_submission(std::coroutine_handle<> h) {
@@ -63,11 +63,16 @@ namespace felspar::io {
         }
         std::coroutine_handle<> setup_timeout(::io_uring_sqe *sqe) {
             ::io_uring_sqe_set_data(sqe, this);
-            if (timeout) {
+            if (deadline) {
                 sqe->flags |= IOSQE_IO_LINK;
                 auto tsqe = self->ring->next_sqe();
+                auto const remaining =
+                        std::chrono::duration_cast<std::chrono::nanoseconds>(
+                                *deadline - std::chrono::steady_clock::now());
                 kts.tv_sec = 0;
-                kts.tv_nsec = timeout->count();
+                kts.tv_nsec = remaining > std::chrono::nanoseconds::zero()
+                        ? remaining.count()
+                        : 0;
                 ::io_uring_prep_link_timeout(tsqe, &kts, 0);
                 ::io_uring_sqe_set_data(tsqe, this);
                 iop_count = 2;
@@ -77,7 +82,7 @@ namespace felspar::io {
 
         void deliver(int result) override {
             if (result < 0) {
-                if (timeout and result == -ECANCELED) {
+                if (deadline and result == -ECANCELED) {
                     /// This is the cancelled IOP so we ignore it as we've timed
                     /// out
                     return;
@@ -108,14 +113,14 @@ namespace felspar::io {
             public io::completion<void> {
         completion(
                 uring_warden *w,
-                std::optional<std::chrono::nanoseconds> tout,
+                std::optional<io::deadline> tout,
                 std::source_location const loc)
-        : io::completion<void>{loc}, self{w}, timeout{tout} {}
+        : io::completion<void>{loc}, self{w}, deadline{tout} {}
 
         uring_warden *self;
         warden *ward() override { return self; }
 
-        std::optional<std::chrono::nanoseconds> timeout = {};
+        std::optional<io::deadline> deadline = {};
         __kernel_timespec kts;
 
         ::io_uring_sqe *setup_submission(std::coroutine_handle<> h) {
@@ -124,11 +129,16 @@ namespace felspar::io {
         }
         std::coroutine_handle<> setup_timeout(::io_uring_sqe *sqe) {
             ::io_uring_sqe_set_data(sqe, this);
-            if (timeout) {
+            if (deadline) {
                 sqe->flags |= IOSQE_IO_LINK;
                 auto tsqe = self->ring->next_sqe();
+                auto const remaining =
+                        std::chrono::duration_cast<std::chrono::nanoseconds>(
+                                *deadline - std::chrono::steady_clock::now());
                 kts.tv_sec = 0;
-                kts.tv_nsec = timeout->count();
+                kts.tv_nsec = remaining > std::chrono::nanoseconds::zero()
+                        ? remaining.count()
+                        : 0;
                 ::io_uring_prep_link_timeout(tsqe, &kts, 0);
                 ::io_uring_sqe_set_data(tsqe, this);
                 iop_count = 2;
@@ -140,7 +150,7 @@ namespace felspar::io {
             if (result == -ETIME) {
                 io::completion<void>::result = {
                         {ETIME, std::system_category()}, "uring IOP timeout"};
-            } else if (timeout and result == -ECANCELED) {
+            } else if (deadline and result == -ECANCELED) {
                 /// This is the cancelled IOP so we ignore it as we've timed
                 /// out
                 return;
