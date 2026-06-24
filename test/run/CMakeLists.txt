@@ -13,6 +13,7 @@ if(TARGET felspar-check)
 endif()
 if(TARGET felspar-stress)
     add_test_run(felspar-stress felspar-io-openssl TESTS
+            deadline.connect.cpp
             timers.connect.cpp
             tls.tests.cpp
         )

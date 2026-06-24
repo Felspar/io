@@ -87,11 +87,11 @@ Every end-user API currently takes a `std::optional<std::chrono::nanoseconds>` t
 ### Chunk 2.2: `connect.hpp` deadline overloads and composed threading
 
 **Tests:**
-* [ ] New test: `connect`-by-hostname against a host resolving to multiple addresses with a short deadline fails within ≈ the deadline overall (mirrors `test/run/timers.connect.cpp`), rather than resetting the timeout per address.
+* [x] New test: `connect`-by-hostname against a host resolving to multiple addresses with a short deadline fails within ≈ the deadline overall (mirrors `test/run/timers.connect.cpp`), rather than resetting the timeout per address.
 
 **Implementation:**
-* [ ] In `include/felspar/io/connect.hpp` add `std::optional<deadline>` overloads of the templated `connect(sock, addr, addrlen, ...)` and the `connect(hostname, port, ...)` declaration, replacing the Chunk 1.3 `std::optional<std::chrono::nanoseconds>` shim with the canonical deadline + non-optional `nanoseconds` pair.
-* [ ] In `src/convenience.cpp` implement the `connect`-by-hostname deadline overload so the deadline is computed once and shared across the `addrinfo` attempt loop; the timeout overload delegates.
+* [x] In `include/felspar/io/connect.hpp` add `std::optional<deadline>` overloads of the templated `connect(sock, addr, addrlen, ...)` and the `connect(hostname, port, ...)` declaration, replacing the Chunk 1.3 `std::optional<std::chrono::nanoseconds>` shim with the canonical deadline + non-optional `nanoseconds` pair.
+* [x] In `src/convenience.cpp` implement the `connect`-by-hostname deadline overload so the deadline is computed once and shared across the `addrinfo` attempt loop; the timeout overload delegates.
 
 ---
 

@@ -15,13 +15,22 @@ namespace felspar::io {
             Socket &&sock,
             sockaddr const *const addr,
             socklen_t const addrlen,
-            std::optional<std::chrono::nanoseconds> const timeout = {},
+            std::optional<deadline> deadline = {},
+            std::source_location const loc = std::source_location::current()) {
+        return ward.connect(
+                std::forward<Socket>(sock), addr, addrlen, deadline, loc);
+    }
+    template<typename Socket>
+    inline auto connect(
+            warden &ward,
+            Socket &&sock,
+            sockaddr const *const addr,
+            socklen_t const addrlen,
+            std::chrono::nanoseconds const timeout,
             std::source_location const loc = std::source_location::current()) {
         return ward.connect(
                 std::forward<Socket>(sock), addr, addrlen,
-                timeout ? std::optional<deadline>{deadline_from(*timeout)}
-                        : std::nullopt,
-                loc);
+                deadline_from(timeout), loc);
     }
 
 
@@ -30,7 +39,13 @@ namespace felspar::io {
             warden &ward,
             char const *hostname,
             std::uint16_t port,
-            std::optional<std::chrono::nanoseconds> timeout = {},
+            std::optional<deadline> deadline = {},
+            std::source_location const loc = std::source_location::current());
+    FELSPAR_CORO_WRAPPER warden::task<posix::fd> connect(
+            warden &ward,
+            char const *hostname,
+            std::uint16_t port,
+            std::chrono::nanoseconds timeout,
             std::source_location const loc = std::source_location::current());
     /**
      * Goes through each host address associated with the `hostname` and tries
