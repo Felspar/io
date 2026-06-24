@@ -10,14 +10,13 @@ Every end-user API currently takes a `std::optional<std::chrono::nanoseconds>` t
 ### Chunk 1.1: Introduce the `deadline` type and conversion helper
 
 **Tests:**
-* [ ] Add `test/headers/deadline.cpp` (single `#include`) to the header-compile test list in `test/headers/CMakeLists.txt`.
-* [ ] Unit test (new `test/run/deadline.cpp`, registered in `test/run/CMakeLists.txt`): `deadline_from(std::nullopt)` returns `std::nullopt`.
-* [ ] Unit test: `deadline_from(20ms)` returns a time point in `[now+19ms, now+21ms]` (mirrors the jitter tolerance style in `test/run/timers.cpp`).
+* [x] Add `test/headers/deadline.cpp` (single `#include`) to the header-compile test list in `test/headers/CMakeLists.txt`.
+* [x] Unit test (new `test/run/deadline.cpp`, registered in `test/run/CMakeLists.txt`): `deadline_from(20ms)` returns a time point in `[now+19ms, now+21ms]` (mirrors the jitter tolerance style in `test/run/timers.cpp`).
 
 **Implementation:**
-* [ ] New `include/felspar/io/deadline.hpp`: `using deadline = std::chrono::steady_clock::time_point;` and an inline `std::optional<deadline> deadline_from(std::optional<std::chrono::nanoseconds>)` that returns `now() + *timeout` when set, else `std::nullopt`.
-* [ ] Include `deadline.hpp` from `include/felspar/io/warden.hpp` so the type is visible everywhere.
-* [ ] Add `deadline.hpp` to `include/felspar/io.hpp`.
+* [x] New `include/felspar/io/deadline.hpp`: `using deadline = std::chrono::steady_clock::time_point;` and an inline `deadline deadline_from(std::chrono::nanoseconds timeout)` that returns `now() + timeout`. The helper takes a plain duration — absence ("no timeout") is never converted; it is represented by an empty `std::optional<deadline>` at the call site instead.
+* [x] Include `deadline.hpp` from `include/felspar/io/warden.hpp` so the type is visible everywhere.
+* [x] Add `deadline.hpp` to `include/felspar/io.hpp`.
 
 ---
 
@@ -29,7 +28,7 @@ Every end-user API currently takes a `std::optional<std::chrono::nanoseconds>` t
 
 **Implementation:**
 * [ ] In `include/felspar/io/warden.hpp` change the protected virtuals `do_read_some`, `do_write_some`, `do_accept`, `do_connect`, `do_read_ready`, `do_write_ready` to take `std::optional<deadline>` instead of `std::optional<std::chrono::nanoseconds>`. Keep `do_close` (no timeout) and `do_sleep` (handled in 1.4) unchanged.
-* [ ] Update the public warden timeout methods to convert inline with `deadline_from(timeout)` before calling the `do_*` virtual (no new public overload yet).
+* [ ] Update the public warden timeout methods to convert inline before calling the `do_*` virtual (no new public overload yet). These methods still take `std::optional<std::chrono::nanoseconds>` at this stage, so guard the conversion: `timeout ? std::optional<deadline>{deadline_from(*timeout)} : std::nullopt`. (Once Chunk 1.3 makes the timeout overload a plain `std::chrono::nanoseconds`, this collapses to a bare `deadline_from(timeout)`.)
 * [ ] `src/poll.hpp`: rename the completion's `timeout` field to `deadline` (type `std::optional<deadline>`); `insert_timeout()` inserts the stored deadline directly into `self->timeouts` (drop the `now() + *timeout` calculation — the multimap is already deadline-keyed).
 * [ ] `src/uring.hpp`: store `std::optional<deadline>` in both `completion<R>` and `completion<void>`; in `setup_timeout()` compute the link-timeout `kts` from `*deadline - std::chrono::steady_clock::now()` (clamp negative to zero so an already-passed deadline fires immediately).
 * [ ] Update completion constructors/`do_*` definitions in `src/poll.iops.cpp` and `src/uring.iops.cpp` to pass the deadline through; `sleep_completion` constructs its base with `now() + ns` for now; `close_completion` keeps `{}`.

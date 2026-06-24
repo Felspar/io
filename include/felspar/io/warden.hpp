@@ -3,6 +3,7 @@
 #include <felspar/coro/starter.hpp>
 #include <felspar/coro/stream.hpp>
 #include <felspar/io/completion.hpp>
+#include <felspar/io/deadline.hpp>
 #include <felspar/io/pipe.hpp>
 #include <felspar/io/posix.hpp>
 #include <felspar/memory/pmr.hpp>
