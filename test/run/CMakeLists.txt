@@ -4,6 +4,7 @@ if(TARGET felspar-check)
             basics.cpp
             cancel.cpp
             deadline.cpp
+            deadline.composed.cpp
             exceptions.cpp
             pipe.cpp
             run_batch.cpp

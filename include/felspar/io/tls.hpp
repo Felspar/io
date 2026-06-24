@@ -31,35 +31,72 @@ namespace felspar::io {
                         char const *snI_hostname,
                         sockaddr const *addr,
                         socklen_t addrlen,
-                        std::optional<std::chrono::nanoseconds> timeout = {},
+                        std::optional<deadline> = {},
                         std::source_location = std::source_location::current());
-        static warden::task<tls> connect(
-                warden &ward,
-                char const *const hostname,
-                std::uint16_t const port = 443,
-                std::optional<std::chrono::nanoseconds> const timeout = {},
-                std::source_location const loc =
-                        std::source_location::current());
+        static warden::task<tls>
+                connect(warden &ward,
+                        char const *const hostname,
+                        std::uint16_t const port = 443,
+                        std::optional<deadline> = {},
+                        std::source_location const loc =
+                                std::source_location::current());
         /**
          * Goes through each host address associated with the `hostname` and
          * tries to connect to them in turn. Returns the first one that works.
          * If all of them fail it throws the exception associated with the last
          * one tried. Also throws if no hosts are returned.
          */
+        FELSPAR_CORO_WRAPPER static warden::task<tls>
+                connect(warden &warden,
+                        char const *const sni_hostname,
+                        sockaddr const *const addr,
+                        socklen_t const addrlen,
+                        std::chrono::nanoseconds const timeout,
+                        std::source_location const loc =
+                                std::source_location::current()) {
+            return connect(
+                    warden, sni_hostname, addr, addrlen, deadline_from(timeout),
+                    loc);
+        }
+        FELSPAR_CORO_WRAPPER static warden::task<tls>
+                connect(warden &ward,
+                        char const *const hostname,
+                        std::uint16_t const port,
+                        std::chrono::nanoseconds const timeout,
+                        std::source_location const loc =
+                                std::source_location::current()) {
+            return connect(ward, hostname, port, deadline_from(timeout), loc);
+        }
 
 
         /// Read from the connection
         warden::task<std::size_t> read_some(
                 warden &w,
                 std::span<std::byte>,
-                std::optional<std::chrono::nanoseconds> const timeout = {},
+                std::optional<deadline> = {},
                 std::source_location = std::source_location::current());
+        FELSPAR_CORO_WRAPPER warden::task<std::size_t> read_some(
+                warden &w,
+                std::span<std::byte> const s,
+                std::chrono::nanoseconds const timeout,
+                std::source_location const loc =
+                        std::source_location::current()) {
+            return read_some(w, s, deadline_from(timeout), loc);
+        }
         /// Write to the connection
         warden::task<std::size_t> write_some(
                 warden &w,
                 std::span<std::byte const>,
-                std::optional<std::chrono::nanoseconds> const timeout = {},
+                std::optional<deadline> = {},
                 std::source_location = std::source_location::current());
+        FELSPAR_CORO_WRAPPER warden::task<std::size_t> write_some(
+                warden &w,
+                std::span<std::byte const> const s,
+                std::chrono::nanoseconds const timeout,
+                std::source_location const loc =
+                        std::source_location::current()) {
+            return write_some(w, s, deadline_from(timeout), loc);
+        }
     };
 
 
@@ -69,17 +106,33 @@ namespace felspar::io {
             warden &w,
             tls &cnx,
             std::span<std::byte> const s,
-            std::optional<std::chrono::nanoseconds> const timeout = {},
+            std::optional<deadline> deadline = {},
             std::source_location const loc = std::source_location::current()) {
-        return cnx.read_some(w, s, timeout, loc);
+        return cnx.read_some(w, s, deadline, loc);
+    }
+    FELSPAR_CORO_WRAPPER inline auto read_some(
+            warden &w,
+            tls &cnx,
+            std::span<std::byte> const s,
+            std::chrono::nanoseconds const timeout,
+            std::source_location const loc = std::source_location::current()) {
+        return cnx.read_some(w, s, deadline_from(timeout), loc);
     }
     FELSPAR_CORO_WRAPPER inline auto write_some(
             warden &w,
             tls &cnx,
             std::span<std::byte const> const s,
-            std::optional<std::chrono::nanoseconds> const timeout = {},
+            std::optional<deadline> deadline = {},
             std::source_location const loc = std::source_location::current()) {
-        return cnx.write_some(w, s, timeout, loc);
+        return cnx.write_some(w, s, deadline, loc);
+    }
+    FELSPAR_CORO_WRAPPER inline auto write_some(
+            warden &w,
+            tls &cnx,
+            std::span<std::byte const> const s,
+            std::chrono::nanoseconds const timeout,
+            std::source_location const loc = std::source_location::current()) {
+        return cnx.write_some(w, s, deadline_from(timeout), loc);
     }
 
 

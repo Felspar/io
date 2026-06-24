@@ -2,6 +2,8 @@
 #include <felspar/coro/eager.hpp>
 #include <felspar/test.hpp>
 
+#include <vector>
+
 
 using namespace std::literals;
 
@@ -197,6 +199,66 @@ namespace {
                 felspar::io::uring_warden ward;
                 ward.run(past_accept_deadline, 5548, check, std::ref(log));
             });
+#endif
+
+
+    /// Accept a single connection then drain it very slowly so the peer's
+    /// `write_all` is forced to make many partial writes spread out over time
+    felspar::io::warden::task<void>
+            slow_drain_acceptor(felspar::io::warden &ward, std::uint16_t port) {
+        auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
+        felspar::posix::set_reuse_port(fd);
+        felspar::posix::bind_to_any_address(fd, port);
+        felspar::posix::listen(fd, 64);
+
+        auto acceptor = felspar::io::accept(ward, fd);
+        auto cnx = co_await acceptor.next();
+        std::array<std::byte, 1 << 10> buffer;
+        for (int i = 0; i < 200; ++i) {
+            co_await felspar::io::read_some(ward, *cnx, buffer);
+            co_await ward.sleep(5ms);
+        }
+    }
+    /// A single deadline must bound the whole `write_all` loop rather than
+    /// resetting on each `write_some`, so even though the slow drain lets a few
+    /// partial writes through we still time out close to the deadline
+    felspar::io::warden::task<void>
+            write_all_deadline(felspar::io::warden &ward, std::uint16_t port) {
+        felspar::test::injected check;
+
+        std::vector<std::byte> buffer(8 << 20);
+        auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
+        sockaddr_in in;
+        in.sin_family = AF_INET;
+        in.sin_port = htons(port);
+        in.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+        co_await ward.connect(
+                fd, reinterpret_cast<sockaddr const *>(&in), sizeof(in));
+
+        auto const start = std::chrono::steady_clock::now();
+        try {
+            co_await felspar::io::write_all(
+                    ward, fd, std::span<std::byte const>{buffer}, 30ms);
+            check(false) == true;
+        } catch (felspar::io::timeout const &) {
+            check(true) == true;
+        } catch (...) { check(false) == true; }
+        auto const elapsed = std::chrono::steady_clock::now() - start;
+        check(elapsed <= 300ms) == true;
+    }
+    auto const wadp = suite.test("write-all-deadline/poll", []() {
+        felspar::io::poll_warden ward;
+        felspar::io::warden::eager<> co;
+        co.post(slow_drain_acceptor, ward, 5550);
+        ward.run(write_all_deadline, 5550);
+    });
+#ifdef FELSPAR_ENABLE_IO_URING
+    auto const wadu = suite.test("write-all-deadline/io_uring", []() {
+        felspar::io::uring_warden ward;
+        felspar::io::warden::eager<> co;
+        co.post(slow_drain_acceptor, ward, 5552);
+        ward.run(write_all_deadline, 5552);
+    });
 #endif
 
 

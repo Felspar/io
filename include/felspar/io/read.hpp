@@ -19,13 +19,18 @@ namespace felspar::io {
             io::warden &warden,
             S &&sock,
             B &&buffer,
-            std::optional<std::chrono::nanoseconds> const timeout = {},
+            std::optional<deadline> deadline = {},
             std::source_location const loc = std::source_location::current()) {
-        return warden.read_some(
-                sock, buffer,
-                timeout ? std::optional<deadline>{deadline_from(*timeout)}
-                        : std::nullopt,
-                loc);
+        return warden.read_some(sock, buffer, deadline, loc);
+    }
+    template<typename S, typename B>
+    inline auto read_some(
+            io::warden &warden,
+            S &&sock,
+            B &&buffer,
+            std::chrono::nanoseconds const timeout,
+            std::source_location const loc = std::source_location::current()) {
+        return warden.read_some(sock, buffer, deadline_from(timeout), loc);
     }
 
 
@@ -90,11 +95,11 @@ namespace felspar::io {
         warden::task<std::size_t> do_read_some(
                 warden &ward,
                 S &&sock,
-                std::optional<std::chrono::nanoseconds> timeout = {},
+                std::optional<deadline> deadline = {},
                 std::source_location const loc =
                         std::source_location::current()) {
             std::size_t const bytes_read =
-                    co_await read_some(ward, sock, remaining(), timeout, loc);
+                    co_await read_some(ward, sock, remaining(), deadline, loc);
             if (bytes_read == 0) {
                 co_return 0;
             } else {
@@ -102,6 +107,16 @@ namespace felspar::io {
                 empty_buffer = empty_buffer.subspan(bytes_read);
                 co_return bytes_read;
             }
+        }
+        template<typename S>
+        FELSPAR_CORO_WRAPPER warden::task<std::size_t> do_read_some(
+                warden &ward,
+                S &&sock,
+                std::chrono::nanoseconds const timeout,
+                std::source_location const loc =
+                        std::source_location::current()) {
+            return do_read_some(
+                    ward, std::forward<S>(sock), deadline_from(timeout), loc);
         }
 
 
@@ -144,11 +159,12 @@ namespace felspar::io {
             warden &ward,
             S &&sock,
             std::span<std::byte> b,
-            std::optional<std::chrono::nanoseconds> timeout = {},
+            std::optional<deadline> deadline = {},
             std::source_location const loc = std::source_location::current()) {
         std::span<std::byte> in{b};
         while (in.size()) {
-            auto const bytes = co_await read_some(ward, sock, in, timeout, loc);
+            auto const bytes =
+                    co_await read_some(ward, sock, in, deadline, loc);
             if (not bytes) { co_return b.size() - in.size(); }
             in = in.subspan(bytes);
         }
@@ -156,29 +172,65 @@ namespace felspar::io {
     }
     template<typename S>
     FELSPAR_CORO_WRAPPER inline warden::task<std::size_t> read_exactly(
+            warden &ward,
+            S &&sock,
+            std::span<std::byte> b,
+            std::chrono::nanoseconds const timeout,
+            std::source_location const loc = std::source_location::current()) {
+        return read_exactly(
+                ward, std::forward<S>(sock), b, deadline_from(timeout), loc);
+    }
+    template<typename S>
+    FELSPAR_CORO_WRAPPER inline warden::task<std::size_t> read_exactly(
             warden &w,
             S &&s,
             void *buf,
             std::size_t count,
-            std::optional<std::chrono::nanoseconds> timeout = {},
+            std::optional<deadline> deadline = {},
             std::source_location const loc = std::source_location::current()) {
         return read_exactly(
                 w, std::forward<S>(s),
                 std::span<std::byte>{reinterpret_cast<std::byte *>(buf), count},
-                std::move(timeout), loc);
+                deadline, loc);
+    }
+    template<typename S>
+    FELSPAR_CORO_WRAPPER inline warden::task<std::size_t> read_exactly(
+            warden &w,
+            S &&s,
+            void *buf,
+            std::size_t count,
+            std::chrono::nanoseconds const timeout,
+            std::source_location const loc = std::source_location::current()) {
+        return read_exactly(
+                w, std::forward<S>(s),
+                std::span<std::byte>{reinterpret_cast<std::byte *>(buf), count},
+                deadline_from(timeout), loc);
     }
     template<typename S>
     FELSPAR_CORO_WRAPPER inline warden::task<std::size_t> read_exactly(
             warden &w,
             S &&s,
             std::span<std::uint8_t> b,
-            std::optional<std::chrono::nanoseconds> timeout = {},
+            std::optional<deadline> deadline = {},
             std::source_location const loc = std::source_location::current()) {
         return read_exactly(
                 w, std::forward<S>(s),
                 std::span<std::byte>{
                         reinterpret_cast<std::byte *>(b.data()), b.size()},
-                std::move(timeout), loc);
+                deadline, loc);
+    }
+    template<typename S>
+    FELSPAR_CORO_WRAPPER inline warden::task<std::size_t> read_exactly(
+            warden &w,
+            S &&s,
+            std::span<std::uint8_t> b,
+            std::chrono::nanoseconds const timeout,
+            std::source_location const loc = std::source_location::current()) {
+        return read_exactly(
+                w, std::forward<S>(s),
+                std::span<std::byte>{
+                        reinterpret_cast<std::byte *>(b.data()), b.size()},
+                deadline_from(timeout), loc);
     }
 
 
@@ -192,12 +244,12 @@ namespace felspar::io {
             warden &ward,
             S &&sock,
             R &read_buffer,
-            std::optional<std::chrono::nanoseconds> timeout = {},
+            std::optional<deadline> deadline = {},
             std::source_location const loc = std::source_location::current()) {
         auto cr = read_buffer.find('\n');
         while (cr == read_buffer.end()) {
-            auto const bytes =
-                    co_await read_buffer.do_read_some(ward, sock, timeout, loc);
+            auto const bytes = co_await read_buffer.do_read_some(
+                    ward, sock, deadline, loc);
             if (bytes == 0) { co_return {}; }
             cr = read_buffer.find('\n');
         }
@@ -208,6 +260,19 @@ namespace felspar::io {
         } else {
             co_return read;
         }
+    }
+    template<typename S, typename R>
+    FELSPAR_CORO_WRAPPER inline warden::task<typename R::span_type>
+            read_until_lf_strip_cr(
+                    warden &ward,
+                    S &&sock,
+                    R &read_buffer,
+                    std::chrono::nanoseconds const timeout,
+                    std::source_location const loc =
+                            std::source_location::current()) {
+        return read_until_lf_strip_cr(
+                ward, std::forward<S>(sock), read_buffer,
+                deadline_from(timeout), loc);
     }
 
 
