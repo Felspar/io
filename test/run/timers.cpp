@@ -183,8 +183,10 @@ namespace {
             log << e.what() << '\n';
             check(false) == true;
         } catch (...) { check(false) == true; }
-        /// A deadline already in the past must time out essentially
-        /// immediately rather than waiting any real length of time
+        /**
+         * A deadline already in the past must time out essentially immediately
+         * rather than waiting any real length of time
+         */
         auto const elapsed = std::chrono::steady_clock::now() - start;
         check(elapsed <= 80ms) == true;
     }
@@ -202,8 +204,10 @@ namespace {
 #endif
 
 
-    /// Accept a single connection then drain it very slowly so the peer's
-    /// `write_all` is forced to make many partial writes spread out over time
+    /**
+     * Accept a single connection then drain it very slowly so the peer's
+     * `write_all` is forced to make many partial writes spread out over time
+     */
     felspar::io::warden::task<void>
             slow_drain_acceptor(felspar::io::warden &ward, std::uint16_t port) {
         auto fd = ward.create_socket(AF_INET, SOCK_STREAM, 0);
@@ -219,9 +223,11 @@ namespace {
             co_await ward.sleep(5ms);
         }
     }
-    /// A single deadline must bound the whole `write_all` loop rather than
-    /// resetting on each `write_some`, so even though the slow drain lets a few
-    /// partial writes through we still time out close to the deadline
+    /**
+     * A single deadline must bound the whole `write_all` loop rather than
+     * resetting on each `write_some`, so even though the slow drain lets a few
+     * partial writes through we still time out close to the deadline
+     */
     felspar::io::warden::task<void>
             write_all_deadline(felspar::io::warden &ward, std::uint16_t port) {
         felspar::test::injected check;

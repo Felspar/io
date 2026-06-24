@@ -19,8 +19,7 @@ namespace {
      * than resetting the timeout for every address.
      */
     felspar::io::warden::task<void> hostname_connect_deadline(
-            felspar::io::warden &ward,
-            char const *const hostname) {
+            felspar::io::warden &ward, char const *const hostname) {
         felspar::test::injected check;
 
         auto const begin = std::chrono::steady_clock::now();
@@ -46,14 +45,12 @@ namespace {
     }
     auto const p = suite.test("poll", []() {
         felspar::io::poll_warden ward;
-        ward.run(
-                hostname_connect_deadline, "felspar.com");
+        ward.run(hostname_connect_deadline, "felspar.com");
     });
 #ifdef FELSPAR_ENABLE_IO_URING
     auto const u = suite.test("uring", []() {
         felspar::io::uring_warden ward{5};
-        ward.run(
-                hostname_connect_deadline, "felspar.com");
+        ward.run(hostname_connect_deadline, "felspar.com");
     });
 #endif
 
