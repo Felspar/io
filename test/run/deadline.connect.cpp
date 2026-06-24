@@ -20,8 +20,7 @@ namespace {
      */
     felspar::io::warden::task<void> hostname_connect_deadline(
             felspar::io::warden &ward,
-            char const *const hostname,
-            std::source_location const loc) {
+            char const *const hostname) {
         felspar::test::injected check;
 
         auto const begin = std::chrono::steady_clock::now();
@@ -35,7 +34,7 @@ namespace {
         } catch (felspar::io::timeout const &) {
             check(true) == true;
         } catch (std::exception const &e) {
-            check.failed(e.what(), loc);
+            check.failed(e.what());
         } catch (...) { check(false) == true; }
         auto const elapsed = std::chrono::steady_clock::now() - begin;
         /**
@@ -48,15 +47,13 @@ namespace {
     auto const p = suite.test("poll", []() {
         felspar::io::poll_warden ward;
         ward.run(
-                hostname_connect_deadline, "felspar.com",
-                std::source_location::current());
+                hostname_connect_deadline, "felspar.com");
     });
 #ifdef FELSPAR_ENABLE_IO_URING
     auto const u = suite.test("uring", []() {
         felspar::io::uring_warden ward{5};
         ward.run(
-                hostname_connect_deadline, "felspar.com",
-                std::source_location::current());
+                hostname_connect_deadline, "felspar.com");
     });
 #endif
 
