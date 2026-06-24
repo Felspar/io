@@ -24,7 +24,6 @@ linux && CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-release \
 
 
 export CXXFLAGS=-stdlib=libc++
-export LD_FLAGS=-stdlib=libc++
 
 CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-debug-libc++ \
     -DCMAKE_INSTALL_PREFIX=dist/clang-debug-libc++
@@ -35,7 +34,7 @@ CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-release-libc++ \
 
 
 # We can't use `undefined` sanitizer with coroutines due to clang bug :-(
-export CXXFLAGS="${CXXFLAGS} -fsanitize=address"
+export CXXFLAGS="-stdlib=libc++ -fsanitize=address"
 
 CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-debug-asan \
     -DCMAKE_INSTALL_PREFIX=dist/clang-debug-asan
@@ -46,10 +45,10 @@ CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-release-asan \
 
 
 linux && CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-debug--io_uring-asan \
-    -DFELSPAR_ENABLE_IO_URING=NO \
+    -DFELSPAR_ENABLE_IO_URING=ON \
     -DCMAKE_INSTALL_PREFIX=dist/clang-debug--io_uring-asan
 
 linux && CC=clang CXX=clang++ $CMAKE -B build.tmp/clang-release--io_uring-asan \
-    -DFELSPAR_ENABLE_IO_URING=NO \
+    -DFELSPAR_ENABLE_IO_URING=ON \
     -DCMAKE_INSTALL_PREFIX=dist/clang-release--io_uring-asan \
     -DCMAKE_BUILD_TYPE=Release
