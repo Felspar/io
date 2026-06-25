@@ -5,6 +5,7 @@
 #include <felspar/io/addrinfo.hpp>
 #include <felspar/io/allocator.hpp>
 #include <felspar/io/connect.hpp>
+#include <felspar/io/deadline.hpp>
 #include <felspar/io/error.hpp>
 #include <felspar/io/exceptions.hpp>
 #include <felspar/io/pipe.hpp>

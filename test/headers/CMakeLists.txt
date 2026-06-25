@@ -5,6 +5,7 @@ if(TARGET felspar-check)
             accept.cpp
             completion.cpp
             connect.cpp
+            deadline.cpp
             error.cpp
             exceptions.cpp
             io.cpp

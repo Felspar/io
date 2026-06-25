@@ -3,6 +3,7 @@
 #include <felspar/coro/starter.hpp>
 #include <felspar/coro/stream.hpp>
 #include <felspar/io/completion.hpp>
+#include <felspar/io/deadline.hpp>
 #include <felspar/io/pipe.hpp>
 #include <felspar/io/posix.hpp>
 #include <felspar/memory/pmr.hpp>
@@ -92,32 +93,62 @@ namespace felspar::io {
         iop<std::size_t> read_some(
                 socket_descriptor fd,
                 std::span<std::byte> s,
-                std::optional<std::chrono::nanoseconds> timeout,
+                std::optional<deadline> deadline = {},
                 std::source_location const loc =
                         std::source_location::current()) {
-            return do_read_some(fd, s, timeout, loc);
+            return do_read_some(fd, s, deadline, loc);
+        }
+        iop<std::size_t> read_some(
+                socket_descriptor fd,
+                std::span<std::byte> s,
+                std::chrono::nanoseconds timeout,
+                std::source_location const loc =
+                        std::source_location::current()) {
+            return read_some(fd, s, deadline_from(timeout), loc);
         }
         iop<std::size_t> read_some(
                 posix::fd const &s,
                 std::span<std::byte> b,
-                std::optional<std::chrono::nanoseconds> timeout = {},
+                std::optional<deadline> deadline = {},
                 std::source_location const l = std::source_location::current()) {
-            return read_some(s.native_handle(), b, timeout, l);
+            return read_some(s.native_handle(), b, deadline, l);
+        }
+        iop<std::size_t> read_some(
+                posix::fd const &s,
+                std::span<std::byte> b,
+                std::chrono::nanoseconds timeout,
+                std::source_location const l = std::source_location::current()) {
+            return read_some(s.native_handle(), b, deadline_from(timeout), l);
         }
         iop<std::size_t> write_some(
                 socket_descriptor fd,
                 std::span<std::byte const> s,
-                std::optional<std::chrono::nanoseconds> timeout = {},
+                std::optional<deadline> deadline = {},
                 std::source_location const loc =
                         std::source_location::current()) {
-            return do_write_some(fd, s, timeout, loc);
+            return do_write_some(fd, s, deadline, loc);
+        }
+        iop<std::size_t> write_some(
+                socket_descriptor fd,
+                std::span<std::byte const> s,
+                std::chrono::nanoseconds timeout,
+                std::source_location const loc =
+                        std::source_location::current()) {
+            return write_some(fd, s, deadline_from(timeout), loc);
         }
         iop<std::size_t> write_some(
                 posix::fd const &s,
                 std::span<std::byte const> b,
-                std::optional<std::chrono::nanoseconds> timeout = {},
+                std::optional<deadline> deadline = {},
                 std::source_location const l = std::source_location::current()) {
-            return write_some(s.native_handle(), b, timeout, l);
+            return write_some(s.native_handle(), b, deadline, l);
+        }
+        iop<std::size_t> write_some(
+                posix::fd const &s,
+                std::span<std::byte const> b,
+                std::chrono::nanoseconds timeout,
+                std::source_location const l = std::source_location::current()) {
+            return write_some(s.native_handle(), b, deadline_from(timeout), l);
         }
 
         /// ### Socket APIs
@@ -151,66 +182,130 @@ namespace felspar::io {
 
         iop<socket_descriptor>
                 accept(socket_descriptor fd,
-                       std::optional<std::chrono::nanoseconds> timeout = {},
+                       std::optional<deadline> deadline = {},
                        std::source_location const loc =
                                std::source_location::current()) {
-            return do_accept(fd, timeout, loc);
+            return do_accept(fd, deadline, loc);
+        }
+        iop<socket_descriptor>
+                accept(socket_descriptor fd,
+                       std::chrono::nanoseconds timeout,
+                       std::source_location const loc =
+                               std::source_location::current()) {
+            return accept(fd, deadline_from(timeout), loc);
         }
         iop<socket_descriptor>
                 accept(posix::fd const &sock,
-                       std::optional<std::chrono::nanoseconds> timeout = {},
+                       std::optional<deadline> deadline = {},
                        std::source_location const loc =
                                std::source_location::current()) {
-            return accept(sock.native_handle(), timeout, loc);
+            return accept(sock.native_handle(), deadline, loc);
+        }
+        iop<socket_descriptor>
+                accept(posix::fd const &sock,
+                       std::chrono::nanoseconds timeout,
+                       std::source_location const loc =
+                               std::source_location::current()) {
+            return accept(sock.native_handle(), deadline_from(timeout), loc);
         }
         iop<void>
                 connect(socket_descriptor fd,
                         sockaddr const *addr,
                         socklen_t addrlen,
-                        std::optional<std::chrono::nanoseconds> timeout = {},
+                        std::optional<deadline> deadline = {},
                         std::source_location const loc =
                                 std::source_location::current()) {
-            return do_connect(fd, addr, addrlen, timeout, loc);
+            return do_connect(fd, addr, addrlen, deadline, loc);
+        }
+        iop<void>
+                connect(socket_descriptor fd,
+                        sockaddr const *addr,
+                        socklen_t addrlen,
+                        std::chrono::nanoseconds timeout,
+                        std::source_location const loc =
+                                std::source_location::current()) {
+            return connect(fd, addr, addrlen, deadline_from(timeout), loc);
         }
         iop<void>
                 connect(posix::fd const &sock,
                         sockaddr const *addr,
                         socklen_t addrlen,
-                        std::optional<std::chrono::nanoseconds> timeout = {},
+                        std::optional<deadline> deadline = {},
                         std::source_location const loc =
                                 std::source_location::current()) {
-            return connect(sock.native_handle(), addr, addrlen, timeout, loc);
+            return connect(sock.native_handle(), addr, addrlen, deadline, loc);
+        }
+        iop<void>
+                connect(posix::fd const &sock,
+                        sockaddr const *addr,
+                        socklen_t addrlen,
+                        std::chrono::nanoseconds timeout,
+                        std::source_location const loc =
+                                std::source_location::current()) {
+            return connect(
+                    sock.native_handle(), addr, addrlen, deadline_from(timeout),
+                    loc);
         }
 
 
         /// ### File readiness
         iop<void> read_ready(
                 socket_descriptor fd,
-                std::optional<std::chrono::nanoseconds> timeout = {},
+                std::optional<deadline> deadline = {},
                 std::source_location const loc =
                         std::source_location::current()) {
-            return do_read_ready(fd, timeout, loc);
+            return do_read_ready(fd, deadline, loc);
+        }
+        iop<void> read_ready(
+                socket_descriptor fd,
+                std::chrono::nanoseconds timeout,
+                std::source_location const loc =
+                        std::source_location::current()) {
+            return read_ready(fd, deadline_from(timeout), loc);
         }
         iop<void> read_ready(
                 posix::fd const &sock,
-                std::optional<std::chrono::nanoseconds> timeout = {},
+                std::optional<deadline> deadline = {},
                 std::source_location const loc =
                         std::source_location::current()) {
-            return read_ready(sock.native_handle(), timeout, loc);
+            return read_ready(sock.native_handle(), deadline, loc);
+        }
+        iop<void> read_ready(
+                posix::fd const &sock,
+                std::chrono::nanoseconds timeout,
+                std::source_location const loc =
+                        std::source_location::current()) {
+            return read_ready(
+                    sock.native_handle(), deadline_from(timeout), loc);
         }
         iop<void> write_ready(
                 socket_descriptor fd,
-                std::optional<std::chrono::nanoseconds> timeout = {},
+                std::optional<deadline> deadline = {},
                 std::source_location const loc =
                         std::source_location::current()) {
-            return do_write_ready(fd, timeout, loc);
+            return do_write_ready(fd, deadline, loc);
+        }
+        iop<void> write_ready(
+                socket_descriptor fd,
+                std::chrono::nanoseconds timeout,
+                std::source_location const loc =
+                        std::source_location::current()) {
+            return write_ready(fd, deadline_from(timeout), loc);
         }
         iop<void> write_ready(
                 posix::fd const &sock,
-                std::optional<std::chrono::nanoseconds> timeout = {},
+                std::optional<deadline> deadline = {},
                 std::source_location const loc =
                         std::source_location::current()) {
-            return write_ready(sock.native_handle(), timeout, loc);
+            return write_ready(sock.native_handle(), deadline, loc);
+        }
+        iop<void> write_ready(
+                posix::fd const &sock,
+                std::chrono::nanoseconds timeout,
+                std::source_location const loc =
+                        std::source_location::current()) {
+            return write_ready(
+                    sock.native_handle(), deadline_from(timeout), loc);
         }
 
       private:
@@ -241,32 +336,32 @@ namespace felspar::io {
         virtual iop<std::size_t> do_read_some(
                 socket_descriptor fd,
                 std::span<std::byte>,
-                std::optional<std::chrono::nanoseconds> timeout,
+                std::optional<deadline> timeout,
                 std::source_location) = 0;
         virtual iop<std::size_t> do_write_some(
                 socket_descriptor fd,
                 std::span<std::byte const>,
-                std::optional<std::chrono::nanoseconds> timeout,
+                std::optional<deadline> timeout,
                 std::source_location) = 0;
         virtual void do_prepare_socket(socket_descriptor, std::source_location) {
         }
         virtual iop<socket_descriptor> do_accept(
                 socket_descriptor fd,
-                std::optional<std::chrono::nanoseconds> timeout,
+                std::optional<deadline> timeout,
                 std::source_location) = 0;
         virtual iop<void> do_connect(
                 socket_descriptor fd,
                 sockaddr const *,
                 socklen_t,
-                std::optional<std::chrono::nanoseconds> timeout,
+                std::optional<deadline> timeout,
                 std::source_location) = 0;
         virtual iop<void> do_read_ready(
                 socket_descriptor fd,
-                std::optional<std::chrono::nanoseconds> timeout,
+                std::optional<deadline> timeout,
                 std::source_location) = 0;
         virtual iop<void> do_write_ready(
                 socket_descriptor fd,
-                std::optional<std::chrono::nanoseconds> timeout,
+                std::optional<deadline> timeout,
                 std::source_location) = 0;
     };
 

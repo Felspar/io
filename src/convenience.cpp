@@ -24,7 +24,7 @@ felspar::io::warden::stream<felspar::io::socket_descriptor> felspar::io::accept(
      * before it can be used in this coroutine.
      */
     while (true) {
-        auto s = co_await ward.accept(fd, {}, loc);
+        auto s = co_await ward.accept(fd, std::optional<deadline>{}, loc);
 #if defined(FELSPAR_WINSOCK2)
         co_yield s;
 #else
@@ -72,13 +72,13 @@ auto felspar::io::connect(
         warden &ward,
         char const *const hostname,
         std::uint16_t const port,
-        std::optional<std::chrono::nanoseconds> const timeout,
+        std::optional<deadline> const deadline,
         std::source_location const loc) -> warden::task<posix::fd> {
     std::exception_ptr eptr;
     for (auto host : addrinfo(hostname, port)) {
         try {
             auto fd = ward.create_socket(host.first->sa_family, SOCK_STREAM, 0);
-            co_await connect(ward, fd, host.first, host.second, timeout, loc);
+            co_await connect(ward, fd, host.first, host.second, deadline, loc);
             co_return fd;
         } catch (...) { eptr = std::current_exception(); }
     }
@@ -88,6 +88,16 @@ auto felspar::io::connect(
         throw felspar::stdexcept::runtime_error{
                 "No host found for " + std::string{hostname}, loc};
     }
+}
+
+
+auto felspar::io::connect(
+        warden &ward,
+        char const *const hostname,
+        std::uint16_t const port,
+        std::chrono::nanoseconds const timeout,
+        std::source_location const loc) -> warden::task<posix::fd> {
+    return connect(ward, hostname, port, deadline_from(timeout), loc);
 }
 
 

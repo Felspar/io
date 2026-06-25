@@ -56,14 +56,14 @@ namespace felspar::io {
         iop<std::size_t> do_read_some(
                 socket_descriptor const fd,
                 std::span<std::byte> const buffer,
-                std::optional<std::chrono::nanoseconds> const timeout,
+                std::optional<deadline> const timeout,
                 std::source_location const loc) override {
             return backing_warden.do_read_some(fd, buffer, timeout, loc);
         }
         iop<std::size_t> do_write_some(
                 socket_descriptor const fd,
                 std::span<std::byte const> const buffer,
-                std::optional<std::chrono::nanoseconds> const timeout,
+                std::optional<deadline> const timeout,
                 std::source_location const loc) override {
             return backing_warden.do_write_some(fd, buffer, timeout, loc);
         }
@@ -74,7 +74,7 @@ namespace felspar::io {
         }
         iop<socket_descriptor> do_accept(
                 socket_descriptor const fd,
-                std::optional<std::chrono::nanoseconds> const timeout,
+                std::optional<deadline> const timeout,
                 std::source_location const loc) override {
             return backing_warden.do_accept(fd, timeout, loc);
         }
@@ -82,19 +82,19 @@ namespace felspar::io {
                 socket_descriptor const fd,
                 sockaddr const *const addr,
                 socklen_t const len,
-                std::optional<std::chrono::nanoseconds> const timeout,
+                std::optional<deadline> const timeout,
                 std::source_location const loc) override {
             return backing_warden.do_connect(fd, addr, len, timeout, loc);
         }
         iop<void> do_read_ready(
                 socket_descriptor const fd,
-                std::optional<std::chrono::nanoseconds> const timeout,
+                std::optional<deadline> const timeout,
                 std::source_location const loc) override {
             return backing_warden.do_read_ready(fd, timeout, loc);
         }
         iop<void> do_write_ready(
                 socket_descriptor const fd,
-                std::optional<std::chrono::nanoseconds> const timeout,
+                std::optional<deadline> const timeout,
                 std::source_location const loc) override {
             return backing_warden.do_write_ready(fd, timeout, loc);
         }

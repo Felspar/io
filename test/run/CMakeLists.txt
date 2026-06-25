@@ -3,6 +3,8 @@ if(TARGET felspar-check)
             allocators.cpp
             basics.cpp
             cancel.cpp
+            deadline.cpp
+            deadline.composed.cpp
             exceptions.cpp
             pipe.cpp
             run_batch.cpp
@@ -11,6 +13,7 @@ if(TARGET felspar-check)
 endif()
 if(TARGET felspar-stress)
     add_test_run(felspar-stress felspar-io-openssl TESTS
+            deadline.connect.cpp
             timers.connect.cpp
             tls.tests.cpp
         )

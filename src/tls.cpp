@@ -46,7 +46,7 @@ struct felspar::io::tls::impl {
     template<typename Op>
     io::warden::task<int> service_operation(
             io::warden &warden,
-            std::optional<std::chrono::nanoseconds> timeout,
+            std::optional<deadline> deadline,
             std::source_location const loc,
             Op &&op) {
         while (true) {
@@ -56,13 +56,13 @@ struct felspar::io::tls::impl {
             case SSL_ERROR_NONE: co_return result;
 
             case SSL_ERROR_WANT_READ:
-                co_await bio_read(warden, timeout, loc);
-                if (0 == co_await bio_write(warden, timeout, loc)) {
+                co_await bio_read(warden, deadline, loc);
+                if (0 == co_await bio_write(warden, deadline, loc)) {
                     co_return 0;
                 }
                 break;
             case SSL_ERROR_WANT_WRITE:
-                co_await bio_read(warden, timeout, loc);
+                co_await bio_read(warden, deadline, loc);
                 break;
 
             case SSL_ERROR_ZERO_RETURN: co_return 0;
@@ -76,7 +76,7 @@ struct felspar::io::tls::impl {
 
     io::warden::task<void> bio_read(
             io::warden &warden,
-            std::optional<std::chrono::nanoseconds> timeout,
+            std::optional<deadline> deadline,
             std::source_location const loc) {
         if (auto bytes = BIO_ctrl_pending(nb); bytes > buffer.size()) {
             throw felspar::stdexcept::logic_error{
@@ -92,15 +92,15 @@ struct felspar::io::tls::impl {
                         "Reading BIO read bytes mismatch"};
             } else {
                 co_await felspar::io::write_all(
-                        warden, fd, buffer.data(), bytes, timeout, loc);
+                        warden, fd, buffer.data(), bytes, deadline, loc);
             }
         }
     }
     io::warden::task<std::size_t> bio_write(
             io::warden &warden,
-            std::optional<std::chrono::nanoseconds> timeout,
+            std::optional<deadline> deadline,
             std::source_location const loc) {
-        auto const bytes = co_await warden.read_some(fd, buffer, timeout, loc);
+        auto const bytes = co_await warden.read_some(fd, buffer, deadline, loc);
         if (bytes == 0) {
             co_return 0;
         } else if (auto const written_int = BIO_write(nb, buffer.data(), bytes);
@@ -133,15 +133,15 @@ auto felspar::io::tls::connect(
         char const *const sni_hostname,
         sockaddr const *addr,
         socklen_t addrlen,
-        std::optional<std::chrono::nanoseconds> timeout,
+        std::optional<deadline> deadline,
         std::source_location const loc) -> warden::task<tls> {
     posix::fd fd = warden.create_socket(addr->sa_family, SOCK_STREAM, 0);
-    co_await warden.connect(fd, addr, addrlen, timeout, loc);
+    co_await warden.connect(fd, addr, addrlen, deadline, loc);
 
     auto i = std::make_unique<impl>(std::move(fd));
     SSL_set_tlsext_host_name(i->ssl, sni_hostname);
     co_await i->service_operation(
-            warden, timeout, loc, [](impl &i) { return SSL_connect(i.ssl); });
+            warden, deadline, loc, [](impl &i) { return SSL_connect(i.ssl); });
 
     co_return tls{std::move(i)};
 }
@@ -149,13 +149,13 @@ auto felspar::io::tls::connect(
         warden &ward,
         char const *const hostname,
         std::uint16_t const port,
-        std::optional<std::chrono::nanoseconds> const timeout,
+        std::optional<deadline> const deadline,
         std::source_location const loc) -> warden::task<tls> {
     std::exception_ptr eptr;
     for (auto host : addrinfo(hostname, port)) {
         try {
             co_return co_await tls::connect(
-                    ward, hostname, host.first, host.second, timeout, loc);
+                    ward, hostname, host.first, host.second, deadline, loc);
         } catch (...) { eptr = std::current_exception(); }
     }
     if (eptr) {
@@ -170,10 +170,10 @@ auto felspar::io::tls::connect(
 auto felspar::io::tls::read_some(
         io::warden &warden,
         std::span<std::byte> const s,
-        std::optional<std::chrono::nanoseconds> const timeout,
+        std::optional<deadline> const deadline,
         std::source_location const loc) -> warden::task<std::size_t> {
     int const ret =
-            co_await p->service_operation(warden, timeout, loc, [s](impl &i) {
+            co_await p->service_operation(warden, deadline, loc, [s](impl &i) {
                 return SSL_read(i.ssl, s.data(), s.size());
             });
     if (ret < 0) {
@@ -188,10 +188,10 @@ auto felspar::io::tls::read_some(
 auto felspar::io::tls::write_some(
         io::warden &warden,
         std::span<std::byte const> const s,
-        std::optional<std::chrono::nanoseconds> const timeout,
+        std::optional<deadline> const deadline,
         std::source_location const loc) -> warden::task<std::size_t> {
     int const ret =
-            co_await p->service_operation(warden, timeout, loc, [s](impl &i) {
+            co_await p->service_operation(warden, deadline, loc, [s](impl &i) {
                 return SSL_write(i.ssl, s.data(), s.size());
             });
     if (ret <= 0) {

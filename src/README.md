@@ -1,6 +1,6 @@
 # *felspar-io* Implementation
 
-The contains three implementations:
+There are three implementations that support the [Warden API](../include/felspar/io/warden.hpp):
 
 * POSIX using `poll`
 * Windows using `WSAPoll`
