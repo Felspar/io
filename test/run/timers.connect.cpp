@@ -30,7 +30,7 @@ namespace {
                     address.first->sa_family, SOCK_STREAM, 0);
             co_await ward.connect(fd2, address.first, address.second, 10ms);
 
-            check(false) == true;
+            check.failed("No exception thrown", loc);
         } catch (felspar::io::timeout const &) {
             check(true) == true;
         } catch (std::exception const &e) {
@@ -42,7 +42,7 @@ namespace {
             []() {
                 felspar::io::poll_warden ward;
                 ward.run(
-                        timed_connect, "felspar.com",
+                        timed_connect, "api.blue5alamander.com",
                         std::source_location::current());
             },
             []() {
@@ -54,13 +54,12 @@ namespace {
 #ifdef FELSPAR_ENABLE_IO_URING
     auto const u = suite.test(
             "uring",
-            /// TODO Work out why this test isn't working properly. Maybe an
-            /// IPv6 issue?
-            // []() {
-            //     felspar::io::uring_warden ward{5};
-            //     ward.run(timed_connect, "kirit.com",
-            //     std::source_location::current());
-            // },
+            []() {
+                felspar::io::uring_warden ward{5};
+                ward.run(
+                        timed_connect, "api.blue5alamander.com",
+                        std::source_location::current());
+            },
             []() {
                 felspar::io::uring_warden ward{5};
                 ward.run(
