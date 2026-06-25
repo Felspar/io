@@ -62,7 +62,15 @@ void felspar::io::uring_warden::impl::execute(::io_uring_cqe *cqe) {
     auto d = reinterpret_cast<delivery *>(::io_uring_cqe_get_data(cqe));
     int result = cqe->res;
     ::io_uring_cqe_seen(&uring, cqe);
-    d->deliver(result);
+    /**
+     * If the owning IOP has already been destructed (for example its coroutine
+     * was cancelled while this op was still in flight) the completion is only
+     * being kept alive to drain its outstanding CQEs. There is no coroutine
+     * left to resume, so calling `deliver` would resume a destroyed handle and
+     * read freed memory -- we just count the CQE down and let the bookkeeping
+     * below delete the completion once the last one arrives.
+     */
+    if (d->iop_exists) { d->deliver(result); }
     if (d->is_outstanding) { std::erase(outstanding, d); }
     if (--d->iop_count == 0 and not d->iop_exists) { delete d; }
 }
