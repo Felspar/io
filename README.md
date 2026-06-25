@@ -85,13 +85,21 @@ Concrete warden implementation make use of a particular API family to implement 
 Different wardens will have slight differences in observable behaviour as a consequence of their differing APIs. For example, sleeps using poll will have best case jitter of just over 1 millisecond, wheres on io_uring this figure should be at least one order of magnitude lower.
 
 
-### Time outs
+### Deadlines and time outs
 
-All of the operations support time outs which can be passed as an extra final parameter:
+All timed operations accept either an absolute **deadline** (a `std::chrono::steady_clock::time_point`) or a relative **time out** (a `std::chrono::nanoseconds`), passed as an extra final parameter:
 
 ```cpp
+// A time out bounds the whole compound operation:
 co_await felspar::io::read_exactly(ward, fd, buffer, 100ms);
+
+// Or share one explicit deadline across several operations:
+auto const by = felspar::io::deadline_from(1s);
+co_await felspar::io::read_exactly(ward, fd, header, by);
+co_await felspar::io::read_exactly(ward, fd, body, by);
 ```
 
-The timeouts operate on a per-IOP basis on the warden in use, so compound APIs like `read_exactly` (that may issue several IOPs) can take longer to time out. When a time out expires an exception of type `felspar::io::timeout` (a sub-class of `std::system_error`) is thrown. The error code in the exception will be equal to `felspar::io::timeout::error`.
+A time out is converted to a deadline *once*, as the call is entered, and that single deadline is then threaded unchanged through every sub-operation. Compound APIs like `read_exactly`, `write_all` and `connect`-by-hostname (which may issue several IOPs) are therefore bounded as a whole — the budget is **not** reset on each retry. Calling a timed operation with no deadline/time out argument means "no deadline": it may run forever.
+
+When a deadline expires an exception of type `felspar::io::timeout` (a sub-class of `std::system_error`) is thrown. The error code in the exception will be equal to `felspar::io::timeout::error`.
 
