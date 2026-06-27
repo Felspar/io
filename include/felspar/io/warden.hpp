@@ -20,14 +20,14 @@ namespace felspar::io {
 
     /// ## Warden
     /**
-     * The warden is the primay abstraction of the library. It represents an
-     * even loop on a single thread without committing to how that event loop is
-     * implemented. It also acts an allocator which is able to allocate
+     * The warden is the primary abstraction of the library. It represents an
+     * event loop on a single thread without committing to how that event loop
+     * is implemented. It also acts as an allocator which is able to allocate
      * coroutine frames.
      *
      * Because of this dual-use this `warden` type must remain only an
-     * interface. Any attributes it has will break allocators as they will two
-     * copies and no way to keep the attribute content the same.
+     * interface. Any attributes it has will break allocators as they will have
+     * two copies and no way to keep the attribute content the same.
      */
     class warden : public felspar::pmr::memory_resource {
         friend class allocator;
