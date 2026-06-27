@@ -36,6 +36,10 @@ namespace felspar::io {
         template<typename R = void>
         using starter = coro::starter<task<R>>;
 
+
+        /// ### Running coroutines
+
+        /// #### Primary coroutine
         template<typename Ret, typename... PArgs, typename... MArgs>
         Ret run(task<Ret> (*f)(warden &, PArgs...), MArgs &&...margs) {
             auto handle = f(*this, std::forward<MArgs>(margs)...).release();
@@ -59,9 +63,22 @@ namespace felspar::io {
             return handle.promise().consume_value();
         }
 
-        /// Run a single IO submission and resume ready coroutines. Only
-        /// processing is performed without any waits
+        /// #### Single batch
         virtual void run_batch() = 0;
+        /**
+         * Run a single IO submission and resume ready coroutines. Only
+         * processing is performed without any waits
+         */
+
+        /// #### Delayed resume
+        void async_resume(std::coroutine_handle<>);
+        /**
+         * Once the event loop has finished processing new events, then the
+         * coroutines sent here will be resumed. This slight asynchrony can be
+         * used to solve problems where a coroutine resume might destroy the
+         * object that triggers the coroutine to be resumed.
+         */
+
 
         /// ### File descriptors
         iop<void>
@@ -77,6 +94,7 @@ namespace felspar::io {
             return close(s.release(), loc);
         }
 
+
         /// ### Time management
         iop<void>
                 sleep(std::chrono::nanoseconds ns,
@@ -84,6 +102,7 @@ namespace felspar::io {
                               std::source_location::current()) {
             return do_sleep(ns, loc);
         }
+
 
         /// ### Reading and writing
         /**
@@ -150,6 +169,7 @@ namespace felspar::io {
                 std::source_location const l = std::source_location::current()) {
             return write_some(s.native_handle(), b, deadline_from(timeout), l);
         }
+
 
         /// ### Socket APIs
 
@@ -363,6 +383,26 @@ namespace felspar::io {
                 socket_descriptor fd,
                 std::optional<deadline> timeout,
                 std::source_location) = 0;
+
+
+        /// ### Async resumption
+        void async_resume_coroutine_handles();
+        /**
+         * Sub-classes need to call this in order to resume some handles. This
+         * should be done at the end of the event loop after processing
+         * outstanding events, but before waiting for more.
+         */
+
+        bool has_async_resume_requests() const noexcept {
+            return not async_resume_coroutines.empty();
+        }
+        /**
+         * Returns `true` if there are coroutines to resume.
+         */
+
+      private:
+        std::vector<std::coroutine_handle<>> async_resume_coroutines,
+                async_coroutines_being_resumed;
     };
 
 

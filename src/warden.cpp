@@ -7,6 +7,8 @@
 #endif
 
 
+/// ## `felspar::io::warden`
+
 felspar::posix::fd felspar::io::warden::create_socket(
         int domain, int type, int protocol, std::source_location const loc) {
     posix::fd s{::socket(domain, type, protocol)};
@@ -71,4 +73,19 @@ auto felspar::io::warden::create_pipe(std::source_location const loc) -> pipe {
                 io::get_error(), std::system_category(), "Creating pipe", loc};
     }
 #endif
+}
+
+
+/// ### Async resumption
+
+
+void felspar::io::warden::async_resume(std::coroutine_handle<> const h) {
+    if (h) { async_resume_coroutines.push_back(h); }
+}
+
+
+void felspar::io::warden::async_resume_coroutine_handles() {
+    std::swap(async_coroutines_being_resumed, async_resume_coroutines);
+    for (auto h : async_coroutines_being_resumed) { h.resume(); }
+    async_coroutines_being_resumed.clear();
 }
