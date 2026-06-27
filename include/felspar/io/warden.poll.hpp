@@ -121,6 +121,13 @@ namespace felspar::io {
          * waiting for unrelated IO.
          */
         pipe wakeup;
+        /**
+         * `true` while an unconsumed wake-up byte is already in `wakeup`. It
+         * lets repeated wakes fold into a single byte so only the first push of
+         * a batch pays for the `write` -- the `poll` analogue of the io_uring
+         * NOP folding.
+         */
+        bool wake_queued = {};
         /// The coroutines this warden has been asked to resume
         async_resumption resumer;
     };

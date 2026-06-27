@@ -70,19 +70,23 @@ void felspar::io::poll_warden::async_resume(
 
 
 void felspar::io::poll_warden::wake_event_loop() {
-    std::byte const byte{};
+    if (not wake_queued) {
+        wake_queued = true;
+        std::byte const byte{};
 #ifdef FELSPAR_WINSOCK2
-    [[maybe_unused]] auto const w =
-            ::send(wakeup.write.native_handle(),
-                   reinterpret_cast<char const *>(&byte), 1, {});
+        [[maybe_unused]] auto const w =
+                ::send(wakeup.write.native_handle(),
+                       reinterpret_cast<char const *>(&byte), 1, {});
 #else
-    [[maybe_unused]] auto const w =
-            ::write(wakeup.write.native_handle(), &byte, 1);
+        [[maybe_unused]] auto const w =
+                ::write(wakeup.write.native_handle(), &byte, 1);
 #endif
+    }
 }
 
 
 void felspar::io::poll_warden::drain_wakeup() {
+    wake_queued = false;
     std::array<std::byte, 64> buffer;
     auto const fd = wakeup.read.native_handle();
 #ifdef FELSPAR_WINSOCK2
