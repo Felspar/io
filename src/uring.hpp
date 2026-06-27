@@ -38,8 +38,6 @@ namespace felspar::io {
         void execute(::io_uring_cqe *);
 
         std::vector<delivery *> outstanding;
-        /// Set while a wake-up NOP is in flight so only one is ever posted
-        bool nop_queued = false;
     };
 
 
