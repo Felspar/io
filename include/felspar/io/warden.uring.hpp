@@ -1,6 +1,7 @@
 #pragma once
 
 
+#include <felspar/io/async_resume.hpp>
 #include <felspar/io/warden.hpp>
 
 
@@ -9,13 +10,15 @@ namespace felspar::io {
 
     class uring_warden : public warden {
         void run_until(std::coroutine_handle<>) override;
-        void wake_event_loop() override;
+        void async_resume(std::coroutine_handle<>) override;
+        void wake_event_loop();
 
         struct delivery;
         template<typename R>
         struct completion;
         struct impl;
         std::unique_ptr<impl> ring;
+        felspar::io::async_resume resumer;
 
         struct close_completion;
         struct sleep_completion;

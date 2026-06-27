@@ -34,7 +34,7 @@ void felspar::io::uring_warden::run_until(std::coroutine_handle<> coro) {
         while (::io_uring_peek_cqe(&ring->uring, &cqe) == 0) {
             ring->execute(cqe);
         }
-        async_resume_coroutine_handles();
+        resumer.resume_all();
     }
 }
 
@@ -43,7 +43,12 @@ void felspar::io::uring_warden::run_batch() {
     ::io_uring_submit(&ring->uring);
     ::io_uring_cqe *cqe = {};
     while (::io_uring_peek_cqe(&ring->uring, &cqe) == 0) { ring->execute(cqe); }
-    async_resume_coroutine_handles();
+    resumer.resume_all();
+}
+
+
+void felspar::io::uring_warden::async_resume(std::coroutine_handle<> const h) {
+    if (resumer.queue(h)) { wake_event_loop(); }
 }
 
 

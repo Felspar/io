@@ -24,6 +24,10 @@ namespace felspar::io {
      * even loop on a single thread without committing to how that event loop is
      * implemented. It also acts an allocator which is able to allocate
      * coroutine frames.
+     *
+     * Because of this dual-use this `warden` type must remain only an
+     * interface. Any attributes it has will break allocators as they will two
+     * copies and no way to keep the attribute content the same.
      */
     class warden : public felspar::pmr::memory_resource {
         friend class allocator;
@@ -78,7 +82,7 @@ namespace felspar::io {
          */
 
         /// #### Delayed resume
-        void async_resume(std::coroutine_handle<>);
+        virtual void async_resume(std::coroutine_handle<>) = 0;
         /**
          * Once the event loop has finished processing new events, then the
          * coroutines sent here will be resumed. This slight asynchrony can be
@@ -390,34 +394,6 @@ namespace felspar::io {
                 socket_descriptor fd,
                 std::optional<deadline> timeout,
                 std::source_location) = 0;
-
-
-        /// ### Async resumption
-        void async_resume_coroutine_handles();
-        /**
-         * Sub-classes need to call this in order to resume some handles. This
-         * should be done at the end of the event loop after processing
-         * outstanding events, but before waiting for more.
-         */
-
-        bool has_async_resume_requests() const noexcept {
-            return not async_resume_coroutines.empty();
-        }
-        /**
-         * Returns `true` if there are coroutines to resume.
-         */
-
-        virtual void wake_event_loop() = 0;
-        /**
-         * Forces the sub-class event's loop to wake up.
-         *
-         * There may be an argument to making this part of the public API.
-         * Let's see if any use cases turn up other than the async resume one.
-         */
-
-      private:
-        std::vector<std::coroutine_handle<>> async_resume_coroutines,
-                async_coroutines_being_resumed;
     };
 
 

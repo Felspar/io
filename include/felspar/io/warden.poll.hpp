@@ -1,6 +1,7 @@
 #pragma once
 
 
+#include <felspar/io/async_resume.hpp>
 #include <felspar/io/warden.hpp>
 
 #include <map>
@@ -109,7 +110,8 @@ namespace felspar::io {
 
         /// ### Async wake up
 
-        void wake_event_loop() override;
+        void async_resume(std::coroutine_handle<>) override;
+        void wake_event_loop();
         /// Read and discard any bytes queued by `wake_event_loop`
         void drain_wakeup();
         /**
@@ -119,6 +121,8 @@ namespace felspar::io {
          * waiting for unrelated IO.
          */
         pipe wakeup;
+        /// The coroutines this warden has been asked to resume
+        felspar::io::async_resume resumer;
     };
 
 

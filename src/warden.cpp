@@ -74,21 +74,3 @@ auto felspar::io::warden::create_pipe(std::source_location const loc) -> pipe {
     }
 #endif
 }
-
-
-/// ### Async resumption
-
-
-void felspar::io::warden::async_resume(std::coroutine_handle<> const h) {
-    if (h) {
-        async_resume_coroutines.push_back(h);
-        wake_event_loop();
-    }
-}
-
-
-void felspar::io::warden::async_resume_coroutine_handles() {
-    std::swap(async_coroutines_being_resumed, async_resume_coroutines);
-    for (auto h : async_coroutines_being_resumed) { h.resume(); }
-    async_coroutines_being_resumed.clear();
-}
