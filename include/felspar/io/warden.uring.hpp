@@ -10,7 +10,7 @@ namespace felspar::io {
 
     class uring_warden : public warden {
         void run_until(std::coroutine_handle<>) override;
-        void async_resume(std::span<std::coroutine_handle<> const>) override;
+        void do_async_resume(std::span<std::coroutine_handle<> const>) override;
         void wake_event_loop();
 
         struct delivery;

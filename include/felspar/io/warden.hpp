@@ -82,7 +82,9 @@ namespace felspar::io {
          */
 
         /// #### Delayed resume
-        virtual void async_resume(std::span<std::coroutine_handle<> const>) = 0;
+        void async_resume(std::span<std::coroutine_handle<> const> handles) {
+            do_async_resume(handles);
+        }
         void async_resume(std::coroutine_handle<> h) {
             async_resume(std::span{&h, 1});
         }
@@ -363,6 +365,8 @@ namespace felspar::io {
 
       protected:
         virtual void run_until(std::coroutine_handle<>) = 0;
+        virtual void
+                do_async_resume(std::span<std::coroutine_handle<> const>) = 0;
         virtual iop<void>
                 do_close(socket_descriptor fd, std::source_location) = 0;
         virtual iop<void>

@@ -63,7 +63,7 @@ void felspar::io::poll_warden::run_batch() {
 }
 
 
-void felspar::io::poll_warden::async_resume(
+void felspar::io::poll_warden::do_async_resume(
         std::span<std::coroutine_handle<> const> const handles) {
     /// Wake only when the queue was empty -- a prior wake covers the rest
     bool const was_empty = not resumer.has_requests();
