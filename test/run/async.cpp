@@ -63,6 +63,7 @@ namespace {
         check(resumed) == 1uz;
     }
 
+
     /**
      * Queue many handles one at a time. Each `async_resume` wakes the loop, so
      * for io_uring this exercises the folding of the repeated wake-up NOPs into
@@ -90,6 +91,7 @@ namespace {
         check(resumed) == count;
     }
 
+
     /// The span overload should resume every coroutine in the batch.
     template<typename Warden>
     void batch(auto check) {
@@ -113,12 +115,46 @@ namespace {
     }
 
 
+    /**
+     * An `allocator` wrapper forwards `async_resume` to its backing warden, so
+     * a coroutine queued through the wrapper is resumed when the backing loop
+     * is pumped -- not left stranded in a queue of its own.
+     */
+    template<typename Warden>
+    void via_allocator(auto check) {
+        Warden backend;
+        felspar::io::allocator wrapper{
+                backend, *felspar::pmr::new_delete_resource()};
+        felspar::io::warden &ward = wrapper;
+        std::vector<std::coroutine_handle<>> handles;
+        std::size_t resumed = {};
+
+        felspar::io::warden::eager<> w;
+        w.post(waiter, std::ref(ward), &handles, &resumed);
+        check(handles.size()) == 1uz;
+        check(resumed) == 0uz;
+
+        ward.async_resume(handles.front());
+        check(resumed) == 0uz;
+
+        /**
+         * Pump the *backing* warden: the wrapper must have forwarded the resume
+         * into its queue rather than keeping its own.
+         */
+        backend.run_batch();
+        check(resumed) == 1uz;
+    }
+
+
     auto const sp = suite.test(
             "single/poll",
             [](auto check) { single<felspar::io::poll_warden>(check); },
             [](auto check) { multi_single<felspar::io::poll_warden>(check); });
     auto const bp = suite.test("batch/poll", [](auto check) {
         batch<felspar::io::poll_warden>(check);
+    });
+    auto const ap = suite.test("allocator/poll", [](auto check) {
+        via_allocator<felspar::io::poll_warden>(check);
     });
 #ifdef FELSPAR_ENABLE_IO_URING
     auto const su = suite.test(
@@ -127,6 +163,9 @@ namespace {
             [](auto check) { multi_single<felspar::io::uring_warden>(check); });
     auto const bu = suite.test("batch/io_uring", [](auto check) {
         batch<felspar::io::uring_warden>(check);
+    });
+    auto const au = suite.test("allocator/io_uring", [](auto check) {
+        via_allocator<felspar::io::uring_warden>(check);
     });
 #endif
 
