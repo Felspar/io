@@ -48,6 +48,7 @@ void felspar::io::poll_warden::run_until(std::coroutine_handle<> coro) {
         auto const timeout = clear_timeouts();
         if (coro.done()) { return; }
         do_poll(timeout);
+        async_resume_coroutine_handles();
     }
 }
 
@@ -55,6 +56,7 @@ void felspar::io::poll_warden::run_until(std::coroutine_handle<> coro) {
 void felspar::io::poll_warden::run_batch() {
     clear_timeouts();
     do_poll(0);
+    async_resume_coroutine_handles();
 }
 
 
