@@ -3,7 +3,8 @@
 #include <felspar/exceptions/system_error.hpp>
 #include <felspar/io/posix.hpp>
 
-#include <thread>
+#include <array>
+#include <cstddef>
 
 #if __has_include(<poll.h>)
 #include <poll.h>
@@ -32,6 +33,7 @@ felspar::io::poll_warden::poll_warden()
 #else
     ::signal(SIGPIPE, SIG_IGN);
 #endif
+    wakeup = create_pipe();
 }
 
 
@@ -60,8 +62,35 @@ void felspar::io::poll_warden::run_batch() {
 }
 
 
+void felspar::io::poll_warden::wake_event_loop() {
+    std::byte const byte{};
+#ifdef FELSPAR_WINSOCK2
+    [[maybe_unused]] auto const w =
+            ::send(wakeup.write.native_handle(),
+                   reinterpret_cast<char const *>(&byte), 1, {});
+#else
+    [[maybe_unused]] auto const w =
+            ::write(wakeup.write.native_handle(), &byte, 1);
+#endif
+}
+
+
+void felspar::io::poll_warden::drain_wakeup() {
+    std::array<std::byte, 64> buffer;
+    auto const fd = wakeup.read.native_handle();
+#ifdef FELSPAR_WINSOCK2
+    while (::recv(fd, reinterpret_cast<char *>(buffer.data()), buffer.size(), {})
+           > 0) {}
+#else
+    while (::read(fd, buffer.data(), buffer.size()) > 0) {}
+#endif
+}
+
+
 void felspar::io::poll_warden::do_poll(int const timeout) {
+    auto const wake_fd = wakeup.read.native_handle();
     bookkeeping->iops.clear();
+    bookkeeping->iops.push_back({wake_fd, POLLIN, {}});
     for (auto const &req : requests) {
         short flags = {};
         if (not req.second.reads.empty()) { flags |= POLLIN; }
@@ -75,36 +104,28 @@ void felspar::io::poll_warden::do_poll(int const timeout) {
     }
 
     int const pr = [&]() {
-        if (bookkeeping->iops.size()) {
 #if defined(FELSPAR_WINSOCK2)
-            int response = ::WSAPoll(
-                    bookkeeping->iops.data(),
-                    static_cast<ULONG>(bookkeeping->iops.size()), timeout);
-            if (response < 0) {
-                /**
-                 * Windows seems to return errors here for no good reason, but
-                 * even if it is for a good reason, we kind of need to keep
-                 * going anyway (for example if the network is down). We'll let
-                 * things time out and have the application's error handling
-                 * take over instead.
-                 *
-                 * We'll just pretend that one of the file descriptors was
-                 * signalled (the number isn't ever used so it's value doesn't
-                 * matter).
-                 */
-                return 1;
-            } else {
-                return response;
-            }
-#else
-            return ::poll(
-                    bookkeeping->iops.data(), bookkeeping->iops.size(),
-                    timeout);
-#endif
+        int response = ::WSAPoll(
+                bookkeeping->iops.data(),
+                static_cast<ULONG>(bookkeeping->iops.size()), timeout);
+        if (response < 0) {
+            /**
+             * Windows seems to return errors here for no good reason, but even
+             * if it is for a good reason, we kind of need to keep going anyway
+             * (for example if the network is down). We'll let things time out
+             * and have the application's error handling take over instead.
+             *
+             * We'll just pretend that one of the file descriptors was signalled
+             * (the number isn't ever used so it's value doesn't matter).
+             */
+            return 1;
         } else {
-            std::this_thread::sleep_for(std::chrono::milliseconds{timeout});
-            return 0;
+            return response;
         }
+#else
+        return ::poll(
+                bookkeeping->iops.data(), bookkeeping->iops.size(), timeout);
+#endif
     }();
     if (pr < 0) {
         throw felspar::stdexcept::system_error{
@@ -112,6 +133,10 @@ void felspar::io::poll_warden::do_poll(int const timeout) {
     } else if (pr > 0) {
         bookkeeping->continuations.clear();
         for (auto events : bookkeeping->iops) {
+            if (events.fd == wake_fd) {
+                if (events.revents & POLLIN) { drain_wakeup(); }
+                continue;
+            }
             if (events.revents & (POLLIN | POLLHUP | POLLERR | POLLNVAL)) {
                 auto &reads = requests[events.fd].reads;
                 bookkeeping->continuations.insert(

@@ -47,6 +47,23 @@ void felspar::io::uring_warden::run_batch() {
 }
 
 
+void felspar::io::uring_warden::wake_event_loop() {
+    if (not ring->nop_queued) {
+        ring->nop_queued = true;
+        auto *const sqe = ring->next_sqe();
+        ::io_uring_prep_nop(sqe);
+        ::io_uring_sqe_set_data(sqe, nullptr);
+        /**
+         * Submit immediately so that a `wait_cqe` already blocked in the kernel
+         * is woken by the NOP's completion -- queuing the SQE alone wouldn't
+         * reach the kernel until the next submit, which won't happen while the
+         * loop is parked.
+         */
+        ::io_uring_submit(&ring->uring);
+    }
+}
+
+
 /// ## `felspar::io::uring_warden::impl`
 
 
@@ -62,6 +79,17 @@ void felspar::io::uring_warden::run_batch() {
 
 void felspar::io::uring_warden::impl::execute(::io_uring_cqe *cqe) {
     auto d = reinterpret_cast<delivery *>(::io_uring_cqe_get_data(cqe));
+    if (not d) {
+        /**
+         * A null user data marks the wake-up NOP posted by `wake_event_loop`.
+         * It carries no delivery; consuming it is all that's needed -- its only
+         * job was to make the loop's wait return so the async resume queue gets
+         * drained.
+         */
+        ::io_uring_cqe_seen(&uring, cqe);
+        nop_queued = false;
+        return;
+    }
     int result = cqe->res;
     ::io_uring_cqe_seen(&uring, cqe);
     /**

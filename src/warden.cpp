@@ -80,7 +80,10 @@ auto felspar::io::warden::create_pipe(std::source_location const loc) -> pipe {
 
 
 void felspar::io::warden::async_resume(std::coroutine_handle<> const h) {
-    if (h) { async_resume_coroutines.push_back(h); }
+    if (h) {
+        async_resume_coroutines.push_back(h);
+        wake_event_loop();
+    }
 }
 
 

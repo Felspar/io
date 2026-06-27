@@ -9,6 +9,7 @@ namespace felspar::io {
 
     class uring_warden : public warden {
         void run_until(std::coroutine_handle<>) override;
+        void wake_event_loop() override;
 
         struct delivery;
         template<typename R>

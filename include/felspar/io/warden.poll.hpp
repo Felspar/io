@@ -105,6 +105,20 @@ namespace felspar::io {
         int clear_timeouts();
         /// Put together data for poll call and then process resulting `revents`
         void do_poll(int timeout);
+
+
+        /// ### Async wake up
+
+        void wake_event_loop() override;
+        /// Read and discard any bytes queued by `wake_event_loop`
+        void drain_wakeup();
+        /**
+         * A self-pipe whose read end always sits in the `poll` set. A blocked
+         * `poll` is interrupted by `wake_event_loop` writing to the write end,
+         * so async resumptions run as soon as they're queued rather than
+         * waiting for unrelated IO.
+         */
+        pipe wakeup;
     };
 
 

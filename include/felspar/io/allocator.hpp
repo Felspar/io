@@ -43,6 +43,7 @@ namespace felspar::io {
         void run_until(std::coroutine_handle<> h) override {
             backing_warden.run_until(h);
         }
+        void wake_event_loop() override { backing_warden.wake_event_loop(); }
         iop<void> do_close(
                 socket_descriptor const fd,
                 std::source_location const loc) override {

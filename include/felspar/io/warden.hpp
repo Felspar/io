@@ -18,6 +18,13 @@ namespace felspar::io {
     class allocator;
 
 
+    /// ## Warden
+    /**
+     * The warden is the primay abstraction of the library. It represents an
+     * even loop on a single thread without committing to how that event loop is
+     * implemented. It also acts an allocator which is able to allocate
+     * coroutine frames.
+     */
     class warden : public felspar::pmr::memory_resource {
         friend class allocator;
         template<typename R>
@@ -398,6 +405,14 @@ namespace felspar::io {
         }
         /**
          * Returns `true` if there are coroutines to resume.
+         */
+
+        virtual void wake_event_loop() = 0;
+        /**
+         * Forces the sub-class event's loop to wake up.
+         *
+         * There may be an argument to making this part of the public API.
+         * Let's see if any use cases turn up other than the async resume one.
          */
 
       private:
