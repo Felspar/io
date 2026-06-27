@@ -2,6 +2,8 @@
 
 #include <felspar/exceptions/runtime_error.hpp>
 
+#include <span>
+
 
 /// ## `felspar::io::uring_warden`
 
@@ -34,6 +36,7 @@ void felspar::io::uring_warden::run_until(std::coroutine_handle<> coro) {
         while (::io_uring_peek_cqe(&ring->uring, &cqe) == 0) {
             ring->execute(cqe);
         }
+        resumer.resume_all();
     }
 }
 
@@ -42,6 +45,28 @@ void felspar::io::uring_warden::run_batch() {
     ::io_uring_submit(&ring->uring);
     ::io_uring_cqe *cqe = {};
     while (::io_uring_peek_cqe(&ring->uring, &cqe) == 0) { ring->execute(cqe); }
+    resumer.resume_all();
+}
+
+
+void felspar::io::uring_warden::do_async_resume(
+        std::span<std::coroutine_handle<> const> const handles) {
+    /// Wake only when the queue was empty -- a prior wake covers the rest
+    bool const was_empty = not resumer.has_requests();
+    if (resumer.queue(handles) and was_empty) { wake_event_loop(); }
+}
+
+
+void felspar::io::uring_warden::wake_event_loop() {
+    auto *const sqe = ring->next_sqe();
+    ::io_uring_prep_nop(sqe);
+    ::io_uring_sqe_set_data(sqe, nullptr);
+    /**
+     * Submit immediately so that a `wait_cqe` already blocked in the kernel is
+     * woken by the NOP's completion -- queuing the SQE alone wouldn't reach the
+     * kernel until the next submit, which won't happen while the loop is parked.
+     */
+    ::io_uring_submit(&ring->uring);
 }
 
 
@@ -60,6 +85,16 @@ void felspar::io::uring_warden::run_batch() {
 
 void felspar::io::uring_warden::impl::execute(::io_uring_cqe *cqe) {
     auto d = reinterpret_cast<delivery *>(::io_uring_cqe_get_data(cqe));
+    if (not d) {
+        /**
+         * A null user data marks the wake-up NOP posted by `wake_event_loop`.
+         * It carries no delivery; consuming it is all that's needed -- its only
+         * job was to make the loop's wait return so the async resume queue gets
+         * drained.
+         */
+        ::io_uring_cqe_seen(&uring, cqe);
+        return;
+    }
     int result = cqe->res;
     ::io_uring_cqe_seen(&uring, cqe);
     /**

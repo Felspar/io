@@ -18,6 +18,17 @@ namespace felspar::io {
     class allocator;
 
 
+    /// ## Warden
+    /**
+     * The warden is the primary abstraction of the library. It represents an
+     * event loop on a single thread without committing to how that event loop
+     * is implemented. It also acts as an allocator which is able to allocate
+     * coroutine frames.
+     *
+     * Because of this dual-use this `warden` type must remain only an
+     * interface. Any attributes it has will break allocators as they will have
+     * two copies and no way to keep the attribute content the same.
+     */
     class warden : public felspar::pmr::memory_resource {
         friend class allocator;
         template<typename R>
@@ -36,6 +47,10 @@ namespace felspar::io {
         template<typename R = void>
         using starter = coro::starter<task<R>>;
 
+
+        /// ### Running coroutines
+
+        /// #### Primary coroutine
         template<typename Ret, typename... PArgs, typename... MArgs>
         Ret run(task<Ret> (*f)(warden &, PArgs...), MArgs &&...margs) {
             auto handle = f(*this, std::forward<MArgs>(margs)...).release();
@@ -59,9 +74,27 @@ namespace felspar::io {
             return handle.promise().consume_value();
         }
 
-        /// Run a single IO submission and resume ready coroutines. Only
-        /// processing is performed without any waits
+        /// #### Single batch
         virtual void run_batch() = 0;
+        /**
+         * Run a single IO submission and resume ready coroutines. Only
+         * processing is performed without any waits
+         */
+
+        /// #### Delayed resume
+        void async_resume(std::span<std::coroutine_handle<> const> handles) {
+            do_async_resume(handles);
+        }
+        void async_resume(std::coroutine_handle<> h) {
+            async_resume(std::span{&h, 1});
+        }
+        /**
+         * Once the event loop has finished processing new events, then the
+         * coroutines sent here will be resumed. This slight asynchrony can be
+         * used to solve problems where a coroutine resume might destroy the
+         * object that triggers the coroutine to be resumed.
+         */
+
 
         /// ### File descriptors
         iop<void>
@@ -77,6 +110,7 @@ namespace felspar::io {
             return close(s.release(), loc);
         }
 
+
         /// ### Time management
         iop<void>
                 sleep(std::chrono::nanoseconds ns,
@@ -84,6 +118,7 @@ namespace felspar::io {
                               std::source_location::current()) {
             return do_sleep(ns, loc);
         }
+
 
         /// ### Reading and writing
         /**
@@ -150,6 +185,7 @@ namespace felspar::io {
                 std::source_location const l = std::source_location::current()) {
             return write_some(s.native_handle(), b, deadline_from(timeout), l);
         }
+
 
         /// ### Socket APIs
 
@@ -329,6 +365,8 @@ namespace felspar::io {
 
       protected:
         virtual void run_until(std::coroutine_handle<>) = 0;
+        virtual void
+                do_async_resume(std::span<std::coroutine_handle<> const>) = 0;
         virtual iop<void>
                 do_close(socket_descriptor fd, std::source_location) = 0;
         virtual iop<void>

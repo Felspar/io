@@ -7,6 +7,8 @@
 #endif
 
 
+/// ## `felspar::io::warden`
+
 felspar::posix::fd felspar::io::warden::create_socket(
         int domain, int type, int protocol, std::source_location const loc) {
     posix::fd s{::socket(domain, type, protocol)};

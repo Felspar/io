@@ -3,6 +3,7 @@ if(TARGET felspar-check)
 
     add_library(felspar-io-headers-tests STATIC EXCLUDE_FROM_ALL
             accept.cpp
+            async_resumption.cpp
             completion.cpp
             connect.cpp
             deadline.cpp

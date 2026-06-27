@@ -103,3 +103,11 @@ A time out is converted to a deadline *once*, as the call is entered, and that s
 
 When a deadline expires an exception of type `felspar::io::timeout` (a sub-class of `std::system_error`) is thrown. The error code in the exception will be equal to `felspar::io::timeout::error`.
 
+
+## Threading
+
+This library is single threaded only. A warden drives its event loop and resumes its coroutines on the single thread that called its `run()`, so the warden and everything running on it have thread affinity. The simplest multi-threaded model that works is to spread work across threads, and give each thread its own warden, handing work between them using your own synchronisation.
+
+* A suitable multi-threaded environment can be built on top of this using standard library tools.
+* Single threaded means that there is no thread-safety overhead for consumers who don't need them. This helps make performance much more predictable.
+* It is easy to reason about the threading behaviour of the coroutines as it's always "this thread", and no other code can wake up and run until control is relinquished back to the warden by awaiting on something.

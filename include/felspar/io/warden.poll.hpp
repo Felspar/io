@@ -1,6 +1,7 @@
 #pragma once
 
 
+#include <felspar/io/async_resumption.hpp>
 #include <felspar/io/warden.hpp>
 
 #include <map>
@@ -17,7 +18,7 @@ namespace felspar::io {
      *
      * Creation of any `poll_warden` instance will turn on ignoring of the
      * `SIGPIPE` signal. This allows the `write` calls to return errors without
-     * also needing to install signal handler.
+     * also needing to install a signal handler.
      */
     class poll_warden : public warden {
         struct retrier;
@@ -105,6 +106,23 @@ namespace felspar::io {
         int clear_timeouts();
         /// Put together data for poll call and then process resulting `revents`
         void do_poll(int timeout);
+
+
+        /// ### Async wake up
+
+        void do_async_resume(std::span<std::coroutine_handle<> const>) override;
+        void wake_event_loop();
+        /// Read and discard any bytes queued by `wake_event_loop`
+        void drain_wakeup();
+        /**
+         * A self-pipe whose read end always sits in the `poll` set. A blocked
+         * `poll` is interrupted by `wake_event_loop` writing to the write end,
+         * so async resumptions run as soon as they're queued rather than
+         * waiting for unrelated IO.
+         */
+        pipe wakeup;
+        /// The coroutines this warden has been asked to resume
+        async_resumption resumer;
     };
 
 
