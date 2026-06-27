@@ -43,8 +43,9 @@ namespace felspar::io {
         void run_until(std::coroutine_handle<> h) override {
             backing_warden.run_until(h);
         }
-        void async_resume(std::coroutine_handle<> h) override {
-            backing_warden.async_resume(h);
+        void async_resume(
+                std::span<std::coroutine_handle<> const> handles) override {
+            backing_warden.async_resume(handles);
         }
         iop<void> do_close(
                 socket_descriptor const fd,

@@ -2,6 +2,8 @@
 
 #include <felspar/exceptions/runtime_error.hpp>
 
+#include <span>
+
 
 /// ## `felspar::io::uring_warden`
 
@@ -47,8 +49,9 @@ void felspar::io::uring_warden::run_batch() {
 }
 
 
-void felspar::io::uring_warden::async_resume(std::coroutine_handle<> const h) {
-    if (resumer.queue(h)) { wake_event_loop(); }
+void felspar::io::uring_warden::async_resume(
+        std::span<std::coroutine_handle<> const> const handles) {
+    if (resumer.queue(handles)) { wake_event_loop(); }
 }
 
 

@@ -2,6 +2,7 @@
 
 
 #include <coroutine>
+#include <span>
 #include <vector>
 
 
@@ -22,18 +23,20 @@ namespace felspar::io {
         std::vector<std::coroutine_handle<>> queued, resuming;
 
       public:
-        /// ### Queue a coroutine handle
-        bool queue(std::coroutine_handle<> const h) {
-            if (h) {
-                queued.push_back(h);
-                return true;
-            } else {
-                return false;
+        /// ### Queue coroutine handles
+        bool queue(std::span<std::coroutine_handle<> const> const handles) {
+            bool queued_any = false;
+            for (auto h : handles) {
+                if (h) {
+                    queued.push_back(h);
+                    queued_any = true;
+                }
             }
+            return queued_any;
         }
         /**
-         * Returns `true` when a non-null handle was queued so the caller knows
-         * it needs to wake its event loop.
+         * Returns `true` when at least one non-null handle was queued so the
+         * caller knows it needs to wake its event loop.
          */
 
         /// ### Resume everything currently queued

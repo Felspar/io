@@ -110,7 +110,7 @@ namespace felspar::io {
 
         /// ### Async wake up
 
-        void async_resume(std::coroutine_handle<>) override;
+        void async_resume(std::span<std::coroutine_handle<> const>) override;
         void wake_event_loop();
         /// Read and discard any bytes queued by `wake_event_loop`
         void drain_wakeup();

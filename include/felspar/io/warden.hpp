@@ -82,7 +82,10 @@ namespace felspar::io {
          */
 
         /// #### Delayed resume
-        virtual void async_resume(std::coroutine_handle<>) = 0;
+        virtual void async_resume(std::span<std::coroutine_handle<> const>) = 0;
+        void async_resume(std::coroutine_handle<> h) {
+            async_resume(std::span{&h, 1});
+        }
         /**
          * Once the event loop has finished processing new events, then the
          * coroutines sent here will be resumed. This slight asynchrony can be

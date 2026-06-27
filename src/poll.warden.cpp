@@ -5,6 +5,7 @@
 
 #include <array>
 #include <cstddef>
+#include <span>
 
 #if __has_include(<poll.h>)
 #include <poll.h>
@@ -62,8 +63,9 @@ void felspar::io::poll_warden::run_batch() {
 }
 
 
-void felspar::io::poll_warden::async_resume(std::coroutine_handle<> const h) {
-    if (resumer.queue(h)) { wake_event_loop(); }
+void felspar::io::poll_warden::async_resume(
+        std::span<std::coroutine_handle<> const> const handles) {
+    if (resumer.queue(handles)) { wake_event_loop(); }
 }
 
 
