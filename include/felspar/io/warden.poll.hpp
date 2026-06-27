@@ -1,7 +1,7 @@
 #pragma once
 
 
-#include <felspar/io/async_resume.hpp>
+#include <felspar/io/async_resumption.hpp>
 #include <felspar/io/warden.hpp>
 
 #include <map>
@@ -18,7 +18,7 @@ namespace felspar::io {
      *
      * Creation of any `poll_warden` instance will turn on ignoring of the
      * `SIGPIPE` signal. This allows the `write` calls to return errors without
-     * also needing to install signal handler.
+     * also needing to install a signal handler.
      */
     class poll_warden : public warden {
         struct retrier;
@@ -122,7 +122,7 @@ namespace felspar::io {
          */
         pipe wakeup;
         /// The coroutines this warden has been asked to resume
-        felspar::io::async_resume resumer;
+        async_resumption resumer;
     };
 
 

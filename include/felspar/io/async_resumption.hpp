@@ -18,7 +18,7 @@ namespace felspar::io {
      * Any concrete warden (i.e. one performing IO) should include a member of
      * this type and use it to implement the `async_resume` part of the API.
      */
-    class async_resume {
+    class async_resumption {
         std::vector<std::coroutine_handle<>> queued, resuming;
 
       public:

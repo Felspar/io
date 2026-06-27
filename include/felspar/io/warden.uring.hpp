@@ -1,7 +1,7 @@
 #pragma once
 
 
-#include <felspar/io/async_resume.hpp>
+#include <felspar/io/async_resumption.hpp>
 #include <felspar/io/warden.hpp>
 
 
@@ -18,7 +18,7 @@ namespace felspar::io {
         struct completion;
         struct impl;
         std::unique_ptr<impl> ring;
-        felspar::io::async_resume resumer;
+        async_resumption resumer;
 
         struct close_completion;
         struct sleep_completion;
