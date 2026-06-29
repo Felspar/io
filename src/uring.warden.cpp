@@ -2,6 +2,7 @@
 
 #include <felspar/exceptions/runtime_error.hpp>
 
+#include <cerrno>
 #include <span>
 
 
@@ -28,7 +29,15 @@ void felspar::io::uring_warden::run_until(std::coroutine_handle<> coro) {
 
         ::io_uring_cqe *cqe = {};
         auto const ret = ::io_uring_wait_cqe(&ring->uring, &cqe);
-        if (ret < 0) {
+        if (ret == -EINTR) {
+            /**
+             * A signal interrupted the wait. `io_uring_enter` is not restarted
+             * by `SA_RESTART`, so retry the loop ourselves rather than treating
+             * the interruption as fatal -- any completions a handler queued
+             * (such as a self-pipe write) are then picked up on the next wait.
+             */
+            continue;
+        } else if (ret < 0) {
             throw felspar::stdexcept::system_error{
                     -ret, std::system_category(), "uring_wait_cqe"};
         }

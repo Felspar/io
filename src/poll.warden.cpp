@@ -4,6 +4,7 @@
 #include <felspar/io/posix.hpp>
 
 #include <array>
+#include <cerrno>
 #include <cstddef>
 #include <span>
 
@@ -137,8 +138,20 @@ void felspar::io::poll_warden::do_poll(int const timeout) {
 #endif
     }();
     if (pr < 0) {
-        throw felspar::stdexcept::system_error{
-                get_error(), std::system_category(), "poll"};
+        auto const error = get_error();
+        if (error == EINTR) {
+            /**
+             * A signal interrupted the wait. `poll` is not restarted by
+             * `SA_RESTART` on Linux, so treat the interruption as a spurious
+             * wake-up with no ready descriptors -- the run loop polls again and
+             * any fd a handler readied (such as a self-pipe write) is picked up
+             * on the next pass.
+             */
+            return;
+        } else {
+            throw felspar::stdexcept::system_error{
+                    error, std::system_category(), "poll"};
+        }
     } else if (pr > 0) {
         bookkeeping->continuations.clear();
         for (auto events : bookkeeping->iops) {
