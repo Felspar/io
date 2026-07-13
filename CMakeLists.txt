@@ -3,6 +3,7 @@ project(felspar-io)
 
 
 include(cmake/detect_accept4.cmake)
+include(cmake/detect_pipe2.cmake)
 
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")

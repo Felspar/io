@@ -64,10 +64,21 @@ auto felspar::io::warden::create_pipe(std::source_location const loc) -> pipe {
     }
 
     return {std::move(read), std::move(write)};
-#else
+#elif defined(FELSPAR_HAS_PIPE2)
     int fds[2] = {};
     if (::pipe2(fds, O_NONBLOCK) == 0) {
         return {posix::fd{fds[0]}, posix::fd{fds[1]}};
+    } else {
+        throw felspar::stdexcept::system_error{
+                io::get_error(), std::system_category(), "Creating pipe", loc};
+    }
+#else
+    int fds[2] = {};
+    if (::pipe(fds) == 0) {
+        pipe result{posix::fd{fds[0]}, posix::fd{fds[1]}};
+        posix::set_non_blocking(result.read, loc);
+        posix::set_non_blocking(result.write, loc);
+        return result;
     } else {
         throw felspar::stdexcept::system_error{
                 io::get_error(), std::system_category(), "Creating pipe", loc};
